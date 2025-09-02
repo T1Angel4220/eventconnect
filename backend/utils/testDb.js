@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: '../config/.env' });
 const pool = require('../models/db');
 
 (async () => {
