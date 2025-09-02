@@ -1,11 +1,24 @@
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import PrivateRoute from './components/login-Web/PrivateRoute';
 
-function App() {
-  return (
-    <div className="flex min-h-svh flex-col items-center justify-center">
-      <Button>Click me</Button>
-    </div>
-  );
-}
+const App: React.FC = () => {
+    return (
+        <Router>
+            <Routes>
+                <Route path="/" element={<Login />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/dashboard" element={
+                    <PrivateRoute allowedRoles={['admin', 'organizer']}>
+                        <Dashboard />
+                    </PrivateRoute>
+                } />
+            </Routes>
+        </Router>
+    );
+};
 
 export default App;
+
