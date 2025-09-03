@@ -143,6 +143,16 @@ const Login: React.FC = () => {
             </button>
           </form>
 
+          {/* Forgot Password Link */}
+          <div className="mt-4 text-center">
+            <Link
+              to="/forgot-password"
+              className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors duration-200 text-sm"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
           {/* Register Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 dark:text-gray-400">

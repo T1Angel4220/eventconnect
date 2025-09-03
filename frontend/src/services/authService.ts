@@ -37,3 +37,62 @@ export const registerUser = async (firstName: string, lastName: string, email: s
 
     return res.json();
 };
+
+export interface ForgotPasswordResponse {
+    message: string;
+    userId?: number;
+}
+
+export interface VerifyCodeResponse {
+    message: string;
+    resetId: number;
+}
+
+export interface ResetPasswordResponse {
+    message: string;
+}
+
+export const forgotPassword = async (email: string): Promise<ForgotPasswordResponse> => {
+    const res = await fetch('http://localhost:3001/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Error solicitando recuperación');
+    }
+
+    return res.json();
+};
+
+export const verifyResetCode = async (userId: number, code: string): Promise<VerifyCodeResponse> => {
+    const res = await fetch('http://localhost:3001/api/auth/verify-reset-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, code })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Error verificando código');
+    }
+
+    return res.json();
+};
+
+export const resetPassword = async (resetId: number, newPassword: string): Promise<ResetPasswordResponse> => {
+    const res = await fetch('http://localhost:3001/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resetId, newPassword })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Error actualizando contraseña');
+    }
+
+    return res.json();
+};

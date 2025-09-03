@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const PasswordReset = require('../models/passwordReset');
+const { sendPasswordResetCode, sendPasswordChangeConfirmation } = require('../services/emailService');
 require('dotenv').config({ path: './config/.env' });
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -83,6 +85,156 @@ exports.register = async (req, res) => {
             token,
             role: newUser.role,
             firstName: newUser.first_name
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+// Función para generar código de 6 dígitos
+const generateResetCode = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Solicitar recuperación de contraseña
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'El email es obligatorio' });
+        }
+
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: 'Formato de email inválido' });
+        }
+
+        // Buscar usuario por email
+        const user = await User.findByEmail(email);
+        if (!user) {
+            // Por seguridad, no revelamos si el email existe o no
+            return res.status(200).json({ 
+                message: 'Si el email existe en nuestro sistema, recibirás un código de recuperación' 
+            });
+        }
+
+        // Invalidar códigos anteriores del usuario
+        await PasswordReset.invalidateUserCodes(user.user_id);
+
+        // Generar nuevo código
+        const resetCode = generateResetCode();
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+        // Guardar código en la base de datos
+        await PasswordReset.create(user.user_id, resetCode, expiresAt);
+
+        // Enviar email con el código
+        const emailResult = await sendPasswordResetCode(user.email, user.first_name, resetCode);
+        
+        if (!emailResult.success) {
+            console.error('Error enviando email:', emailResult.error);
+            return res.status(500).json({ message: 'Error enviando el código de recuperación' });
+        }
+
+        res.status(200).json({ 
+            message: 'Código de recuperación enviado a tu email',
+            userId: user.user_id // Necesario para el frontend
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+// Verificar código de recuperación
+exports.verifyResetCode = async (req, res) => {
+    try {
+        const { userId, code } = req.body;
+
+        if (!userId || !code) {
+            return res.status(400).json({ message: 'Usuario y código son obligatorios' });
+        }
+
+        if (code.length !== 6 || !/^\d+$/.test(code)) {
+            return res.status(400).json({ message: 'El código debe ser de 6 dígitos numéricos' });
+        }
+
+        // Buscar código válido
+        const resetCode = await PasswordReset.findValidCode(userId, code);
+        
+        if (!resetCode) {
+            return res.status(400).json({ message: 'Código inválido o expirado' });
+        }
+
+        res.status(200).json({ 
+            message: 'Código verificado correctamente',
+            resetId: resetCode.reset_id
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+// Actualizar contraseña con código
+exports.resetPassword = async (req, res) => {
+    try {
+        const { resetId, newPassword } = req.body;
+
+        if (!resetId || !newPassword) {
+            return res.status(400).json({ message: 'ID de reset y nueva contraseña son obligatorios' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
+        }
+
+        // Buscar el código de reset válido
+        const pool = require('../models/db');
+        const resetResult = await pool.query(
+            'SELECT * FROM password_reset_codes WHERE reset_id = $1 AND expires_at > NOW() AND used = FALSE',
+            [resetId]
+        );
+
+        if (resetResult.rows.length === 0) {
+            return res.status(400).json({ message: 'Código de recuperación inválido o expirado' });
+        }
+
+        const resetCode = resetResult.rows[0];
+
+        // Obtener información del usuario
+        const userResult = await pool.query(
+            'SELECT * FROM users WHERE user_id = $1',
+            [resetCode.user_id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        const user = userResult.rows[0];
+
+        // Encriptar nueva contraseña
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        // Actualizar contraseña en la base de datos
+        await pool.query(
+            'UPDATE users SET password = $1 WHERE user_id = $2',
+            [hashedPassword, user.user_id]
+        );
+
+        // Marcar código como usado
+        await PasswordReset.markAsUsed(resetCode.reset_id);
+
+        // Enviar email de confirmación
+        await sendPasswordChangeConfirmation(user.email, user.first_name);
+
+        res.status(200).json({ 
+            message: 'Contraseña actualizada exitosamente' 
         });
     } catch (err) {
         console.error(err);
