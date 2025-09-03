@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { loginUser } from "../services/authService"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { Eye, EyeOff, User, Lock, Sun, Moon } from "lucide-react"
 import { useTheme } from "../hooks/useTheme"
 
@@ -142,6 +142,19 @@ const Login: React.FC = () => {
               )}
             </button>
           </form>
+
+          {/* Register Link */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 dark:text-gray-400">
+              ¿No tienes una cuenta?{" "}
+              <Link
+                to="/register"
+                className="text-black dark:text-white font-semibold hover:underline transition-colors duration-200"
+              >
+                Regístrate como Organizador
+              </Link>
+            </p>
+          </div>
         </div>
 
         {/* Footer */}
