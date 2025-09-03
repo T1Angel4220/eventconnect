@@ -80,70 +80,65 @@ const VerifyCode: React.FC = () => {
 
   if (!userId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-black dark:via-gray-900 dark:to-black flex items-center justify-center px-4">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Error</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">No se encontró el ID de usuario</p>
-          <Link
-            to="/forgot-password"
-            className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline"
+        <h2 className="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-4">Error</h2>          <p className="text-gray-600 dark:text-gray-300 mb-6">No se encontró el ID de usuario</p>
+        <button
+            onClick={handleResendCode}
+            className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white cursor-pointer transition-colors duration-200"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver a solicitar código
-          </Link>
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center px-4 transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center px-4 transition-colors duration-300">
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className="fixed top-6 right-6 z-50 p-3 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        className="fixed top-6 right-6 z-50 p-3 rounded-full bg-white dark:bg-black border-2 border-gray-200 dark:border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
         aria-label="Cambiar tema"
       >
-        {isDark ? (
-          <Sun className="h-6 w-6 text-yellow-500" />
-        ) : (
-          <Moon className="h-6 w-6 text-gray-700" />
-        )}
+        {isDark ? <Sun className="h-6 w-6 text-yellow-500" /> : <Moon className="h-6 w-6 text-black" />}
       </button>
 
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 dark:from-blue-400 dark:to-purple-400 rounded-2xl mb-6 shadow-lg">
-            <Shield className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-black dark:bg-white rounded-2xl mb-6 shadow-lg">
+            <Shield className="w-10 h-10 text-white dark:text-black" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-black to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-3">
-            Event Connect
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">Verificar Código</p>
+          <h1 className="text-4xl font-bold text-black dark:text-white mb-3">Event Connect</h1>
+          <p className="text-gray-600 dark:text-gray-300 text-lg">Verificar Código</p>
         </div>
 
         {/* Form */}
-        <div className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-8 shadow-2xl backdrop-blur-sm transition-all duration-300 hover:shadow-3xl">
+        <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-8 shadow-2xl backdrop-blur-sm transition-all duration-300 hover:shadow-3xl">
           {!isSuccess ? (
             <>
               <h2 className="text-2xl font-bold text-black dark:text-white mb-8 text-center">Ingresa el Código</h2>
-              
-              <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+
+              <p className="text-gray-600 dark:text-gray-300 text-center mb-6">
                 Hemos enviado un código de 6 dígitos a tu email. Ingresa el código para continuar.
               </p>
 
               {/* Timer */}
               <div className="flex items-center justify-center mb-6">
                 <Clock className="h-5 w-5 text-orange-500 mr-2" />
-                <span className={`text-sm font-medium ${timeLeft < 300 ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'}`}>
+                <span
+                  className={`text-sm font-medium ${timeLeft < 300 ? "text-red-500" : "text-gray-600 dark:text-gray-300"}`}
+                >
                   Tiempo restante: {formatTime(timeLeft)}
                 </span>
               </div>
 
               {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl mb-6 flex items-center">
-                  <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
+                <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-400 px-4 py-3 rounded-xl mb-6 flex items-center">
+                  <div className="w-2 h-2 bg-gray-500 rounded-full mr-3"></div>
                   {error}
                 </div>
               )}
@@ -161,12 +156,12 @@ const VerifyCode: React.FC = () => {
                       placeholder="000000"
                       value={code}
                       onChange={handleCodeChange}
-                      className="w-full text-center text-2xl font-mono tracking-widest py-4 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all duration-200 text-black dark:text-white placeholder-gray-400"
+                      className="w-full text-center text-2xl font-mono tracking-widest py-4 bg-white border-2 border-gray-200 dark:border-white rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-all duration-200 text-black placeholder-gray-400"
                       maxLength={6}
                       required
                     />
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                  <p className="text-xs text-gray-500 dark:text-gray-300 mt-2 text-center">
                     Ingresa el código de 6 dígitos que recibiste por email
                   </p>
                 </div>
@@ -175,11 +170,11 @@ const VerifyCode: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading || code.length !== 6 || timeLeft === 0}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                  className="w-full bg-white text-black border-2 border-black py-4 px-6 rounded-xl font-semibold hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-black/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 cursor-pointer shadow-lg hover:shadow-xl"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black mr-3"></div>
                       Verificando...
                     </div>
                   ) : (
@@ -190,12 +185,10 @@ const VerifyCode: React.FC = () => {
 
               {/* Resend Code */}
               <div className="mt-6 text-center">
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                  ¿No recibiste el código?
-                </p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">¿No recibiste el código?</p>
                 <button
                   onClick={handleResendCode}
-                  className="text-blue-600 dark:text-blue-400 font-semibold hover:underline transition-colors duration-200"
+                  className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white font-semibold hover:underline transition-colors duration-200 cursor-pointer"
                 >
                   Solicitar nuevo código
                 </button>
@@ -203,19 +196,19 @@ const VerifyCode: React.FC = () => {
             </>
           ) : (
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full mb-6">
-                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-900/20 rounded-full mb-6">
+                <CheckCircle className="w-8 h-8 text-gray-600 dark:text-gray-400" />
               </div>
-              
+
               <h2 className="text-2xl font-bold text-black dark:text-white mb-4">¡Código Verificado!</h2>
-              
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Tu código ha sido verificado correctamente. Ahora puedes establecer una nueva contraseña.
               </p>
 
               <button
                 onClick={handleContinueToReset}
-                className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-4 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-blue-600 focus:outline-none focus:ring-4 focus:ring-green-500/20 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                className="w-full bg-white text-black border-2 border-black py-4 px-6 rounded-xl font-semibold hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-black/20 transition-all duration-300 hover:scale-105 cursor-pointer shadow-lg hover:shadow-xl"
               >
                 Establecer Nueva Contraseña
               </button>
@@ -224,20 +217,16 @@ const VerifyCode: React.FC = () => {
 
           {/* Back to Forgot Password */}
           <div className="mt-6 text-center">
-            <Link
-              to="/forgot-password"
-              className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors duration-200"
-            >
-              ← Volver a solicitar código
-            </Link>
+
           </div>
         </div>
+
 
         {/* Back to Login Button */}
         <div className="text-center mt-6">
           <Link
             to="/login"
-            className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors duration-200"
+            className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors duration-200"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al Login
@@ -246,7 +235,7 @@ const VerifyCode: React.FC = () => {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-gray-300">
             © 2024 Event Connect - Sistema de Gestión Universitaria
           </p>
         </div>

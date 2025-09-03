@@ -115,9 +115,8 @@ exports.forgotPassword = async (req, res) => {
         // Buscar usuario por email
         const user = await User.findByEmail(email);
         if (!user) {
-            // Por seguridad, no revelamos si el email existe o no
-            return res.status(200).json({ 
-                message: 'Si el email existe en nuestro sistema, recibirás un código de recuperación' 
+            return res.status(404).json({ 
+                message: 'Correo inexistente' 
             });
         }
 
