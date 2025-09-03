@@ -112,7 +112,7 @@ const Register: React.FC = () => {
             placeholder="Tu nombre"
             value={formData.firstName}
             onChange={handleInputChange}
-            className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-white-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-colors duration-200 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-900"
+            className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-white border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-black focus:outline-none transition-colors duration-200 text-black placeholder-gray-500 dark:placeholder-gray-700"
             required
           />
         </div>
@@ -134,7 +134,7 @@ const Register: React.FC = () => {
             placeholder="Tu apellido"
             value={formData.lastName}
             onChange={handleInputChange}
-            className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-white-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-colors duration-200 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-900"
+            className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-white border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-black focus:outline-none transition-colors duration-200 text-black placeholder-gray-500 dark:placeholder-gray-900"
             required
           />
         </div>
@@ -157,7 +157,7 @@ const Register: React.FC = () => {
           placeholder="tu@email.com"
           value={formData.email}
           onChange={handleInputChange}
-          className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-white-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-colors duration-200 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-900"
+          className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-white-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-colors duration-200 text-black placeholder-gray-500 dark:placeholder-gray-900"
           required
         />
       </div>
@@ -179,7 +179,7 @@ const Register: React.FC = () => {
           placeholder="••••••••"
           value={formData.password}
           onChange={handleInputChange}
-          className="w-full pl-12 pr-14 py-4 bg-gray-50 dark:bg-white-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-colors duration-200 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-900"
+          className="w-full pl-12 pr-14 py-4 bg-gray-50 dark:bg-white-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-colors duration-200 text-black  placeholder-gray-500 dark:placeholder-gray-900"
           required
         />
         <button
@@ -212,7 +212,7 @@ const Register: React.FC = () => {
           placeholder="••••••••"
           value={formData.confirmPassword}
           onChange={handleInputChange}
-          className="w-full pl-12 pr-14 py-4 bg-gray-50 dark:bg-white-900 border-2 border-black-900 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-colors duration-200 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-900"
+          className="w-full pl-12 pr-14 py-4 bg-gray-50 dark:bg-white-900 border-2 border-black-900 dark:border-gray-700 rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-colors duration-200 text-black placeholder-gray-500 dark:placeholder-gray-900"
           required
         />
         <button
