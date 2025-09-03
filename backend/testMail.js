@@ -15,7 +15,7 @@ async function main() {
 
   const info = await transporter.sendMail({
     from: process.env.EMAIL_USER,
-    to: "ayuquinaangel4220@gmail.com",
+    to: "sebastianalejandroob20@gmail.com",
     subject: "Prueba ✔",
     text: "Hola, esto es un test"
   });

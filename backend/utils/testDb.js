@@ -1,4 +1,4 @@
-require('dotenv').config({ path: __dirname + '/config/.env' });
+require('dotenv').config({ path: '../config/.env' });
 const pool = require('../models/db');
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "OK" : "NO DEFINIDO");

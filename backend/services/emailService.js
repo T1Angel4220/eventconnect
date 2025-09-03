@@ -6,8 +6,8 @@ const createTransporter = () => {
     return nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: process.env.EMAIL_USER || 'ayuquinaangel123@gmail.com',
-            pass: process.env.EMAIL_PASS || 'uxwnpluimhjxrbes'
+            user: process.env.EMAIL_USER || 'eventconnect90@gmail.com',
+            pass: process.env.EMAIL_PASS || 'oshzkgssiwxfdiqr'
         }
     });
 };
