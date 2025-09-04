@@ -28,6 +28,16 @@ const Login: React.FC = () => {
   const navigate = useNavigate()
   const { toggleTheme, isDark } = useTheme()
 
+  // Al entrar a Login, limpiar cualquier estado del flujo de recuperación
+  useEffect(() => {
+    sessionStorage.removeItem('fp:email')
+    sessionStorage.removeItem('fp:userId')
+    sessionStorage.removeItem('fp:canVerify')
+    sessionStorage.removeItem('fp:canReset')
+    sessionStorage.removeItem('fp:resetId')
+    sessionStorage.removeItem('fp:transition')
+  }, [])
+
   // Validación en tiempo real
   useEffect(() => {
     if (touched.email) {

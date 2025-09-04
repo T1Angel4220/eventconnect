@@ -20,6 +20,19 @@ const ForgotPassword: React.FC = () => {
   const navigate = useNavigate()
   const { toggleTheme, isDark } = useTheme()
 
+  // Al montar Forgot, limpiar cualquier rastro del flujo para que el botón Adelante no pueda volver a VerifyCode
+  useEffect(() => {
+    sessionStorage.removeItem('fp:backFromVerify')
+    sessionStorage.removeItem('fp:canVerify')
+    sessionStorage.removeItem('fp:userId')
+    sessionStorage.removeItem('fp:canReset')
+    sessionStorage.removeItem('fp:resetId')
+    // Romper el historial hacia adelante para que el botón "Adelante" no vuelva a verify-code
+    try {
+      window.history.pushState({}, '', window.location.href)
+    } catch {}
+  }, [])
+
   // Validación en tiempo real del email
   useEffect(() => {
     if (touched) {
@@ -62,6 +75,10 @@ const ForgotPassword: React.FC = () => {
       setIsSuccess(true)
       if (data.userId) {
         setUserId(data.userId)
+        // Persistir estado del flujo
+        sessionStorage.setItem('fp:email', email)
+        sessionStorage.setItem('fp:userId', String(data.userId))
+        sessionStorage.setItem('fp:canVerify', '1')
       }
     } catch (err: unknown) {
       let errorMessage = "Error solicitando recuperación"
@@ -80,12 +97,20 @@ const ForgotPassword: React.FC = () => {
 
   const handleContinueToCode = () => {
     if (userId) {
+      // Navegación sin replace para permitir volver al formulario con el botón Atrás
       navigate(`/verify-code?userId=${userId}`)
     }
   }
 
   const navigateToLogin = () => {
-    navigate("/login")
+    // Limpiar estado del flujo de recuperación y navegar con replace
+    sessionStorage.removeItem('fp:email')
+    sessionStorage.removeItem('fp:userId')
+    sessionStorage.removeItem('fp:canVerify')
+    sessionStorage.removeItem('fp:canReset')
+    sessionStorage.removeItem('fp:resetId')
+    sessionStorage.removeItem('fp:transition')
+    navigate("/login", { replace: true })
   }
 
   const isFormValid = !emailError && email.length > 0

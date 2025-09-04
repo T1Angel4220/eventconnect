@@ -237,7 +237,7 @@ const LetterOnlyInput: React.FC<LetterOnlyInputProps> = ({
       
       {/* Mensaje de ayuda */}
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-        Solo letras (máximo {maxLength} caracteres). Puedes escribir con mayúsculas, se convertirán automáticamente al formato correcto.
+        Solo letras (máximo {maxLength} caracteres).
       </p>
     </div>
   )

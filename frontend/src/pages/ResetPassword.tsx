@@ -34,6 +34,15 @@ const ResetPassword: React.FC = () => {
 
   const resetId = searchParams.get('resetId')
 
+  // Guard: requerir permiso desde VerifyCode
+  useEffect(() => {
+    const canReset = sessionStorage.getItem('fp:canReset')
+    const storedResetId = sessionStorage.getItem('fp:resetId')
+    if (!canReset || canReset !== '1' || !storedResetId) {
+      navigate('/forgot-password', { replace: true })
+    }
+  }, [navigate])
+
   // Validación en tiempo real
   useEffect(() => {
     if (touched.newPassword) {
@@ -113,7 +122,7 @@ const ResetPassword: React.FC = () => {
   }
 
   const handleGoToLogin = () => {
-    navigate('/login')
+    navigate('/login', { replace: true })
   }
 
   const isFormValid = !errors.newPassword && !errors.confirmPassword && 
@@ -299,14 +308,26 @@ const ResetPassword: React.FC = () => {
             </div>
           )}
 
-          {/* Back to Verify Code */}
+          {/* Back/Cancel from Reset with confirmation */}
           {!isSuccess && (
             <div className="mt-6 text-center">
-              <Link
-                to="/verify-code"
-                className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors duration-200 cursor-pointer"
+              <button
+                onClick={() => {
+                  const confirmLeave = window.confirm('Se cancelará el cambio de contraseña. ¿Deseas salir?')
+                  if (confirmLeave) {
+                    // Limpiar estado de flujo y volver al login
+                    sessionStorage.removeItem('fp:canVerify')
+                    sessionStorage.removeItem('fp:userId')
+                    sessionStorage.removeItem('fp:email')
+                    sessionStorage.removeItem('fp:canReset')
+                    sessionStorage.removeItem('fp:resetId')
+                    navigate('/login', { replace: true })
+                  }
+                }}
+                className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors duración-200 cursor-pointer"
               >
-              </Link>
+                Cancelar y salir al Login
+              </button>
             </div>
           )}
         </div>

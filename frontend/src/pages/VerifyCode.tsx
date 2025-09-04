@@ -23,6 +23,15 @@ const VerifyCode: React.FC = () => {
 
   const userId = searchParams.get('userId')
 
+  // Guard: requerir que ForgotPassword haya establecido el flujo
+  useEffect(() => {
+    const canVerify = sessionStorage.getItem('fp:canVerify')
+    const storedUserId = sessionStorage.getItem('fp:userId')
+    if (!canVerify || canVerify !== '1' || !storedUserId) {
+      navigate('/forgot-password', { replace: true })
+    }
+  }, [navigate])
+
   // Timer countdown
   useEffect(() => {
     if (timeLeft > 0) {
@@ -93,13 +102,46 @@ const VerifyCode: React.FC = () => {
 
   const handleContinueToReset = () => {
     if (resetId) {
-      navigate(`/reset-password?resetId=${resetId}`)
+      // Persistir permiso para reset y navegar con replace
+      sessionStorage.setItem('fp:canReset', '1')
+      sessionStorage.setItem('fp:resetId', String(resetId))
+      // Guardar transición para poder invalidarla si retrocede a login
+      sessionStorage.setItem('fp:transition', 'verify->reset')
+      navigate(`/reset-password?resetId=${resetId}`, { replace: true })
     }
   }
 
   const handleResendCode = () => {
-    navigate('/forgot-password')
+    // Limpiar estado y volver con replace
+    sessionStorage.removeItem('fp:canVerify')
+    sessionStorage.removeItem('fp:userId')
+    sessionStorage.removeItem('fp:email')
+    sessionStorage.removeItem('fp:canReset')
+    sessionStorage.removeItem('fp:resetId')
+    navigate('/forgot-password', { replace: true })
   }
+
+  // Si el usuario usa botón atrás desde VerifyCode, limpiar flujo inmediatamente
+  useEffect(() => {
+    const handlePopState = () => {
+      // Marcar bandera y limpiar claves para que no pueda volver adelante a esta pantalla
+      sessionStorage.setItem('fp:backFromVerify', '1')
+      sessionStorage.removeItem('fp:canVerify')
+      sessionStorage.removeItem('fp:userId')
+      sessionStorage.removeItem('fp:email')
+      sessionStorage.removeItem('fp:canReset')
+      sessionStorage.removeItem('fp:resetId')
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  // Cleanup: si el usuario abandona esta pantalla, no permitir volver adelante
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem('fp:transition')
+    }
+  }, [])
 
   const isFormValid = code.length === 6 && !codeError
 
