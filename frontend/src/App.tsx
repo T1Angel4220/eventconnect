@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -48,6 +48,8 @@ const App: React.FC = () => {
                         <Dashboard />
                     </PrivateRoute>
                 } />
+                 {/* Ruta catch-all */}
+                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
         </Router>
     );
