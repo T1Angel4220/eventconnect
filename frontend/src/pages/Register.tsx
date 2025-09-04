@@ -349,7 +349,7 @@ const Register: React.FC = () => {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <p className="text-sm text-gray-500 dark:text-gray-400">© 2024 Event Connect - Sistema de Gestión Universitaria</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">© 2025 Event Connect - Sistema de Gestión Universitaria</p>
         </div>
       </div>
     </div>
