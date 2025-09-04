@@ -1,16 +1,27 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { resetPassword } from "../services/authService"
 import { useNavigate, useSearchParams, Link } from "react-router-dom"
 import { Lock, Sun, Moon, ArrowLeft, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { useTheme } from "../hooks/useTheme"
+import { validatePassword, validateConfirmPassword } from "../utils/validations"
+import ValidationError from "../components/ui/ValidationError"
+import PasswordStrength from "../components/forms/PasswordStrength"
 
 const ResetPassword: React.FC = () => {
   const [formData, setFormData] = useState({
     newPassword: "",
     confirmPassword: ""
+  })
+  const [errors, setErrors] = useState({
+    newPassword: "",
+    confirmPassword: ""
+  })
+  const [touched, setTouched] = useState({
+    newPassword: false,
+    confirmPassword: false
   })
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -23,37 +34,72 @@ const ResetPassword: React.FC = () => {
 
   const resetId = searchParams.get('resetId')
 
+  // Validación en tiempo real
+  useEffect(() => {
+    if (touched.newPassword) {
+      const passwordValidation = validatePassword(formData.newPassword)
+      setErrors(prev => ({ ...prev, newPassword: passwordValidation.message }))
+    }
+  }, [formData.newPassword, touched.newPassword])
+
+  useEffect(() => {
+    if (touched.confirmPassword) {
+      const confirmPasswordValidation = validateConfirmPassword(formData.newPassword, formData.confirmPassword)
+      setErrors(prev => ({ ...prev, confirmPassword: confirmPasswordValidation.message }))
+    }
+  }, [formData.newPassword, formData.confirmPassword, touched.confirmPassword])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
     }))
+    
+    // Marcar como tocado para activar validaciones
+    if (!touched[name as keyof typeof touched]) {
+      setTouched(prev => ({ ...prev, [name]: true }))
+    }
+  }
+
+  const handleBlur = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors = {
+      newPassword: "",
+      confirmPassword: ""
+    }
+
+    // Validar nueva contraseña
+    const passwordValidation = validatePassword(formData.newPassword)
+    newErrors.newPassword = passwordValidation.message
+
+    // Validar confirmación de contraseña
+    const confirmPasswordValidation = validateConfirmPassword(formData.newPassword, formData.confirmPassword)
+    newErrors.confirmPassword = confirmPasswordValidation.message
+
+    setErrors(newErrors)
+    setTouched({ newPassword: true, confirmPassword: true })
+
+    return !newErrors.newPassword && !newErrors.confirmPassword
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setIsLoading(true)
 
     if (!resetId) {
       setError("Error: ID de reset no encontrado")
-      setIsLoading(false)
       return
     }
 
-    // Validaciones del frontend
-    if (formData.newPassword !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden")
-      setIsLoading(false)
+    if (!validateForm()) {
       return
     }
 
-    if (formData.newPassword.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres")
-      setIsLoading(false)
-      return
-    }
+    setIsLoading(true)
 
     try {
       await resetPassword(parseInt(resetId), formData.newPassword)
@@ -69,6 +115,10 @@ const ResetPassword: React.FC = () => {
   const handleGoToLogin = () => {
     navigate('/login')
   }
+
+  const isFormValid = !errors.newPassword && !errors.confirmPassword && 
+                     formData.newPassword && formData.confirmPassword
+
   if (!resetId) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center px-4">
@@ -86,6 +136,7 @@ const ResetPassword: React.FC = () => {
       </div>
     )
   }
+
   return (
     <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center px-4 transition-colors duration-300">
       {/* Theme Toggle */}
@@ -114,12 +165,9 @@ const ResetPassword: React.FC = () => {
                 Establecer Nueva Contraseña
               </h2>
 
-              <p className="text-gray-600 dark:text-gray-300 text-center mb-6">
-              </p>
-
               {error && (
-                <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-400 px-4 py-3 rounded-xl mb-6 flex items-center">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full mr-3"></div>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl mb-6 flex items-center">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
                   {error}
                 </div>
               )}
@@ -131,17 +179,22 @@ const ResetPassword: React.FC = () => {
                     Nueva Contraseña
                   </label>
                   <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                  <Lock className="h-5 w-5 text-gray-700 dark:text-gray-700 transition-colors duration-200" />
-                  </div>
-                  <input
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                      <Lock className="h-5 w-5 text-gray-700 dark:text-gray-700 transition-colors duration-200" />
+                    </div>
+                    <input
                       id="newPassword"
                       name="newPassword"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={formData.newPassword}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-14 py-4 bg-white border-2 border-gray-700 dark:border-white rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-all duration-200 text-black placeholder-gray-700"
+                      onBlur={() => handleBlur('newPassword')}
+                      className={`w-full pl-12 pr-14 py-4 bg-white border-2 rounded-xl focus:outline-none transition-all duration-200 text-black placeholder-gray-700 ${
+                        errors.newPassword && touched.newPassword 
+                          ? 'border-red-500 dark:border-red-500' 
+                          : 'border-gray-700 dark:border-white focus:border-black dark:focus:border-white'
+                      }`}
                       required
                     />
                     <button
@@ -156,6 +209,8 @@ const ResetPassword: React.FC = () => {
                       )}
                     </button>
                   </div>
+                  <ValidationError message={errors.newPassword} />
+                  <PasswordStrength password={formData.newPassword} />
                 </div>
 
                 {/* Confirm Password Input */}
@@ -167,17 +222,22 @@ const ResetPassword: React.FC = () => {
                     Confirmar Nueva Contraseña
                   </label>
                   <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                       <Lock className="h-5 w-5 text-gray-700 dark:text-gray-700 transition-colors duration-200" />
                     </div>
-                                        <input
+                    <input
                       id="confirmPassword"
                       name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-14 py-4 bg-white border-2 border-gray-200 dark:border-white rounded-xl focus:border-black dark:focus:border-white focus:outline-none transition-all duration-200 text-black placeholder-gray-500"
+                      onBlur={() => handleBlur('confirmPassword')}
+                      className={`w-full pl-12 pr-14 py-4 bg-white border-2 rounded-xl focus:outline-none transition-all duration-200 text-black placeholder-gray-500 ${
+                        errors.confirmPassword && touched.confirmPassword 
+                          ? 'border-red-500 dark:border-red-500' 
+                          : 'border-gray-200 dark:border-white focus:border-black dark:focus:border-white'
+                      }`}
                       required
                     />
                     <button
@@ -192,22 +252,13 @@ const ResetPassword: React.FC = () => {
                       )}
                     </button>
                   </div>
-                </div>
-
-                {/* Password Requirements */}
-                <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-                  <p className="text-sm text-gray-700 dark:text-gray-400 font-medium mb-2">Requisitos de contraseña:</p>
-                  <ul className="text-xs text-gray-600 dark:text-gray-300 space-y-1">
-                    <li>• Mínimo 6 caracteres</li>
-                    <li>• Debe coincidir en ambos campos</li>
-                    <li>• Recomendamos usar mayúsculas, minúsculas y números</li>
-                  </ul>
+                  <ValidationError message={errors.confirmPassword} />
                 </div>
 
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !isFormValid}
                   className="w-full bg-white text-black border-2 border-black py-4 px-6 rounded-xl font-semibold hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-black/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-[0.98] shadow-lg hover:shadow-xl cursor-pointer"
                 >
                   {isLoading ? (
@@ -281,4 +332,5 @@ const ResetPassword: React.FC = () => {
     </div>
   )
 }
+
 export default ResetPassword

@@ -1,24 +1,60 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { forgotPassword } from "../services/authService"
 import { useNavigate } from "react-router-dom"
 import { Mail, Sun, Moon, ArrowLeft, CheckCircle } from "lucide-react"
 import { useTheme } from "../hooks/useTheme"
+import { validateEmail } from "../utils/validations"
+import ValidationError from "../components/ui/ValidationError"
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState("")
   const [error, setError] = useState("")
+  const [emailError, setEmailError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
+  const [touched, setTouched] = useState(false)
   const navigate = useNavigate()
   const { toggleTheme, isDark } = useTheme()
+
+  // Validación en tiempo real del email
+  useEffect(() => {
+    if (touched) {
+      const emailValidation = validateEmail(email)
+      setEmailError(emailValidation.message)
+    }
+  }, [email, touched])
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setEmail(value)
+    if (error) setError("")
+    
+    if (!touched) {
+      setTouched(true)
+    }
+  }
+
+  const validateForm = (): boolean => {
+    const emailValidation = validateEmail(email)
+    setEmailError(emailValidation.message)
+    setTouched(true)
+    
+    return emailValidation.isValid
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setEmailError("")
+
+    if (!validateForm()) {
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -51,6 +87,8 @@ const ForgotPassword: React.FC = () => {
   const navigateToLogin = () => {
     navigate("/login")
   }
+
+  const isFormValid = !emailError && email.length > 0
 
   return (
     <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center px-4 transition-colors duration-300">
@@ -119,20 +157,22 @@ const ForgotPassword: React.FC = () => {
                       type="email"
                       placeholder="tu@email.com"
                       value={email}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        setEmail(e.target.value)
-                        if (error) setError("")
-                      }}
-                      className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 dark:border-gray-600 rounded-lg focus:border-black dark:focus:border-white focus:outline-none transition-all duration-200 text-black placeholder-gray-500"
+                      onChange={handleEmailChange}
+                      className={`w-full pl-10 pr-4 py-3 bg-white border rounded-lg focus:outline-none transition-all duration-200 text-black placeholder-gray-500 ${
+                        emailError && touched 
+                          ? 'border-red-500 dark:border-red-500' 
+                          : 'border-gray-300 dark:border-gray-600 focus:border-black dark:focus:border-white'
+                      }`}
                       required
                     />
                   </div>
+                  <ValidationError message={emailError} />
                 </div>
 
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isLoading || !!error}
+                  disabled={isLoading || !isFormValid}
                   className="w-full bg-black dark:bg-white text-white dark:text-black py-3 px-4 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isLoading ? (
@@ -176,6 +216,8 @@ const ForgotPassword: React.FC = () => {
                 onClick={() => {
                   setIsSuccess(false)
                   setError("")
+                  setEmailError("")
+                  setTouched(false)
                 }}
                 className="w-full text-gray-600 dark:text-gray-400 py-2 px-4 rounded-lg font-medium hover:text-black dark:hover:text-white transition-colors duration-200 cursor-pointer"
               >

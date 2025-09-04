@@ -1,28 +1,101 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { loginUser } from "../services/authService"
 import { useNavigate, Link } from "react-router-dom"
 import { Eye, EyeOff, User, Lock, Sun, Moon } from "lucide-react"
 import { useTheme } from "../hooks/useTheme"
+import { validateEmail } from "../utils/validations"
+import ValidationError from "../components/ui/ValidationError"
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  })
+  const [errors, setErrors] = useState({
+    email: "",
+    password: ""
+  })
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false
+  })
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const { toggleTheme, isDark } = useTheme()
 
+  // Validación en tiempo real
+  useEffect(() => {
+    if (touched.email) {
+      const emailValidation = validateEmail(formData.email)
+      setErrors(prev => ({ ...prev, email: emailValidation.message }))
+    }
+  }, [formData.email, touched.email])
+
+  useEffect(() => {
+    if (touched.password) {
+      if (!formData.password) {
+        setErrors(prev => ({ ...prev, password: "La contraseña es requerida" }))
+      } else {
+        setErrors(prev => ({ ...prev, password: "" }))
+      }
+    }
+  }, [formData.password, touched.password])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+    
+    // Marcar como tocado para activar validaciones
+    if (!touched[name as keyof typeof touched]) {
+      setTouched(prev => ({ ...prev, [name]: true }))
+    }
+  }
+
+  const handleBlur = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors = {
+      email: "",
+      password: ""
+    }
+
+    // Validar email
+    const emailValidation = validateEmail(formData.email)
+    newErrors.email = emailValidation.message
+
+    // Validar password
+    if (!formData.password) {
+      newErrors.password = "La contraseña es requerida"
+    }
+
+    setErrors(newErrors)
+    setTouched({ email: true, password: true })
+
+    return !newErrors.email && !newErrors.password
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+
+    if (!validateForm()) {
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      const data = await loginUser(email, password)
+      const data = await loginUser(formData.email, formData.password)
       localStorage.setItem("token", data.token)
       localStorage.setItem("role", data.role)
       navigate("/dashboard")
@@ -33,6 +106,8 @@ const Login: React.FC = () => {
       setIsLoading(false)
     }
   }
+
+  const isFormValid = !errors.email && !errors.password && formData.email && formData.password
 
   return (
     <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center px-4 transition-colors duration-300">
@@ -82,14 +157,21 @@ const Login: React.FC = () => {
                 </div>
                 <input
                   id="email"
+                  name="email"
                   type="text"
                   placeholder="usuario@ejemplo.com"
-                  value={email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-white border-2 border-gray-200 dark:border-gray-300 rounded-xl focus:border-black dark:focus:border-gray-600 focus:outline-none transition-all duration-200 text-black dark:text-black placeholder-gray-500 dark:placeholder-gray-600"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  onBlur={() => handleBlur('email')}
+                  className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-white border-2 rounded-xl focus:outline-none transition-all duration-200 text-black dark:text-black placeholder-gray-500 dark:placeholder-gray-600 ${
+                    errors.email && touched.email 
+                      ? 'border-red-500 dark:border-red-500' 
+                      : 'border-gray-200 dark:border-gray-300 focus:border-black dark:focus:border-gray-600'
+                  }`}
                   required
                 />
               </div>
+              <ValidationError message={errors.email} />
             </div>
 
             {/* Password Input */}
@@ -103,11 +185,17 @@ const Login: React.FC = () => {
                 </div>
                 <input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  value={password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-14 py-4 bg-gray-50 dark:bg-white border-2 border-gray-200 dark:border-gray-300 rounded-xl focus:border-black dark:focus:border-gray-600 focus:outline-none transition-all duration-200 text-black dark:text-black placeholder-gray-500 dark:placeholder-gray-600"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  onBlur={() => handleBlur('password')}
+                  className={`w-full pl-12 pr-14 py-4 bg-gray-50 dark:bg-white border-2 rounded-xl focus:outline-none transition-all duration-200 text-black dark:text-black placeholder-gray-500 dark:placeholder-gray-600 ${
+                    errors.password && touched.password 
+                      ? 'border-red-500 dark:border-red-500' 
+                      : 'border-gray-200 dark:border-gray-300 focus:border-black dark:focus:border-gray-600'
+                  }`}
                   required
                 />
                 <button
@@ -122,12 +210,13 @@ const Login: React.FC = () => {
                   )}
                 </button>
               </div>
+              <ValidationError message={errors.password} />
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !isFormValid}
               className="w-full bg-black dark:bg-white text-white dark:text-black py-4 px-6 rounded-xl font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
@@ -159,7 +248,6 @@ const Login: React.FC = () => {
                 to="/register"
                 className="text-black dark:text-white font-semibold hover:underline transition-colors duration-200"
               >
-                
                 Regístrate
               </Link>
             </p>
