@@ -67,20 +67,20 @@ const PasswordStrength: React.FC<PasswordStrengthProps> = ({ password }) => {
       
       <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
         <ul className="space-y-1">
-          <li className={`flex items-center ${password.length >= 8 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-            <span className="mr-2">•</span>
+          <li className={`flex items-center ${password.length >= 8 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+            <span className="mr-2">{password.length >= 8 ? '✓' : '✗'}</span>
             Mínimo 8 caracteres
           </li>
-          <li className={`flex items-center ${/[a-z]/.test(password) ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-            <span className="mr-2">•</span>
+          <li className={`flex items-center ${/[a-z]/.test(password) ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+            <span className="mr-2">{/[a-z]/.test(password) ? '✓' : '✗'}</span>
             Al menos una minúscula
           </li>
-          <li className={`flex items-center ${/[A-Z]/.test(password) ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-            <span className="mr-2">•</span>
+          <li className={`flex items-center ${/[A-Z]/.test(password) ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+            <span className="mr-2">{/[A-Z]/.test(password) ? '✓' : '✗'}</span>
             Al menos una mayúscula
           </li>
-          <li className={`flex items-center ${/\d/.test(password) ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-            <span className="mr-2">•</span>
+          <li className={`flex items-center ${/\d/.test(password) ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+            <span className="mr-2">{/\d/.test(password) ? '✓' : '✗'}</span>
             Al menos un número
           </li>
         </ul>

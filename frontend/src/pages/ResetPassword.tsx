@@ -158,7 +158,21 @@ const ResetPassword: React.FC = () => {
     navigate('/login', { replace: true })
   }
 
-  const isFormValid = !errors.newPassword && !errors.confirmPassword && 
+  // Función para verificar si la contraseña cumple todos los criterios
+  const isPasswordValid = (password: string): boolean => {
+    if (!password) return false
+    
+    const hasUpperCase = /[A-Z]/.test(password)
+    const hasLowerCase = /[a-z]/.test(password)
+    const hasNumber = /\d/.test(password)
+    const hasMinLength = password.length >= 8
+    const hasMaxLength = password.length <= 128
+    
+    return hasUpperCase && hasLowerCase && hasNumber && hasMinLength && hasMaxLength
+  }
+
+  const isFormValid = isPasswordValid(formData.newPassword) && 
+                     formData.confirmPassword === formData.newPassword &&
                      formData.newPassword && formData.confirmPassword
 
   if (!resetId) {

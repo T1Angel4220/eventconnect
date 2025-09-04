@@ -33,12 +33,21 @@ export const validatePassword = (password: string): ValidationResult => {
     return { isValid: false, message: "La contraseña no puede exceder 128 caracteres" }
   }
   
-  // Validar que contenga al menos una letra y un número
-  const hasLetter = /[a-zA-Z]/.test(password)
+  // Validar que contenga al menos una letra mayúscula, una minúscula y un número
+  const hasUpperCase = /[A-Z]/.test(password)
+  const hasLowerCase = /[a-z]/.test(password)
   const hasNumber = /\d/.test(password)
   
-  if (!hasLetter || !hasNumber) {
-    return { isValid: false, message: "La contraseña debe contener al menos una letra y un número" }
+  if (!hasUpperCase) {
+    return { isValid: false, message: "La contraseña debe contener al menos una letra mayúscula" }
+  }
+  
+  if (!hasLowerCase) {
+    return { isValid: false, message: "La contraseña debe contener al menos una letra minúscula" }
+  }
+  
+  if (!hasNumber) {
+    return { isValid: false, message: "La contraseña debe contener al menos un número" }
   }
   
   return { isValid: true, message: "" }
