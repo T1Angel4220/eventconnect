@@ -3,12 +3,13 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { resetPassword } from "../services/authService"
-import { useNavigate, useSearchParams, Link } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Lock, Sun, Moon, ArrowLeft, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { useTheme } from "../hooks/useTheme"
 import { validatePassword, validateConfirmPassword } from "../utils/validations"
 import ValidationError from "../components/ui/ValidationError"
 import PasswordStrength from "../components/forms/PasswordStrength"
+import ConfirmModal from "../components/ui/ConfirmModal"
 
 const ResetPassword: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -28,6 +29,7 @@ const ResetPassword: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { toggleTheme, isDark } = useTheme()
@@ -57,6 +59,37 @@ const ResetPassword: React.FC = () => {
       setErrors(prev => ({ ...prev, confirmPassword: confirmPasswordValidation.message }))
     }
   }, [formData.newPassword, formData.confirmPassword, touched.confirmPassword])
+
+  // Manejar navegación hacia atrás con confirmación
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isSuccess) {
+        e.preventDefault()
+        e.returnValue = 'Se cancelará el cambio de contraseña. ¿Deseas salir?'
+        return e.returnValue
+      }
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (!isSuccess) {
+        e.preventDefault()
+        setShowConfirmModal(true)
+        // Empujar el estado actual de vuelta al historial
+        window.history.pushState(null, '', window.location.href)
+      }
+    }
+
+    // Agregar el estado actual al historial para poder detectar navegación hacia atrás
+    window.history.pushState(null, '', window.location.href)
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [isSuccess])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -134,13 +167,13 @@ const ResetPassword: React.FC = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-4">Error</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">No se encontró el ID de reset</p>
-          <Link
-            to="/forgot-password"
+          <button
+            onClick={() => navigate('/forgot-password', { replace: true })}
             className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white cursor-pointer transition-colors duration-200"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver a solicitar recuperación
-          </Link>
+          </button>
         </div>
       </div>
     )
@@ -308,39 +341,17 @@ const ResetPassword: React.FC = () => {
             </div>
           )}
 
-          {/* Back/Cancel from Reset with confirmation */}
-          {!isSuccess && (
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => {
-                  const confirmLeave = window.confirm('Se cancelará el cambio de contraseña. ¿Deseas salir?')
-                  if (confirmLeave) {
-                    // Limpiar estado de flujo y volver al login
-                    sessionStorage.removeItem('fp:canVerify')
-                    sessionStorage.removeItem('fp:userId')
-                    sessionStorage.removeItem('fp:email')
-                    sessionStorage.removeItem('fp:canReset')
-                    sessionStorage.removeItem('fp:resetId')
-                    navigate('/login', { replace: true })
-                  }
-                }}
-                className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors duración-200 cursor-pointer"
-              >
-                Cancelar y salir al Login
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Back to Login Button */}
         <div className="text-center mt-6">
-          <Link
-            to="/login"
+          <button
+            onClick={() => setShowConfirmModal(true)}
             className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors duration-200 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al Login
-          </Link>
+          </button>
         </div>
 
         {/* Footer */}
@@ -350,6 +361,26 @@ const ResetPassword: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={() => {
+          // Limpiar estado de flujo y volver al login
+          sessionStorage.removeItem('fp:canVerify')
+          sessionStorage.removeItem('fp:userId')
+          sessionStorage.removeItem('fp:email')
+          sessionStorage.removeItem('fp:canReset')
+          sessionStorage.removeItem('fp:resetId')
+          navigate('/login', { replace: true })
+        }}
+        title="Cancelar cambio de contraseña"
+        message="Se cancelará el cambio de contraseña y volverás al login. ¿Estás seguro?"
+        confirmText="Sí, cancelar"
+        cancelText="No, continuar"
+        isDark={isDark}
+      />
     </div>
   )
 }
