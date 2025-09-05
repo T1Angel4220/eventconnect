@@ -18,7 +18,7 @@ const PasswordReset = {
   ): Promise<PasswordResetCode> => {
     const res = await pool.query(
       "INSERT INTO password_reset_codes (user_id, code, expires_at) VALUES ($1, $2, $3) RETURNING reset_id, code, expires_at, created_at",
-      [userId, code, expiresAt],
+      [userId, code, expiresAt.toISOString()],
     );
     return res.rows[0];
   },

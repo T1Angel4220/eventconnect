@@ -20,9 +20,21 @@ if (!JWT_EXPIRES_IN) {
   );
 }
 
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email y contraseña son obligatorios" });
+    }
+
     const user = await User.findByEmail(email);
 
     if (!user)
@@ -59,14 +71,13 @@ export const register = async (req: Request, res: Response) => {
 
     // Validar que todos los campos estén presentes
     if (!firstName || !lastName || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Todos los campos son obligatorios" });
+      return res.status(400).json({
+        message: "Todos los campos son obligatorios, para crear el usuario",
+      });
     }
 
     // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!validateEmail(email)) {
       return res.status(400).json({ message: "Formato de email inválido" });
     }
 
@@ -133,8 +144,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     }
 
     // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!validateEmail(email)) {
       return res.status(400).json({ message: "Formato de email inválido" });
     }
 
