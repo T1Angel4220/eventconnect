@@ -9,6 +9,8 @@ import {
   sendPasswordResetCode,
 } from "../services/emailService";
 
+import pool from "../models/db";
+
 const JWT_SECRET = env.jwt.secret as Secret;
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET no está definido en las variables de entorno");
@@ -242,7 +244,6 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     // Buscar el código de reset válido
-    const pool = require("../models/db");
     const resetResult = await pool.query(
       "SELECT * FROM password_reset_codes WHERE reset_id = $1 AND expires_at > NOW() AND used = FALSE",
       [resetId],
