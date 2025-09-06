@@ -9,9 +9,9 @@ import {
 } from "../services/emailService";
 import {
   createResetCode,
-  getResetCode,
   invalidateUserCodes,
   markCodeAsUsed,
+  validateResetCode,
 } from "../services/restCodeService";
 import { createUser, getUserByEmail } from "../services/userService";
 
@@ -207,14 +207,7 @@ export const verifyResetCode = async (req: Request, res: Response) => {
         .json({ message: "Usuario y código son obligatorios" });
     }
 
-    if (code.length !== 6 || !/^\d+$/.test(code)) {
-      return res
-        .status(400)
-        .json({ message: "El código debe ser de 6 dígitos numéricos" });
-    }
-
-    // Buscar código válido
-    const resetCode = await getResetCode(userId, code);
+    const resetCode = await validateResetCode(userId, code);
 
     if (!resetCode) {
       return res.status(400).json({ message: "Código inválido o expirado" });

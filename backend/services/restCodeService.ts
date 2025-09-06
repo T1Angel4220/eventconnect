@@ -9,10 +9,13 @@ export const createResetCode = async (
   return await PasswordResetCode.create(userId, codeData, expiresAt);
 };
 
-export const getResetCode = async (
+export const validateResetCode = async (
   userId: number,
   code: string,
 ): Promise<PasswordResetCodeData | undefined> => {
+  if (code.length !== 6 || !/^\d+$/.test(code)) {
+    return undefined;
+  }
   return await PasswordResetCode.findValidCode(userId, code);
 };
 
