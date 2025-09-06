@@ -3,4 +3,8 @@ const validateEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-export { validateEmail };
+const generateResetCode = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+export { validateEmail, generateResetCode };

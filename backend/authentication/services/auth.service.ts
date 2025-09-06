@@ -1,4 +1,5 @@
 import env from "@config/env";
+import { generateResetCode, validateEmail } from "@utils/helpers";
 import bcrypt from "bcryptjs";
 import jwt, { Secret } from "jsonwebtoken";
 import { UserService, userService } from "./user.service";
@@ -56,6 +57,33 @@ class AuthService {
     );
 
     return { token, user };
+  }
+
+  async sendRecoveryCode(email: string) {
+    if (!email) {
+      throw new Error("Email is required");
+    }
+
+    if (!validateEmail(email)) {
+      throw new Error("Invalid email format");
+    }
+
+    const user = await this.userService.getUserByEmail(email);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const resetCode = generateResetCode();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+    // const emailResult = await sendPasswordResetCode(
+    //   user.email,
+    //   user.first_name,
+    //   resetCode,
+    // );
+
+    return { resetCode, expiresAt };
   }
 }
 

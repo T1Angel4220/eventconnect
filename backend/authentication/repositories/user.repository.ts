@@ -1,9 +1,9 @@
-import { UserData } from "authentication/models/userData.interface";
+import User from "authentication/models/userModel";
 import { UserRow } from "authentication/models/userRow.interface";
 import pool from "models/db";
 
 class UserRepository {
-  async create(userData: UserData): Promise<UserRow | undefined> {
+  async create(userData: User): Promise<UserRow | undefined> {
     const { firstName, lastName, email, password, role } = userData;
     try {
       const res = await pool.query(
