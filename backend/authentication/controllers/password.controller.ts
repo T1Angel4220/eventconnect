@@ -37,3 +37,27 @@ export const verifyRecoveryCode = async (req: Request, res: Response) => {
     }
   }
 };
+
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const token = req.token;
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { newPassword } = req.body;
+    await passwordService.resetPassword(token, newPassword);
+
+    res.status(200).json({
+      message: "Password reset successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    if (err instanceof Error) {
+      res.status(400).json({ error: err.message });
+    } else {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+};

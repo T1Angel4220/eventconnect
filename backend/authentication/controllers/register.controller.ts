@@ -1,10 +1,11 @@
 import { UserData } from "authentication/models/userData.interface";
-import { userService } from "authentication/services/user.service";
+import { authService } from "authentication/services/auth.service";
 import { Request, Response } from "express";
 
 export const register = async (req: Request, res: Response) => {
   try {
-    await userService.registerUser(req.body as UserData);
+    await authService.register(req.body as UserData);
+
     res.status(201).json({
       message: "User registered successfully",
     });

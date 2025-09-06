@@ -1,24 +1,47 @@
-import env from "@config/env";
+import { JWT_OPTIONS, JWT_SECRET } from "@config/jwtConfig";
+import { encryptPassword, validateEmail } from "@utils/helpers";
+import { UserData } from "authentication/models/userData.interface";
 import bcrypt from "bcryptjs";
-import jwt, { Secret } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { UserService, userService } from "./user.service";
-
-const JWT_SECRET = env.jwt.secret as Secret;
-
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET no está definido en las variables de entorno");
-}
-
-const JWT_EXPIRES_IN = env.jwt.expiresIn as jwt.SignOptions["expiresIn"];
-
-if (!JWT_EXPIRES_IN) {
-  throw new Error(
-    "JWT_EXPIRES_IN no está definido en las variables de entorno",
-  );
-}
 
 class AuthService {
   constructor(private userService: UserService) {}
+
+  async register(userData: UserData) {
+    const { firstName, lastName, email, password } = userData;
+
+    if (!firstName || !lastName || !email || !password) {
+      throw new Error("All fields are required");
+    }
+
+    if (!validateEmail(email)) {
+      throw new Error("Email format is invalid");
+    }
+
+    if (password.length < 6) {
+      throw new Error("Password must be at least 6 characters long");
+    }
+
+    const existingUser = await this.userService.getUserByEmail(email);
+
+    if (existingUser) {
+      throw new Error("Email is already in use");
+    }
+
+    const hashedPassword = await encryptPassword(password);
+
+    const userDataToCreate: UserData = {
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+    };
+
+    const newUser = await this.userService.createUser(userDataToCreate);
+
+    return newUser;
+  }
 
   async login(data: { email: string; password: string }) {
     const { email, password } = data;
@@ -46,7 +69,7 @@ class AuthService {
     const tokenData = {
       payload: { userId: user.user_id, role: user.role },
       secret: JWT_SECRET,
-      options: { expiresIn: JWT_EXPIRES_IN },
+      options: JWT_OPTIONS,
     };
 
     const token = jwt.sign(

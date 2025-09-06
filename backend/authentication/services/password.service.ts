@@ -1,25 +1,15 @@
-import { generateResetCode, validateEmail } from "@utils/helpers";
+import { JWT_OPTIONS, JWT_SECRET } from "@config/jwtConfig";
+import {
+  encryptPassword,
+  generateResetCode,
+  validateEmail,
+} from "@utils/helpers";
 import {
   recoveryCodeRepository,
   RecoveryCodeRepository,
 } from "authentication/repositories/recoveryCode.repository";
+import jwt from "jsonwebtoken";
 import { userService, UserService } from "./user.service";
-import jwt, { Secret } from "jsonwebtoken";
-import env from "@config/env";
-
-const JWT_SECRET = env.jwt.secret as Secret;
-
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET no está definido en las variables de entorno");
-}
-
-const JWT_EXPIRES_IN = env.jwt.expiresIn as jwt.SignOptions["expiresIn"];
-
-if (!JWT_EXPIRES_IN) {
-  throw new Error(
-    "JWT_EXPIRES_IN no está definido en las variables de entorno",
-  );
-}
 
 class PasswordService {
   private userService: UserService;
@@ -84,7 +74,7 @@ class PasswordService {
     const tempJWTData = {
       payload: { userId },
       secret: JWT_SECRET,
-      options: { expiresIn: JWT_EXPIRES_IN },
+      options: JWT_OPTIONS,
     };
 
     const token = jwt.sign(
@@ -94,6 +84,29 @@ class PasswordService {
     );
 
     return token;
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    if (!token || !newPassword) {
+      throw new Error("Token and new password are required");
+    }
+
+    if (newPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters long");
+    }
+
+    const payload = jwt.verify(token, JWT_SECRET) as { userId: number };
+
+    if (!payload || !payload.userId) {
+      throw new Error("Invalid token");
+    }
+
+    const hashedPassword = await encryptPassword(newPassword);
+
+    await this.userService.updateUserPassword(payload.userId, hashedPassword);
+
+    // await sendPasswordChangeConfirmation(user.email, user.first_name);
+    return true;
   }
 }
 
