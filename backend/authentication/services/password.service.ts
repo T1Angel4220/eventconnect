@@ -10,6 +10,10 @@ import {
 } from "authentication/repositories/recoveryCode.repository";
 import jwt from "jsonwebtoken";
 import { userService, UserService } from "./user.service";
+import {
+  sendPasswordResetCode,
+  sendPasswordChangeConfirmation,
+} from "authentication/services/email.service";
 
 class PasswordService {
   private userService: UserService;
@@ -49,11 +53,19 @@ class PasswordService {
       expiresAt,
     );
 
-    // const emailResult = await sendPasswordResetCode(
-    //   user.email,
-    //   user.first_name,
-    //   resetCode,
-    // );
+    // Enviar email con el código de recuperación
+    try {
+      const emailResult = await sendPasswordResetCode(
+        user.email,
+        user.first_name,
+        resetCode,
+      );
+      if (!emailResult.success) {
+        console.error("Error enviando email:", emailResult.error);
+      }
+    } catch (err: any) {
+      console.error("Error enviando email de recuperación:", err.message);
+    }
 
     return { resetCode, expiresAt };
   }
@@ -105,7 +117,16 @@ class PasswordService {
 
     await this.userService.updateUserPassword(payload.userId, hashedPassword);
 
-    // await sendPasswordChangeConfirmation(user.email, user.first_name);
+    // Obtener usuario para enviar email de confirmación
+    const user = await this.userService.getUserById(payload.userId);
+    if (user) {
+      try {
+        await sendPasswordChangeConfirmation(user.email, user.first_name);
+      } catch (err: any) {
+        console.error("Error enviando email de confirmación:", err.message);
+      }
+    }
+
     return true;
   }
 }
