@@ -4,6 +4,22 @@ import {
   RecoveryCodeRepository,
 } from "authentication/repositories/recoveryCode.repository";
 import { userService, UserService } from "./user.service";
+import jwt, { Secret } from "jsonwebtoken";
+import env from "@config/env";
+
+const JWT_SECRET = env.jwt.secret as Secret;
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET no está definido en las variables de entorno");
+}
+
+const JWT_EXPIRES_IN = env.jwt.expiresIn as jwt.SignOptions["expiresIn"];
+
+if (!JWT_EXPIRES_IN) {
+  throw new Error(
+    "JWT_EXPIRES_IN no está definido en las variables de entorno",
+  );
+}
 
 class PasswordService {
   private userService: UserService;
@@ -62,7 +78,22 @@ class PasswordService {
     if (!record) {
       throw new Error("Invalid or expired code");
     }
-    return true;
+
+    await this.recoveryCodeRepository.markAsUsed(record.reset_id);
+
+    const tempJWTData = {
+      payload: { userId },
+      secret: JWT_SECRET,
+      options: { expiresIn: JWT_EXPIRES_IN },
+    };
+
+    const token = jwt.sign(
+      tempJWTData.payload,
+      tempJWTData.secret,
+      tempJWTData.options,
+    );
+
+    return token;
   }
 }
 

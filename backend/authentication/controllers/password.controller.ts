@@ -22,10 +22,11 @@ export const sendRecoveryCode = async (req: Request, res: Response) => {
 export const verifyRecoveryCode = async (req: Request, res: Response) => {
   try {
     const { userId, code } = req.body;
-    await passwordService.verifyRecoveryCode(userId, code);
+    const token = await passwordService.verifyRecoveryCode(userId, code);
 
     res.status(200).json({
       message: "Code verified successfully",
+      token,
     });
   } catch (err) {
     console.error(err);
