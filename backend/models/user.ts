@@ -19,6 +19,13 @@ export interface UserRow {
 }
 
 const User = {
+  findById: async (userId: number): Promise<UserRow | undefined> => {
+    const res = await pool.query("SELECT * FROM users WHERE user_id=$1", [
+      userId,
+    ]);
+    return res.rows[0];
+  },
+
   findByEmail: async (email: string): Promise<UserRow | undefined> => {
     const res = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
     return res.rows[0];
@@ -37,6 +44,17 @@ const User = {
       [firstName, lastName, email, password, role],
     );
     return res.rows[0];
+  },
+
+  updatePassword: async (
+    userId: number,
+    newPassword: string,
+  ): Promise<boolean> => {
+    const res = await pool.query(
+      "UPDATE users SET password = $1 WHERE user_id = $2",
+      [newPassword, userId],
+    );
+    return res.rowCount == null ? false : res.rowCount > 0;
   },
 };
 

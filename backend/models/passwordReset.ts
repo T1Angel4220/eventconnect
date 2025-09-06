@@ -1,6 +1,6 @@
 import pool from "./db";
 
-export interface PasswordResetCode {
+export interface PasswordResetCodeData {
   reset_id: number;
   code: string;
   expires_at: Date;
@@ -9,13 +9,13 @@ export interface PasswordResetCode {
   used?: boolean;
 }
 
-const PasswordReset = {
+const PasswordResetCode = {
   // Crear un nuevo código de recuperación
   create: async (
     userId: number,
     code: string,
     expiresAt: Date,
-  ): Promise<PasswordResetCode> => {
+  ): Promise<PasswordResetCodeData> => {
     const res = await pool.query(
       "INSERT INTO password_reset_codes (user_id, code, expires_at) VALUES ($1, $2, $3) RETURNING reset_id, code, expires_at, created_at",
       [userId, code, expiresAt.toISOString()],
@@ -27,7 +27,7 @@ const PasswordReset = {
   findValidCode: async (
     userId: number,
     code: string,
-  ): Promise<PasswordResetCode | undefined> => {
+  ): Promise<PasswordResetCodeData | undefined> => {
     const res = await pool.query(
       "SELECT * FROM password_reset_codes WHERE user_id = $1 AND code = $2 AND expires_at > NOW() AND used = FALSE ORDER BY created_at DESC LIMIT 1",
       [userId, code],
@@ -36,7 +36,7 @@ const PasswordReset = {
   },
 
   // Marcar código como usado
-  markAsUsed: async (resetId: number): Promise<PasswordResetCode> => {
+  markAsUsed: async (resetId: number): Promise<PasswordResetCodeData> => {
     const res = await pool.query(
       "UPDATE password_reset_codes SET used = TRUE WHERE reset_id = $1 RETURNING *",
       [resetId],
@@ -62,4 +62,4 @@ const PasswordReset = {
   },
 };
 
-export default PasswordReset;
+export default PasswordResetCode;

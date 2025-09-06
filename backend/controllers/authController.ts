@@ -2,14 +2,18 @@ import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import jwt, { Secret } from "jsonwebtoken";
 import env from "../config/env";
-import PasswordReset from "../models/passwordReset";
-import User from "../models/user";
+import pool from "../models/db";
 import {
   sendPasswordChangeConfirmation,
   sendPasswordResetCode,
 } from "../services/emailService";
-
-import pool from "../models/db";
+import {
+  createResetCode,
+  getResetCode,
+  invalidateUserCodes,
+  markCodeAsUsed,
+} from "../services/restCodeService";
+import { createUser, getUserByEmail } from "../services/userService";
 
 const JWT_SECRET = env.jwt.secret as Secret;
 if (!JWT_SECRET) {
@@ -37,7 +41,7 @@ export const login = async (req: Request, res: Response) => {
         .json({ message: "Email y contraseña son obligatorios" });
     }
 
-    const user = await User.findByEmail(email);
+    const user = await getUserByEmail(email);
 
     if (!user)
       return res.status(404).json({ message: "Usuario no encontrado" });
@@ -91,7 +95,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     // Verificar si el usuario ya existe
-    const existingUser = await User.findByEmail(email);
+    const existingUser = await getUserByEmail(email);
     if (existingUser) {
       return res.status(409).json({ message: "El email ya está registrado" });
     }
@@ -109,7 +113,7 @@ export const register = async (req: Request, res: Response) => {
       role: "organizer",
     };
 
-    const newUser = await User.create(userData);
+    const newUser = await createUser(userData);
     if (!newUser) {
       return res.status(500).json({ message: "No se pudo crear el usuario" });
     }
@@ -137,7 +141,7 @@ const generateResetCode = (): string => {
 };
 
 // Solicitar recuperación de contraseña
-export const forgotPassword = async (req: Request, res: Response) => {
+export const sendResetCode = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
 
@@ -151,7 +155,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     }
 
     // Buscar usuario por email
-    const user = await User.findByEmail(email);
+    const user = await getUserByEmail(email);
     if (!user) {
       return res.status(404).json({
         message: "Correo inexistente",
@@ -159,14 +163,14 @@ export const forgotPassword = async (req: Request, res: Response) => {
     }
 
     // Invalidar códigos anteriores del usuario
-    await PasswordReset.invalidateUserCodes(user.user_id);
+    await invalidateUserCodes(user.user_id);
 
     // Generar nuevo código
     const resetCode = generateResetCode();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
 
     // Guardar código en la base de datos
-    await PasswordReset.create(user.user_id, resetCode, expiresAt);
+    await createResetCode(user.user_id, resetCode, expiresAt);
 
     // Enviar email con el código
     const emailResult = await sendPasswordResetCode(
@@ -210,7 +214,7 @@ export const verifyResetCode = async (req: Request, res: Response) => {
     }
 
     // Buscar código válido
-    const resetCode = await PasswordReset.findValidCode(userId, code);
+    const resetCode = await getResetCode(userId, code);
 
     if (!resetCode) {
       return res.status(400).json({ message: "Código inválido o expirado" });
@@ -280,7 +284,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     ]);
 
     // Marcar código como usado
-    await PasswordReset.markAsUsed(resetCode.reset_id);
+    await markCodeAsUsed(resetCode.reset_id);
 
     // Enviar email de confirmación
     await sendPasswordChangeConfirmation(user.email, user.first_name);
