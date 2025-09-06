@@ -38,12 +38,20 @@ const Dashboard: React.FC = () => {
         navigate('/login');
     };
 
+    const handleNavigateToEvents = () => {
+        navigate('/events-management');
+    };
+
+    const handleNavigateToRegistrations = () => {
+        navigate('/registrations-management');
+    };
+
     const menuItems = [
-        { icon: Home, label: 'Dashboard', active: true },
-        { icon: Calendar, label: 'Eventos', active: false },
-        { icon: Users, label: 'Usuarios', active: false },
-        { icon: BarChart3, label: 'Estadísticas', active: false },
-        { icon: Settings, label: 'Configuración', active: false },
+        { icon: Home, label: 'Dashboard', active: true, onClick: () => {} },
+        { icon: Calendar, label: 'Eventos', active: false, onClick: handleNavigateToEvents },
+        { icon: Users, label: 'Inscripciones', active: false, onClick: handleNavigateToRegistrations },
+        { icon: BarChart3, label: 'Estadísticas', active: false, onClick: () => {} },
+        { icon: Settings, label: 'Configuración', active: false, onClick: () => {} },
     ];
 
     const statsCards = [
@@ -128,6 +136,7 @@ const Dashboard: React.FC = () => {
                         {menuItems.map((item, index) => (
                             <li key={index}>
                                 <button
+                                    onClick={item.onClick}
                                     className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all duration-200 ${
                                         item.active
                                             ? 'bg-black dark:bg-white text-white dark:text-black'

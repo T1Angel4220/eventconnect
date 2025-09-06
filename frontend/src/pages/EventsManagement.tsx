@@ -35,6 +35,17 @@ const EventsManagement: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editingEvent, setEditingEvent] = useState(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [newEvent, setNewEvent] = useState({
+        name: '',
+        date: '',
+        time: '',
+        location: '',
+        capacity: '',
+        category: '',
+        description: ''
+    });
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
 
@@ -45,10 +56,51 @@ const EventsManagement: React.FC = () => {
         navigate('/login');
     };
 
+    const handleCreateEvent = () => {
+        // Aquí se implementaría la lógica para crear un evento
+        console.log('Crear evento:', newEvent);
+        setShowCreateModal(false);
+        setNewEvent({
+            name: '',
+            date: '',
+            time: '',
+            location: '',
+            capacity: '',
+            category: '',
+            description: ''
+        });
+    };
+
+    const handleEditEvent = (event) => {
+        setEditingEvent(event);
+        setNewEvent({
+            name: event.name,
+            date: event.date,
+            time: event.time,
+            location: event.location,
+            capacity: event.capacity.toString(),
+            category: event.category,
+            description: event.description
+        });
+        setShowCreateModal(true);
+    };
+
+    const handleDeleteEvent = (eventId) => {
+        if (window.confirm('¿Estás seguro de que quieres eliminar este evento?')) {
+            // Aquí se implementaría la lógica para eliminar un evento
+            console.log('Eliminar evento:', eventId);
+        }
+    };
+
+    const handleViewDetails = (event) => {
+        setSelectedEvent(event);
+        setShowDetailsModal(true);
+    };
+
     const menuItems = [
         { icon: Home, label: 'Dashboard', active: false, path: '/dashboard' },
-        { icon: Calendar, label: 'Eventos', active: true, path: '/events' },
-        { icon: Users, label: 'Usuarios', active: false, path: '/users' },
+        { icon: Calendar, label: 'Eventos', active: true, path: '/events-management' },
+        { icon: Users, label: 'Inscripciones', active: false, path: '/registrations-management' },
         { icon: Settings, label: 'Configuración', active: false, path: '/settings' },
     ];
 
@@ -384,16 +436,22 @@ const EventsManagement: React.FC = () => {
                                         </span>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <button className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                        <button 
+                                            onClick={() => handleViewDetails(event)}
+                                            className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                        >
                                             <Eye className="w-4 h-4" />
                                         </button>
                                         <button 
-                                            onClick={() => setEditingEvent(event)}
+                                            onClick={() => handleEditEvent(event)}
                                             className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
-                                        <button className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                                        <button 
+                                            onClick={() => handleDeleteEvent(event.id)}
+                                            className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
@@ -411,6 +469,208 @@ const EventsManagement: React.FC = () => {
                     </div>
                 </main>
             </div>
+
+            {/* Modal para crear/editar evento */}
+            {showCreateModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 w-full max-w-md mx-4">
+                        <h3 className="text-xl font-bold text-black dark:text-white mb-6">
+                            {editingEvent ? 'Editar Evento' : 'Crear Nuevo Evento'}
+                        </h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Nombre del Evento
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newEvent.name}
+                                    onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Ingresa el nombre del evento"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Fecha
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={newEvent.date}
+                                        onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Hora
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={newEvent.time}
+                                        onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Ubicación
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newEvent.location}
+                                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Ingresa la ubicación"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Capacidad
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={newEvent.capacity}
+                                        onChange={(e) => setNewEvent({...newEvent, capacity: e.target.value})}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        placeholder="100"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Categoría
+                                    </label>
+                                    <select
+                                        value={newEvent.category}
+                                        onChange={(e) => setNewEvent({...newEvent, category: e.target.value})}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    >
+                                        <option value="">Selecciona una categoría</option>
+                                        {categories.map(category => (
+                                            <option key={category} value={category}>{category}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Descripción
+                                </label>
+                                <textarea
+                                    value={newEvent.description}
+                                    onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Describe el evento..."
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-3 mt-6">
+                            <button
+                                onClick={() => {
+                                    setShowCreateModal(false);
+                                    setEditingEvent(null);
+                                    setNewEvent({
+                                        name: '',
+                                        date: '',
+                                        time: '',
+                                        location: '',
+                                        capacity: '',
+                                        category: '',
+                                        description: ''
+                                    });
+                                }}
+                                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleCreateEvent}
+                                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
+                            >
+                                {editingEvent ? 'Actualizar' : 'Crear'} Evento
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal para ver detalles del evento */}
+            {showDetailsModal && selectedEvent && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 w-full max-w-lg mx-4">
+                        <h3 className="text-xl font-bold text-black dark:text-white mb-6">
+                            Detalles del Evento
+                        </h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-lg font-semibold text-black dark:text-white">{selectedEvent.name}</h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Organizado por: {selectedEvent.organizer}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex items-center">
+                                    <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{selectedEvent.date}</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <Clock className="w-4 h-4 mr-2 text-gray-500" />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{selectedEvent.time}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center">
+                                <MapPin className="w-4 h-4 mr-2 text-gray-500" />
+                                <span className="text-sm text-gray-700 dark:text-gray-300">{selectedEvent.location}</span>
+                            </div>
+
+                            <div className="flex items-center">
+                                <Users className="w-4 h-4 mr-2 text-gray-500" />
+                                <span className="text-sm text-gray-700 dark:text-gray-300">
+                                    {selectedEvent.attendees} / {selectedEvent.capacity} participantes
+                                </span>
+                            </div>
+
+                            <div className="flex items-center">
+                                <Tag className="w-4 h-4 mr-2 text-gray-500" />
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(selectedEvent.category)} text-white`}>
+                                    {selectedEvent.category}
+                                </span>
+                            </div>
+
+                            <div>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedEvent.status)}`}>
+                                    {selectedEvent.status}
+                                </span>
+                            </div>
+
+                            <div>
+                                <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Descripción:</h5>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{selectedEvent.description}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end mt-6">
+                            <button
+                                onClick={() => setShowDetailsModal(false)}
+                                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

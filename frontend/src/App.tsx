@@ -6,6 +6,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import VerifyCode from './pages/VerifyCode';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
+import EventsManagement from './pages/EventsManagement';
+import RegistrationsManagement from './pages/RegistrationsManagement';
 import PrivateRoute from './components/login-Web/PrivateRoute';
 import PublicRoute from './components/login-Web/PublicRoute';
 
@@ -46,6 +48,16 @@ const App: React.FC = () => {
                 <Route path="/dashboard" element={
                     <PrivateRoute allowedRoles={['admin', 'organizer']}>
                         <Dashboard />
+                    </PrivateRoute>
+                } />
+                <Route path="/events-management" element={
+                    <PrivateRoute allowedRoles={['admin', 'organizer']}>
+                        <EventsManagement />
+                    </PrivateRoute>
+                } />
+                <Route path="/registrations-management" element={
+                    <PrivateRoute allowedRoles={['admin', 'organizer']}>
+                        <RegistrationsManagement />
                     </PrivateRoute>
                 } />
                  {/* Ruta catch-all */}
