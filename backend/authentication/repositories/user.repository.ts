@@ -1,6 +1,6 @@
 import User from "authentication/models/userModel";
 import { UserRow } from "authentication/models/userRow.interface";
-import pool from "models/db";
+import pool from "@config/db";
 
 class UserRepository {
   async create(userData: User): Promise<UserRow | undefined> {

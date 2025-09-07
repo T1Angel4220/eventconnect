@@ -1,4 +1,4 @@
-import pool from "../models/db";
+import pool from "../config/db";
 import env from "../config/env";
 
 console.log("EMAIL_USER:", env.email.user ? "OK" : "NO DEFINIDO");

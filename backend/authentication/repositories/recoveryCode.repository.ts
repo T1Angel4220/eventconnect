@@ -1,5 +1,5 @@
 import { RecoveryCodeData } from "authentication/models/recoveryCode.interface";
-import pool from "models/db";
+import pool from "@config/db";
 
 class RecoveryCodeRepository {
   async create(

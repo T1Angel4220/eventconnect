@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import env from "../config/env";
+import env from "./env";
 
 const pool = new Pool({
   user: env.database.user,
