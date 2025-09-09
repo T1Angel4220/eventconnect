@@ -332,14 +332,10 @@ const EventsManagement: React.FC = () => {
                             {/* Theme Toggle */}
                             <button
                                 onClick={toggleTheme}
-                                className="p-2 text-gray-400 hover:text-black dark:hover:text-white"
+                                className="p-3 rounded-full bg-white dark:bg-black border-2 border-gray-200 dark:border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
                                 aria-label="Cambiar tema"
                             >
-                                {isDark ? (
-                                    <Sun className="h-5 w-5" />
-                                ) : (
-                                    <Moon className="h-5 w-5" />
-                                )}
+                                {isDark ? <Sun className="h-6 w-6 text-yellow-500" /> : <Moon className="h-6 w-6 text-black" />}
                             </button>
                         </div>
                     </div>

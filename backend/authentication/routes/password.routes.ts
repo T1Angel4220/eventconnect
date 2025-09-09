@@ -10,6 +10,6 @@ const passwordRouter: Router = Router();
 
 passwordRouter.post("/forgot-password", sendRecoveryCode);
 passwordRouter.post("/verify-code", verifyRecoveryCode);
-passwordRouter.post("/reset-password", authMiddleware, resetPassword);
+passwordRouter.post("/reset-password", resetPassword);
 
 export default passwordRouter;

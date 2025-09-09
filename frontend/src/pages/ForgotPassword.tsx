@@ -72,14 +72,12 @@ const ForgotPassword: React.FC = () => {
 
     try {
       const data = await forgotPassword(email)
+      setUserId(data.userId)
+      // Persistir estado del flujo
+      sessionStorage.setItem('fp:email', email)
+      sessionStorage.setItem('fp:userId', String(data.userId))
+      sessionStorage.setItem('fp:canVerify', '1')
       setIsSuccess(true)
-      if (data.userId) {
-        setUserId(data.userId)
-        // Persistir estado del flujo
-        sessionStorage.setItem('fp:email', email)
-        sessionStorage.setItem('fp:userId', String(data.userId))
-        sessionStorage.setItem('fp:canVerify', '1')
-      }
     } catch (err: unknown) {
       let errorMessage = "Error solicitando recuperación"
 

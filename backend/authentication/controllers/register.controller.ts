@@ -4,10 +4,12 @@ import { Request, Response } from "express";
 
 export const register = async (req: Request, res: Response) => {
   try {
-    await authService.register(req.body as UserData);
+    const userData = req.body as UserData;
+    await authService.register(userData);
 
     res.status(201).json({
       message: "User registered successfully",
+      firstName: userData.firstName,
     });
   } catch (err) {
     console.error(err);

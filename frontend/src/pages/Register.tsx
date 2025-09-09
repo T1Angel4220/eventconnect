@@ -138,11 +138,11 @@ const Register: React.FC = () => {
     setIsLoading(true)
 
     try {
-      const data = await registerUser(formData.firstName, formData.lastName, formData.email, formData.password)
+      await registerUser(formData.firstName, formData.lastName, formData.email, formData.password)
 
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("role", data.role)
-      navigate("/dashboard")
+      // Guardar el nombre del usuario para mostrarlo en la página de éxito
+      localStorage.setItem("userFirstName", formData.firstName)
+      navigate("/register-success")
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Error en el registro"
       setError(errorMessage)
@@ -159,10 +159,10 @@ const Register: React.FC = () => {
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className="fixed top-6 right-6 z-50 p-3 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
+        className="fixed top-6 right-6 z-50 p-3 rounded-full bg-white dark:bg-black border-2 border-gray-200 dark:border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
         aria-label="Cambiar tema"
       >
-        {isDark ? <Sun className="h-6 w-6 text-yellow-500" /> : <Moon className="h-6 w-6 text-gray-700" />}
+        {isDark ? <Sun className="h-6 w-6 text-yellow-500" /> : <Moon className="h-6 w-6 text-black" />}
       </button>
 
       <div className="w-full max-w-lg">

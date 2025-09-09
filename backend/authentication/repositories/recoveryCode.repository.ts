@@ -35,6 +35,19 @@ class RecoveryCodeRepository {
     }
   }
 
+  async findById(resetId: number): Promise<RecoveryCodeData | undefined> {
+    try {
+      const res = await pool.query(
+        "SELECT * FROM password_reset_codes WHERE reset_id = $1",
+        [resetId],
+      );
+      return res.rows[0];
+    } catch (error) {
+      console.error("Error finding recovery code by ID:", error);
+      throw new Error("Database error finding recovery code by ID");
+    }
+  }
+
   async markAsUsed(resetId: number): Promise<RecoveryCodeData | undefined> {
     try {
       const res = await pool.query(

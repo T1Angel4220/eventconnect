@@ -108,6 +108,7 @@ const Login: React.FC = () => {
       const data = await loginUser(formData.email, formData.password)
       localStorage.setItem("token", data.token)
       localStorage.setItem("role", data.role)
+      localStorage.setItem("firstName", data.firstName)
       navigate("/dashboard")
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Error en el login"
@@ -124,14 +125,10 @@ const Login: React.FC = () => {
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className="fixed top-6 right-6 z-50 p-3 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        className="fixed top-6 right-6 z-50 p-3 rounded-full bg-white dark:bg-black border-2 border-gray-200 dark:border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
         aria-label="Cambiar tema"
       >
-        {isDark ? (
-          <Sun className="h-5 w-5 text-gray-700 dark:text-yellow-400" />
-        ) : (
-          <Moon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-        )}
+        {isDark ? <Sun className="h-6 w-6 text-yellow-500" /> : <Moon className="h-6 w-6 text-black" />}
       </button>
 
       <div className="w-full max-w-md">

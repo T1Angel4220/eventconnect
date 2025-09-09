@@ -67,7 +67,7 @@ class PasswordService {
       console.error("Error enviando email de recuperación:", err.message);
     }
 
-    return { resetCode, expiresAt };
+    return { resetCode, expiresAt, userId: user.user_id };
   }
 
   async verifyRecoveryCode(userId: number, code: string) {
@@ -81,44 +81,45 @@ class PasswordService {
       throw new Error("Invalid or expired code");
     }
 
-    await this.recoveryCodeRepository.markAsUsed(record.reset_id);
+    // No marcar como usado todavía, solo verificar
+    // Se marcará como usado cuando se resetee la contraseña
 
-    const tempJWTData = {
-      payload: { userId },
-      secret: JWT_SECRET,
-      options: JWT_OPTIONS,
-    };
-
-    const token = jwt.sign(
-      tempJWTData.payload,
-      tempJWTData.secret,
-      tempJWTData.options,
-    );
-
-    return token;
+    return { resetId: record.reset_id };
   }
 
-  async resetPassword(token: string, newPassword: string) {
-    if (!token || !newPassword) {
-      throw new Error("Token and new password are required");
+  async resetPassword(resetId: number, newPassword: string) {
+    if (!resetId || !newPassword) {
+      throw new Error("Reset ID and new password are required");
     }
 
     if (newPassword.length < 6) {
       throw new Error("Password must be at least 6 characters long");
     }
 
-    const payload = jwt.verify(token, JWT_SECRET) as { userId: number };
+    // Verificar que el resetId existe y es válido
+    const record = await this.recoveryCodeRepository.findById(resetId);
 
-    if (!payload || !payload.userId) {
-      throw new Error("Invalid token");
+    if (!record) {
+      throw new Error("Invalid reset ID");
     }
 
-    const hashedPassword = await encryptPassword(newPassword);
+    if (record.used) {
+      throw new Error("This reset code has already been used");
+    }
 
-    await this.userService.updateUserPassword(payload.userId, hashedPassword);
+    if (record.expires_at < new Date()) {
+      throw new Error("This reset code has expired");
+    }
+
+    // Marcar como usado
+    await this.recoveryCodeRepository.markAsUsed(resetId);
+
+    // Actualizar contraseña
+    const hashedPassword = await encryptPassword(newPassword);
+    await this.userService.updateUserPassword(record.user_id!, hashedPassword);
 
     // Obtener usuario para enviar email de confirmación
-    const user = await this.userService.getUserById(payload.userId);
+    const user = await this.userService.getUserById(record.user_id!);
     if (user) {
       try {
         await sendPasswordChangeConfirmation(user.email, user.first_name);

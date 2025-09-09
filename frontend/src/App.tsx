@@ -2,9 +2,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import RegisterSuccess from './pages/RegisterSuccess';
 import ForgotPassword from './pages/ForgotPassword';
 import VerifyCode from './pages/VerifyCode';
 import ResetPassword from './pages/ResetPassword';
+import PasswordResetSuccess from './pages/PasswordResetSuccess';
 import Dashboard from './pages/Dashboard';
 import EventsManagement from './pages/EventsManagement';
 import RegistrationsManagement from './pages/RegistrationsManagement';
@@ -30,6 +32,11 @@ const App: React.FC = () => {
                         <Register />
                     </PublicRoute>
                 } />
+                <Route path="/register-success" element={
+                    <PublicRoute>
+                        <RegisterSuccess />
+                    </PublicRoute>
+                } />
                 <Route path="/forgot-password" element={
                     <PublicRoute>
                         <ForgotPassword />
@@ -43,6 +50,11 @@ const App: React.FC = () => {
                 <Route path="/reset-password" element={
                     <PublicRoute>
                         <ResetPassword />
+                    </PublicRoute>
+                } />
+                <Route path="/password-reset-success" element={
+                    <PublicRoute>
+                        <PasswordResetSuccess />
                     </PublicRoute>
                 } />
                 <Route path="/dashboard" element={

@@ -4,10 +4,11 @@ import { Request, Response } from "express";
 export const sendRecoveryCode = async (req: Request, res: Response) => {
   try {
     const email = req.body.email;
-    await passwordService.sendRecoveryCode(email);
+    const result = await passwordService.sendRecoveryCode(email);
 
     res.status(200).json({
       message: "Code sent successfully",
+      userId: result.userId,
     });
   } catch (err) {
     console.error(err);
@@ -22,11 +23,11 @@ export const sendRecoveryCode = async (req: Request, res: Response) => {
 export const verifyRecoveryCode = async (req: Request, res: Response) => {
   try {
     const { userId, code } = req.body;
-    const token = await passwordService.verifyRecoveryCode(userId, code);
+    const result = await passwordService.verifyRecoveryCode(userId, code);
 
     res.status(200).json({
       message: "Code verified successfully",
-      token,
+      resetId: result.resetId,
     });
   } catch (err) {
     console.error(err);
@@ -40,14 +41,13 @@ export const verifyRecoveryCode = async (req: Request, res: Response) => {
 
 export const resetPassword = async (req: Request, res: Response) => {
   try {
-    const token = req.token;
+    const { resetId, newPassword } = req.body;
 
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!resetId || !newPassword) {
+      return res.status(400).json({ error: "Reset ID and new password are required" });
     }
 
-    const { newPassword } = req.body;
-    await passwordService.resetPassword(token, newPassword);
+    await passwordService.resetPassword(resetId, newPassword);
 
     res.status(200).json({
       message: "Password reset successfully",

@@ -26,7 +26,7 @@ const ResetPassword: React.FC = () => {
   })
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
+  const [isSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -145,7 +145,8 @@ const ResetPassword: React.FC = () => {
 
     try {
       await resetPassword(parseInt(resetId), formData.newPassword)
-      setIsSuccess(true)
+      // Navegar a la página de éxito en lugar de mostrar mensaje inline
+      navigate('/password-reset-success', { replace: true })
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Error actualizando contraseña"
       setError(errorMessage)

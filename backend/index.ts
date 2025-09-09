@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/auth", authRouter);
-app.use("/api/password", passwordRouter);
+app.use("/api/auth", passwordRouter);
 
 const PORT: number = env.port || 3001;
 

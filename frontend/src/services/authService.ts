@@ -18,7 +18,10 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
         body: JSON.stringify({ email, password })
     });
 
-    if (!res.ok) throw await res.json();
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Error en el login');
+    }
 
     return res.json();
 };
@@ -40,7 +43,7 @@ export const registerUser = async (firstName: string, lastName: string, email: s
 
 export interface ForgotPasswordResponse {
     message: string;
-    userId?: number;
+    userId: number;
 }
 
 export interface VerifyCodeResponse {
@@ -68,7 +71,7 @@ export const forgotPassword = async (email: string): Promise<ForgotPasswordRespo
 };
 
 export const verifyResetCode = async (userId: number, code: string): Promise<VerifyCodeResponse> => {
-    const res = await fetch('http://localhost:3001/api/auth/verify-reset-code', {
+    const res = await fetch('http://localhost:3001/api/auth/verify-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, code })
