@@ -1,22 +1,20 @@
-"use client"
-
-import type React from "react"
-import { useNavigate } from "react-router-dom"
-import { CheckCircle, Sun, Moon, User } from "lucide-react"
-import { useTheme } from "../hooks/useTheme"
+import type React from "react";
+import { useNavigate } from "react-router-dom";
+import { CheckCircle, Sun, Moon, User } from "lucide-react";
+import { useTheme } from "../hooks/useTheme";
 
 const RegisterSuccess: React.FC = () => {
-  const navigate = useNavigate()
-  const { toggleTheme, isDark } = useTheme()
+  const navigate = useNavigate();
+  const { toggleTheme, isDark } = useTheme();
 
   // Obtener el nombre del usuario del localStorage si está disponible
-  const firstName = localStorage.getItem('userFirstName') || 'Usuario'
+  const firstName = localStorage.getItem("userFirstName") || "Usuario";
 
   const handleGoToLogin = () => {
     // Limpiar datos temporales del registro
-    localStorage.removeItem('userFirstName')
-    navigate('/login', { replace: true })
-  }
+    localStorage.removeItem("userFirstName");
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center px-4 transition-colors duration-300">
@@ -26,7 +24,11 @@ const RegisterSuccess: React.FC = () => {
         className="fixed top-6 right-6 z-50 p-3 rounded-full bg-white dark:bg-black border-2 border-gray-200 dark:border-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
         aria-label="Cambiar tema"
       >
-        {isDark ? <Sun className="h-6 w-6 text-yellow-500" /> : <Moon className="h-6 w-6 text-black" />}
+        {isDark ? (
+          <Sun className="h-6 w-6 text-yellow-500" />
+        ) : (
+          <Moon className="h-6 w-6 text-black" />
+        )}
       </button>
 
       <div className="w-full max-w-md">
@@ -35,7 +37,9 @@ const RegisterSuccess: React.FC = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-black dark:bg-white rounded-2xl mb-6 shadow-lg">
             <User className="w-10 h-10 text-white dark:text-black" />
           </div>
-          <h1 className="text-4xl font-bold text-black dark:text-white mb-3">Event Connect</h1>
+          <h1 className="text-4xl font-bold text-black dark:text-white mb-3">
+            Event Connect
+          </h1>
         </div>
 
         {/* Success Message */}
@@ -45,16 +49,26 @@ const RegisterSuccess: React.FC = () => {
               <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>
 
-            <h2 className="text-2xl font-bold text-black dark:text-white mb-4">¡Registro Exitoso!</h2>
+            <h2 className="text-2xl font-bold text-black dark:text-white mb-4">
+              ¡Registro Exitoso!
+            </h2>
 
+            <p className="text-gray-600 dark:text-gray-300 mb-2">
+              Te hemos enviado un correo de bienvenida.
+            </p>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              ¡Hola <span className="font-semibold text-black dark:text-white">{firstName}</span>! Tu cuenta ha sido creada exitosamente. 
-              Ya puedes iniciar sesión y comenzar a gestionar tus eventos.
+              ¡Hola{" "}
+              <span className="font-semibold text-black dark:text-white">
+                {firstName}
+              </span>
+              ! Tu cuenta ha sido creada exitosamente. Ya puedes iniciar sesión
+              y comenzar a gestionar tus eventos.
             </p>
 
             <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-400 px-4 py-3 rounded-xl mb-6">
               <p className="text-sm">
-                <strong>Bienvenido a Event Connect:</strong> Tu plataforma de gestión de eventos universitarios.
+                <strong>Bienvenido a Event Connect:</strong> Tu plataforma de
+                gestión de eventos universitarios.
               </p>
             </div>
 
@@ -75,7 +89,7 @@ const RegisterSuccess: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default RegisterSuccess
+export default RegisterSuccess;
