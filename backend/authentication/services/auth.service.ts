@@ -4,6 +4,7 @@ import { UserData } from "authentication/models/userData.interface";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { UserService, userService } from "./user.service";
+import { sendWelcomeEmail } from "./email.service";
 
 class AuthService {
   constructor(private userService: UserService) {}
@@ -39,6 +40,14 @@ class AuthService {
     };
 
     const newUser = await this.userService.createUser(userDataToCreate);
+
+    if (newUser) {
+      try {
+        await sendWelcomeEmail(newUser.email, newUser.first_name);
+      } catch (err: any) {
+        console.error("Error enviando email de bienvenida:", err.message);
+      }
+    }
 
     return newUser;
   }

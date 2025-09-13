@@ -77,6 +77,33 @@ function getPasswordChangeHtml(firstName: string): string {
   `;
 }
 
+function getWelcomeHtml(firstName: string): string {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #007bff 0%, #6a11cb 100%); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">Event Connect</h1>
+        <p style="color: white; margin: 10px 0 0 0; opacity: 0.9;">Sistema de Gestión Universitaria</p>
+      </div>
+      <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; border-left: 4px solid #007bff;">
+        <h2 style="color: #333; margin-top: 0;">¡Bienvenido/a ${firstName}!</h2>
+        <p style="color: #666; font-size: 16px; line-height: 1.6;">
+          Tu registro en Event Connect fue exitoso.<br>
+          Ahora puedes acceder y disfrutar de todas las funcionalidades de nuestro sistema.
+        </p>
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px solid #007bff;">
+          <p style="margin: 0; color: #007bff; font-size: 18px; font-weight: bold;">
+            🎉 ¡Gracias por unirte a nuestra comunidad!
+          </p>
+        </div>
+        <p style="color: #666; font-size: 14px; line-height: 1.6;">
+          Si tienes alguna duda, puedes contactarnos desde la plataforma.
+        </p>
+      </div>
+      ${FOOTER_HTML}
+    </div>
+  `;
+}
+
 export async function sendPasswordResetCode(
   email: string,
   firstName: string,
@@ -116,6 +143,27 @@ export async function sendPasswordChangeConfirmation(
     return { success: true, messageId: result.messageId };
   } catch (error: any) {
     console.error("Error enviando email de confirmación:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function sendWelcomeEmail(
+  email: string,
+  firstName: string,
+): Promise<EmailResult> {
+  const transporter = createTransporter();
+  const mailOptions = {
+    from: EMAIL_FROM,
+    to: email,
+    subject: "¡Bienvenido a Event Connect!",
+    html: getWelcomeHtml(firstName),
+  };
+  try {
+    const result = await transporter.sendMail(mailOptions);
+    console.log("Email de bienvenida enviado:", result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error("Error enviando email de bienvenida:", error);
     return { success: false, error: error.message };
   }
 }

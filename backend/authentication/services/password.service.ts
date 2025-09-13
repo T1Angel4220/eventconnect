@@ -1,4 +1,3 @@
-import { JWT_OPTIONS, JWT_SECRET } from "@config/jwtConfig";
 import {
   encryptPassword,
   generateResetCode,
@@ -8,12 +7,11 @@ import {
   recoveryCodeRepository,
   RecoveryCodeRepository,
 } from "authentication/repositories/recoveryCode.repository";
-import jwt from "jsonwebtoken";
-import { userService, UserService } from "./user.service";
 import {
-  sendPasswordResetCode,
   sendPasswordChangeConfirmation,
+  sendPasswordResetCode,
 } from "authentication/services/email.service";
+import { userService, UserService } from "./user.service";
 
 class PasswordService {
   private userService: UserService;
