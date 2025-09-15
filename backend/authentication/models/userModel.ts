@@ -1,4 +1,4 @@
-import { UserData } from "models/user";
+import { UserData } from "authentication/models/userData.interface";
 
 class User implements UserData {
   firstName: string;

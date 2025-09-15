@@ -35,7 +35,7 @@ export const registerUser = async (firstName: string, lastName: string, email: s
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Error en el registro');
+        throw new Error(error.error || error.message || 'Error en el registro');
     }
 
     return res.json();
@@ -64,7 +64,7 @@ export const forgotPassword = async (email: string): Promise<ForgotPasswordRespo
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Error solicitando recuperación');
+        throw new Error(error.error || error.message || 'Error solicitando recuperación');
     }
 
     return res.json();
@@ -79,7 +79,7 @@ export const verifyResetCode = async (userId: number, code: string): Promise<Ver
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Error verificando código');
+        throw new Error(error.error || error.message || 'Error verificando código');
     }
 
     return res.json();
@@ -94,7 +94,7 @@ export const resetPassword = async (resetId: number, newPassword: string): Promi
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Error actualizando contraseña');
+        throw new Error(error.error || error.message || 'Error actualizando contraseña');
     }
 
     return res.json();
