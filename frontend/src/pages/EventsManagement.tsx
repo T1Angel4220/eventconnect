@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Menu, 
@@ -26,6 +26,7 @@ import {
   Tag
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEvents as apiFetchEvents, updateEvent as apiUpdateEvent } from '../services/eventsService';
 
 const EventsManagement: React.FC = () => {
     const navigate = useNavigate();
@@ -34,9 +35,9 @@ const EventsManagement: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [editingEvent, setEditingEvent] = useState(null);
+    const [editingEvent, setEditingEvent] = useState<any>(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [selectedEvent, setSelectedEvent] = useState<any>(null);
     const [newEvent, setNewEvent] = useState({
         name: '',
         date: '',
@@ -48,6 +49,9 @@ const EventsManagement: React.FC = () => {
     });
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
+    const [events, setEvents] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -56,39 +60,81 @@ const EventsManagement: React.FC = () => {
         navigate('/login');
     };
 
-    const handleCreateEvent = () => {
-        // Aquí se implementaría la lógica para crear un evento
-        console.log('Crear evento:', newEvent);
-        setShowCreateModal(false);
-        setNewEvent({
-            name: '',
-            date: '',
-            time: '',
-            location: '',
-            capacity: '',
-            category: '',
-            description: ''
-        });
+    const loadEvents = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await apiFetchEvents();
+            setEvents(data as any);
+        } catch (e: any) {
+            setError(e.message || 'Error cargando eventos');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleEditEvent = (event) => {
+    React.useEffect(() => {
+        loadEvents();
+    }, []);
+
+    const handleCreateOrUpdateEvent = async () => {
+        try {
+            setError(null);
+            const isoDate = newEvent.date && newEvent.time ? new Date(`${newEvent.date}T${newEvent.time}:00`).toISOString() : '';
+            const payload: any = {
+                title: newEvent.name,
+                description: newEvent.description || undefined,
+                event_date: isoDate,
+                location: newEvent.location || undefined,
+                event_type: mapUiCategoryToEventType(newEvent.category),
+                capacity: Number(newEvent.capacity || 0),
+            };
+            if (editingEvent?.event_id) {
+                await apiUpdateEvent(editingEvent.event_id, payload);
+            } else {
+                await apiCreateEvent(payload);
+            }
+            await loadEvents();
+            setShowCreateModal(false);
+            setEditingEvent(null);
+            setNewEvent({
+                name: '',
+                date: '',
+                time: '',
+                location: '',
+                capacity: '',
+                category: '',
+                description: ''
+            });
+        } catch (e: any) {
+            setError(e.message || 'Error guardando evento');
+        }
+    };
+
+    const handleEditEvent = (event: any) => {
         setEditingEvent(event);
+        const dt = new Date(event.event_date);
+        const dateStr = isNaN(dt.getTime()) ? '' : dt.toISOString().slice(0,10);
+        const timeStr = isNaN(dt.getTime()) ? '' : dt.toISOString().slice(11,16);
         setNewEvent({
-            name: event.name,
-            date: event.date,
-            time: event.time,
-            location: event.location,
-            capacity: event.capacity.toString(),
-            category: event.category,
-            description: event.description
+            name: event.title,
+            date: dateStr,
+            time: timeStr,
+            location: event.location || '',
+            capacity: String(event.capacity ?? ''),
+            category: mapEventTypeToUiCategory(event.event_type),
+            description: event.description || ''
         });
         setShowCreateModal(true);
     };
 
-    const handleDeleteEvent = (eventId) => {
-        if (window.confirm('¿Estás seguro de que quieres eliminar este evento?')) {
-            // Aquí se implementaría la lógica para eliminar un evento
-            console.log('Eliminar evento:', eventId);
+    const handleDeleteEvent = async (eventId: number) => {
+        if (!window.confirm('¿Estás seguro de que quieres eliminar este evento?')) return;
+        try {
+            await apiDeleteEvent(eventId);
+            await loadEvents();
+        } catch (e: any) {
+            setError(e.message || 'Error eliminando evento');
         }
     };
 
@@ -104,96 +150,32 @@ const EventsManagement: React.FC = () => {
         { icon: Settings, label: 'Configuración', active: false, path: '/settings' },
     ];
 
-    const events = [
-        { 
-            id: 1, 
-            name: 'Conferencia de Tecnología', 
-            date: '2025-01-15', 
-            time: '09:00',
-            location: 'Centro de Convenciones',
-            attendees: 150, 
-            capacity: 200,
-            status: 'Activo', 
-            category: 'Tecnología', 
-            organizer: 'Juan Pérez',
-            description: 'Una conferencia sobre las últimas tendencias en tecnología y desarrollo de software.',
-            createdAt: '2025-01-10'
-        },
-        { 
-            id: 2, 
-            name: 'Workshop de Diseño', 
-            date: '2025-01-18', 
-            time: '14:00',
-            location: 'Sala de Talleres',
-            attendees: 75, 
-            capacity: 100,
-            status: 'Activo', 
-            category: 'Diseño', 
-            organizer: 'María García',
-            description: 'Taller práctico de diseño UX/UI con herramientas modernas.',
-            createdAt: '2025-01-12'
-        },
-        { 
-            id: 3, 
-            name: 'Seminario de Marketing', 
-            date: '2025-01-20', 
-            time: '10:00',
-            location: 'Auditorio Principal',
-            attendees: 200, 
-            capacity: 250,
-            status: 'Próximo', 
-            category: 'Marketing', 
-            organizer: 'Carlos López',
-            description: 'Estrategias de marketing digital para empresas modernas.',
-            createdAt: '2025-01-14'
-        },
-        { 
-            id: 4, 
-            name: 'Networking Event', 
-            date: '2025-01-22', 
-            time: '18:00',
-            location: 'Hotel Downtown',
-            attendees: 120, 
-            capacity: 150,
-            status: 'Próximo', 
-            category: 'Networking', 
-            organizer: 'Ana Martínez',
-            description: 'Evento de networking para profesionales del sector tecnológico.',
-            createdAt: '2025-01-16'
-        },
-        { 
-            id: 5, 
-            name: 'Curso de Programación', 
-            date: '2025-01-25', 
-            time: '16:00',
-            location: 'Laboratorio de Computación',
-            attendees: 90, 
-            capacity: 120,
-            status: 'Finalizado', 
-            category: 'Educación', 
-            organizer: 'Pedro Rodríguez',
-            description: 'Curso intensivo de programación en JavaScript y React.',
-            createdAt: '2025-01-18'
-        },
-        { 
-            id: 6, 
-            name: 'Expo de Innovación', 
-            date: '2025-01-28', 
-            time: '11:00',
-            location: 'Centro de Exposiciones',
-            attendees: 300, 
-            capacity: 400,
-            status: 'Próximo', 
-            category: 'Innovación', 
-            organizer: 'Laura Sánchez',
-            description: 'Exposición de proyectos innovadores y startups tecnológicas.',
-            createdAt: '2025-01-20'
-        },
-    ];
+    const uiEvents = React.useMemo(() => {
+        return events.map((e: any) => {
+            const dt = new Date(e.event_date);
+            const today = new Date();
+            const status = dt.getTime() < today.getTime() ? 'Finalizado' : 'Próximo';
+            return {
+                id: e.event_id,
+                name: e.title,
+                date: dt.toISOString().slice(0,10),
+                time: dt.toISOString().slice(11,16),
+                location: e.location || '',
+                attendees: e.attendees ?? 0,
+                capacity: e.capacity,
+                status,
+                category: mapEventTypeToUiCategory(e.event_type),
+                organizer: '—',
+                description: e.description || '',
+                createdAt: e.created_at,
+                raw: e,
+            };
+        });
+    }, [events]);
 
-    const categories = ['Tecnología', 'Diseño', 'Marketing', 'Networking', 'Educación', 'Innovación'];
+    const categories = ['Académico', 'Cultural', 'Deportes'];
 
-    const filteredEvents = events.filter(event => {
+    const filteredEvents = uiEvents.filter(event => {
         const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             event.organizer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             event.location.toLowerCase().includes(searchTerm.toLowerCase());
@@ -216,15 +198,30 @@ const EventsManagement: React.FC = () => {
 
     const getCategoryColor = (category: string) => {
         const colors = {
-            'Tecnología': 'from-purple-500 to-purple-600',
-            'Diseño': 'from-violet-500 to-violet-600',
-            'Marketing': 'from-indigo-500 to-indigo-600',
-            'Networking': 'from-purple-600 to-purple-700',
-            'Educación': 'from-violet-600 to-violet-700',
-            'Innovación': 'from-indigo-600 to-indigo-700'
+            'Académico': 'from-indigo-500 to-indigo-600',
+            'Cultural': 'from-purple-500 to-purple-600',
+            'Deportes': 'from-violet-500 to-violet-600'
         };
         return colors[category] || 'from-gray-500 to-gray-600';
     };
+
+    function mapEventTypeToUiCategory(type: 'academic' | 'cultural' | 'sports'): string {
+        switch (type) {
+            case 'academic': return 'Académico';
+            case 'cultural': return 'Cultural';
+            case 'sports': return 'Deportes';
+            default: return 'Académico';
+        }
+    }
+
+    function mapUiCategoryToEventType(category: string): 'academic' | 'cultural' | 'sports' {
+        switch (category) {
+            case 'Académico': return 'academic';
+            case 'Cultural': return 'cultural';
+            case 'Deportes': return 'sports';
+            default: return 'academic';
+        }
+    }
 
     return (
         <div className="min-h-screen bg-white dark:bg-black transition-colors duration-300">
@@ -383,7 +380,7 @@ const EventsManagement: React.FC = () => {
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-bold text-black dark:text-white">Lista de Eventos</h3>
                             <div className="text-sm text-gray-600 dark:text-gray-400">
-                                {filteredEvents.length} de {events.length} eventos
+                                {filteredEvents.length} de {uiEvents.length} eventos
                             </div>
                         </div>
 
@@ -439,7 +436,7 @@ const EventsManagement: React.FC = () => {
                                             <Eye className="w-4 h-4" />
                                         </button>
                                         <button 
-                                            onClick={() => handleEditEvent(event)}
+                                            onClick={() => handleEditEvent(event.raw)}
                                             className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
                                         >
                                             <Edit className="w-4 h-4" />
@@ -590,7 +587,7 @@ const EventsManagement: React.FC = () => {
                                 Cancelar
                             </button>
                             <button
-                                onClick={handleCreateEvent}
+                                onClick={handleCreateOrUpdateEvent}
                                 className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
                             >
                                 {editingEvent ? 'Actualizar' : 'Crear'} Evento

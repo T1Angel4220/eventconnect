@@ -11,7 +11,9 @@
     "baseUrl": ".",
     "paths": {
       "@utils/*": ["utils/*"],
-      "@config/*": ["config/*"]
+      "@config/*": ["config/*"],
+      "events/*": ["events/*"],
+      "authentication/*": ["authentication/*"]
     }
   },
   "include": ["./**/*.ts"],
