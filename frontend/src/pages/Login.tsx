@@ -156,7 +156,7 @@ const Login: React.FC = () => {
             {/* Email/Username Input */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-black dark:text-white mb-3">
-                Usuario o Correo Electrónico
+                 Correo Electrónico
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

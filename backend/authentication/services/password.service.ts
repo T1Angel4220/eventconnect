@@ -27,17 +27,17 @@ class PasswordService {
 
   async sendRecoveryCode(email: string) {
     if (!email) {
-      throw new Error("Email is required");
+      throw new Error("El correo es requerido");
     }
 
     if (!validateEmail(email)) {
-      throw new Error("Invalid email format");
+      throw new Error("Formato de correo invalido");
     }
 
     const user = await this.userService.getUserByEmail(email);
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error("El usuario con ese correo no existe");
     }
 
     await this.recoveryCodeRepository.invalidateCodes(user.user_id);
@@ -70,13 +70,13 @@ class PasswordService {
 
   async verifyRecoveryCode(userId: number, code: string) {
     if (!userId || !code) {
-      throw new Error("User ID and code are required");
+      throw new Error("Se requiere identificación de usuario y código");
     }
 
     const record = await this.recoveryCodeRepository.findValid(userId, code);
 
     if (!record) {
-      throw new Error("Invalid or expired code");
+      throw new Error("Código inválido o caducado");
     }
 
     // No marcar como usado todavía, solo verificar
@@ -87,26 +87,26 @@ class PasswordService {
 
   async resetPassword(resetId: number, newPassword: string) {
     if (!resetId || !newPassword) {
-      throw new Error("Reset ID and new password are required");
+      throw new Error("Se requiere restablecer ID y nueva contraseña");
     }
 
     if (newPassword.length < 6) {
-      throw new Error("Password must be at least 6 characters long");
+      throw new Error("La contraseña debe tener al menos 6 caracteres.");
     }
 
     // Verificar que el resetId existe y es válido
     const record = await this.recoveryCodeRepository.findById(resetId);
 
     if (!record) {
-      throw new Error("Invalid reset ID");
+      throw new Error("ID de restablecimiento no válido");
     }
 
     if (record.used) {
-      throw new Error("This reset code has already been used");
+      throw new Error("Este código de reinicio ya se ha utilizado");
     }
 
     if (record.expires_at < new Date()) {
-      throw new Error("This reset code has expired");
+      throw new Error("Este código de reinicio ha expirado");
     }
 
     // Marcar como usado

@@ -13,21 +13,21 @@ class AuthService {
     const { firstName, lastName, email, password } = userData;
 
     if (!firstName || !lastName || !email || !password) {
-      throw new Error("All fields are required");
+      throw new Error("Todos los campos son requeridos");
     }
 
     if (!validateEmail(email)) {
-      throw new Error("Email format is invalid");
+      throw new Error("El formato del correo es incorrecto");
     }
 
     if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters long");
+      throw new Error("La contraseña debe tener al menos 6 caracteres.");
     }
 
     const existingUser = await this.userService.getUserByEmail(email);
 
     if (existingUser) {
-      throw new Error("Email is already in use");
+      throw new Error("El correo ya esta en uso");
     }
 
     const hashedPassword = await encryptPassword(password);
@@ -56,23 +56,23 @@ class AuthService {
     const { email, password } = data;
 
     if (!email || !password) {
-      throw new Error("Email and password are required");
+      throw new Error("Correo y contraseña requerido");
     }
 
     const user = await this.userService.getUserByEmail(email);
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error("El correo no existe");
     }
 
     if (!user.password) {
-      throw new Error("User has no password set");
+      throw new Error("El usuario no tiene contraseña establecida");
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
-      throw new Error("Invalid credentials");
+      throw new Error("Contraseña Incorrecta");
     }
 
     const tokenData = {
