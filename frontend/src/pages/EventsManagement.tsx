@@ -138,7 +138,7 @@ const EventsManagement: React.FC = () => {
         }
     };
 
-    const handleViewDetails = (event) => {
+    const handleViewDetails = (event: any) => {
         setSelectedEvent(event);
         setShowDetailsModal(true);
     };
@@ -197,7 +197,7 @@ const EventsManagement: React.FC = () => {
     };
 
     const getCategoryColor = (category: string) => {
-        const colors = {
+        const colors: Record<string, string> = {
             'Académico': 'from-indigo-500 to-indigo-600',
             'Cultural': 'from-purple-500 to-purple-600',
             'Deportes': 'from-violet-500 to-violet-600'
@@ -465,48 +465,58 @@ const EventsManagement: React.FC = () => {
 
             {/* Modal para crear/editar evento */}
             {showCreateModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 w-full max-w-md mx-4">
-                        <h3 className="text-xl font-bold text-black dark:text-white mb-6">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 w-full max-w-xl mx-4 shadow-2xl">
+                        <h3 className="text-2xl font-bold text-black dark:text-white">
                             {editingEvent ? 'Editar Evento' : 'Crear Nuevo Evento'}
                         </h3>
-                        
-                        <div className="space-y-4">
+                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Completa la información del evento. Los estilos se adaptan al tema claro/oscuro.</p>
+
+                        <div className="mt-6 space-y-5">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Nombre del Evento
                                 </label>
-                                <input
-                                    type="text"
-                                    value={newEvent.name}
-                                    onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
-                                    className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                    placeholder="Ingresa el nombre del evento"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={newEvent.name}
+                                        onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
+                                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                        placeholder="Ingresa el nombre del evento"
+                                    />
+                                    <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Fecha
                                     </label>
-                                    <input
-                                        type="date"
-                                        value={newEvent.date}
-                                        onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="date"
+                                            value={newEvent.date}
+                                            onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                                            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                        />
+                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Hora
                                     </label>
-                                    <input
-                                        type="time"
-                                        value={newEvent.time}
-                                        onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="time"
+                                            value={newEvent.time}
+                                            onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                                            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                        />
+                                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    </div>
                                 </div>
                             </div>
 
@@ -514,42 +524,51 @@ const EventsManagement: React.FC = () => {
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Ubicación
                                 </label>
-                                <input
-                                    type="text"
-                                    value={newEvent.location}
-                                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
-                                    className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                    placeholder="Ingresa la ubicación"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={newEvent.location}
+                                        onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                        placeholder="Ingresa la ubicación"
+                                    />
+                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Capacidad
                                     </label>
-                                    <input
-                                        type="number"
-                                        value={newEvent.capacity}
-                                        onChange={(e) => setNewEvent({...newEvent, capacity: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                        placeholder="100"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            value={newEvent.capacity}
+                                            onChange={(e) => setNewEvent({...newEvent, capacity: e.target.value})}
+                                            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                            placeholder="100"
+                                        />
+                                        <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Categoría
                                     </label>
-                                    <select
-                                        value={newEvent.category}
-                                        onChange={(e) => setNewEvent({...newEvent, category: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                    >
-                                        <option value="">Selecciona una categoría</option>
-                                        {categories.map(category => (
-                                            <option key={category} value={category}>{category}</option>
-                                        ))}
-                                    </select>
+                                    <div className="relative">
+                                        <select
+                                            value={newEvent.category}
+                                            onChange={(e) => setNewEvent({...newEvent, category: e.target.value})}
+                                            className="w-full pl-12 pr-10 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                        >
+                                            <option value="">Selecciona una categoría</option>
+                                            {categories.map(category => (
+                                                <option key={category} value={category}>{category}</option>
+                                            ))}
+                                        </select>
+                                        <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    </div>
                                 </div>
                             </div>
 
@@ -560,8 +579,8 @@ const EventsManagement: React.FC = () => {
                                 <textarea
                                     value={newEvent.description}
                                     onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
-                                    rows={3}
-                                    className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    rows={4}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
                                     placeholder="Describe el evento..."
                                 />
                             </div>
@@ -582,13 +601,13 @@ const EventsManagement: React.FC = () => {
                                         description: ''
                                     });
                                 }}
-                                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                                className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-white bg-white dark:bg-black text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleCreateOrUpdateEvent}
-                                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
+                                className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
                             >
                                 {editingEvent ? 'Actualizar' : 'Crear'} Evento
                             </button>
