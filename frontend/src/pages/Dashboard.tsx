@@ -29,7 +29,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useDashboard } from '../hooks/useDashboard';
 import { useAuth } from '../hooks/useAuth';
 import { getEventTypeLabel } from '../types/event.types';
-import { formatDate, formatTime, getEventStatusText, getEventStatusColor } from '../utils/dateUtils';
+import { formatDate, formatTime, formatDuration, getEventStatusText, getEventStatusColor } from '../utils/dateUtils';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -387,22 +387,23 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 
                                 {/* Table Header */}
-                                <div className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
+                                <div className="grid grid-cols-8 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
                                     <div>Evento</div>
                                     <div>Fecha</div>
                                     <div>Participantes</div>
                                     <div>Capacidad</div>
                                     <div>Organizador</div>
                                     <div>Hora</div>
+                                    <div>Duración</div>
                                     <div>Estado</div>
                                 </div>
                                 
                                 <div className="space-y-3">
                                     {recentEvents.length > 0 ? recentEvents.map((event) => {
-                                        const statusText = getEventStatusText(event.event_date);
-                                        const statusColor = getEventStatusColor(event.event_date);
+                                        const statusText = getEventStatusText(event.event_date, event.duration);
+                                        const statusColor = getEventStatusColor(event.event_date, event.duration);
                                         return (
-                                            <div key={event.event_id} className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                            <div key={event.event_id} className="grid grid-cols-8 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                                                 <div className="flex items-center">
                                                     <div>
                                                         <h4 className="font-semibold text-black dark:text-white text-sm">{event.title}</h4>
@@ -423,6 +424,9 @@ const Dashboard: React.FC = () => {
                                                 </div>
                                                 <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
                                                     {formatTime(event.event_date)}
+                                                </div>
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                    {formatDuration(event.duration)}
                                                 </div>
                                                 <div className="flex items-center">
                                                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>
@@ -516,16 +520,16 @@ const Dashboard: React.FC = () => {
                                     const color = colors[index % colors.length];
                                     
                                     return (
-                                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                            <div className="flex items-center">
+                                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                        <div className="flex items-center">
                                                 <div className={`w-4 h-4 bg-gradient-to-r ${color} rounded-full mr-3`}></div>
-                                                <span className="font-medium text-black dark:text-white">{item.category}</span>
-                                            </div>
-                                            <div className="flex items-center space-x-3">
-                                                <span className="text-sm text-gray-600 dark:text-gray-400">{item.count} eventos</span>
-                                                <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">{item.percentage}%</span>
-                                            </div>
+                                            <span className="font-medium text-black dark:text-white">{item.category}</span>
                                         </div>
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">{item.count} eventos</span>
+                                            <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">{item.percentage}%</span>
+                                        </div>
+                                    </div>
                                     );
                                 }) : (
                                     <div className="text-center py-8 text-gray-500 dark:text-gray-400">
