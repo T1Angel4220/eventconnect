@@ -20,9 +20,14 @@ import {
   Moon,
   Download,
   Filter,
-  Activity
+  Activity,
+  Loader2,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { useDashboard } from '../hooks/useDashboard';
+import { getEventTypeLabel } from '../types/event.types';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -30,6 +35,17 @@ const Dashboard: React.FC = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
+    
+    // Hook para datos del dashboard
+    const {
+        stats,
+        recentEvents,
+        topUsers,
+        eventCategories,
+        loading,
+        error,
+        refreshData
+    } = useDashboard();
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -54,20 +70,20 @@ const Dashboard: React.FC = () => {
         { icon: Settings, label: 'Configuración', active: false, onClick: () => {} },
     ];
 
-    const statsCards = [
+    // Generar tarjetas de estadísticas dinámicamente
+    const statsCards = stats ? [
         {
             title: 'Total Eventos',
-            value: '24',
+            value: stats.total_events.toString(),
             change: '+12%',
             changeType: 'positive',
             icon: CalendarIcon,
             color: 'bg-gradient-to-br from-purple-500 to-purple-600',
             iconColor: 'text-purple-100'
         },
-      
         {
             title: 'Participantes Totales',
-            value: '5,678',
+            value: stats.total_participants.toLocaleString(),
             change: '+23%',
             changeType: 'positive',
             icon: Users,
@@ -76,41 +92,82 @@ const Dashboard: React.FC = () => {
         },
         {
             title: 'Eventos Activos',
-            value: '8',
+            value: stats.active_events.toString(),
             change: '+3',
             changeType: 'positive',
             icon: Activity,
             color: 'bg-gradient-to-br from-purple-600 to-purple-700',
             iconColor: 'text-purple-100'
         },
-       
         {
             title: 'Eventos Próximos',
-            value: '12',
+            value: stats.upcoming_events.toString(),
             change: '+4',
             changeType: 'positive',
             icon: Calendar,
             color: 'bg-gradient-to-br from-indigo-600 to-indigo-700',
             iconColor: 'text-indigo-100'
         }
-    ];
+    ] : [];
 
-    const recentEvents = [
-        { id: 1, name: 'Conferencia de Tecnología', date: '2025-01-15', attendees: 150, status: 'Activo', capacity: 200, category: 'Tecnología', organizer: 'Juan Pérez' },
-        { id: 2, name: 'Workshop de Diseño', date: '2025-01-18', attendees: 75, status: 'Activo', capacity: 100, category: 'Diseño', organizer: 'María García' },
-        { id: 3, name: 'Seminario de Marketing', date: '2025-01-20', attendees: 200, status: 'Próximo', capacity: 250, category: 'Marketing', organizer: 'Carlos López' },
-        { id: 4, name: 'Networking Event', date: '2025-01-22', attendees: 120, status: 'Próximo', capacity: 150, category: 'Networking', organizer: 'Ana Martínez' },
-        { id: 5, name: 'Curso de Programación', date: '2025-01-25', attendees: 90, status: 'Finalizado', capacity: 120, category: 'Educación', organizer: 'Pedro Rodríguez' },
-        { id: 6, name: 'Expo de Innovación', date: '2025-01-28', attendees: 300, status: 'Próximo', capacity: 400, category: 'Innovación', organizer: 'Laura Sánchez' },
-    ];
+    // Función para determinar el estado del evento
+    const getEventStatus = (eventDate: string) => {
+        const now = new Date();
+        const event = new Date(eventDate);
+        const diffTime = event.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 0) return 'Finalizado';
+        if (diffDays === 0) return 'Activo';
+        return 'Próximo';
+    };
 
-    const topUsers = [
-        { name: 'Ana Rodríguez', eventsAttended: 12, favoriteCategory: 'Tecnología', joinDate: 'Ene 2024', avatar: 'AR' },
-        { name: 'Carlos Mendoza', eventsAttended: 10, favoriteCategory: 'Marketing', joinDate: 'Feb 2024', avatar: 'CM' },
-        { name: 'Laura Silva', eventsAttended: 9, favoriteCategory: 'Diseño', joinDate: 'Mar 2024', avatar: 'LS' },
-        { name: 'Diego Torres', eventsAttended: 8, favoriteCategory: 'Educación', joinDate: 'Abr 2024', avatar: 'DT' },
-    ];
+    // Función para formatear fecha
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+    };
 
+    // Función para generar avatar
+    const generateAvatar = (name: string) => {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    };
+
+
+    // Componente de loading
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-600" />
+                    <p className="text-gray-600 dark:text-gray-400">Cargando dashboard...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Componente de error
+    if (error) {
+        return (
+            <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+                <div className="text-center max-w-md mx-auto p-6">
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Error al cargar el dashboard</h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+                    <button
+                        onClick={refreshData}
+                        className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors mx-auto"
+                    >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Reintentar
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-white dark:bg-black transition-colors duration-300">
@@ -206,6 +263,15 @@ const Dashboard: React.FC = () => {
                                     className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent"
                                 />
                             </div>
+
+                            {/* Refresh Button */}
+                            <button
+                                onClick={refreshData}
+                                className="p-2 text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+                                title="Actualizar datos"
+                            >
+                                <RefreshCw className="w-5 h-5" />
+                            </button>
 
                             {/* Notifications */}
                             <button className="p-2 text-gray-400 hover:text-black dark:hover:text-white relative">
@@ -322,39 +388,47 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 
                                 <div className="space-y-3">
-                                    {recentEvents.map((event) => (
-                                        <div key={event.id} className="grid grid-cols-6 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
-                                            <div className="flex items-center">
-                                                <div>
-                                                    <h4 className="font-semibold text-black dark:text-white text-sm">{event.name}</h4>
-                                                    <p className="text-xs text-gray-600 dark:text-gray-400">{event.category}</p>
+                                    {recentEvents.length > 0 ? recentEvents.map((event) => {
+                                        const status = getEventStatus(event.event_date);
+                                        return (
+                                            <div key={event.event_id} className="grid grid-cols-6 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                                <div className="flex items-center">
+                                                    <div>
+                                                        <h4 className="font-semibold text-black dark:text-white text-sm">{event.title}</h4>
+                                                        <p className="text-xs text-gray-600 dark:text-gray-400">{getEventTypeLabel(event.event_type)}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                    {formatDate(event.event_date)}
+                                                </div>
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                    {event.registered_count}
+                                                </div>
+                                                <div className="flex items-center text-sm font-semibold text-purple-600 dark:text-purple-400">
+                                                    {event.capacity}
+                                                </div>
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                    {event.organizer_name}
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                        status === 'Activo' 
+                                                            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                                                            : status === 'Próximo'
+                                                            ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white'
+                                                            : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+                                                    }`}>
+                                                        {status}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                                {event.date}
-                                            </div>
-                                            <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                                {event.attendees}
-                                            </div>
-                                            <div className="flex items-center text-sm font-semibold text-purple-600 dark:text-purple-400">
-                                                {event.capacity}
-                                            </div>
-                                            <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                                {event.organizer}
-                                            </div>
-                                            <div className="flex items-center">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                    event.status === 'Activo' 
-                                                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
-                                                        : event.status === 'Próximo'
-                                                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white'
-                                                        : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-                                                }`}>
-                                                    {event.status}
-                                                </span>
-                                            </div>
+                                        );
+                                    }) : (
+                                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                            <p>No hay eventos disponibles</p>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -365,23 +439,28 @@ const Dashboard: React.FC = () => {
                             <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
                                 <h3 className="text-xl font-bold text-black dark:text-white mb-6">Top Usuarios más inscritos</h3>
                                 <div className="space-y-4">
-                                    {topUsers.map((user, index) => (
+                                    {topUsers.length > 0 ? topUsers.map((user, index) => (
                                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
                                             <div className="flex items-center">
                                                 <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-600 rounded-full flex items-center justify-center mr-4 shadow-lg">
-                                                    <span className="text-white font-bold text-base">{user.avatar}</span>
+                                                    <span className="text-white font-bold text-base">{generateAvatar(user.user_name)}</span>
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-semibold text-black dark:text-white text-sm">{user.name}</h4>
-                                                    <p className="text-xs text-gray-600 dark:text-gray-400">{user.favoriteCategory}</p>
+                                                    <h4 className="font-semibold text-black dark:text-white text-sm">{user.user_name}</h4>
+                                                    <p className="text-xs text-gray-600 dark:text-gray-400">{user.favorite_category}</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">{user.eventsAttended} eventos</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-500">{user.joinDate}</p>
+                                                <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">{user.events_attended} eventos</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-500">{user.join_date}</p>
                                             </div>
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                            <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                            <p>No hay usuarios disponibles</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -418,24 +497,34 @@ const Dashboard: React.FC = () => {
                                 </button>
                             </div>
                             <div className="space-y-4">
-                                {[
-                                    { category: 'Tecnología', count: 8, percentage: 35, color: 'from-purple-500 to-purple-600' },
-                                    { category: 'Marketing', count: 6, percentage: 25, color: 'from-violet-500 to-violet-600' },
-                                    { category: 'Diseño', count: 4, percentage: 17, color: 'from-indigo-500 to-indigo-600' },
-                                    { category: 'Educación', count: 3, percentage: 13, color: 'from-purple-600 to-purple-700' },
-                                    { category: 'Networking', count: 3, percentage: 10, color: 'from-violet-600 to-violet-700' }
-                                ].map((item, index) => (
-                                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                        <div className="flex items-center">
-                                            <div className={`w-4 h-4 bg-gradient-to-r ${item.color} rounded-full mr-3`}></div>
-                                            <span className="font-medium text-black dark:text-white">{item.category}</span>
+                                {eventCategories.length > 0 ? eventCategories.map((item, index) => {
+                                    const colors = [
+                                        'from-purple-500 to-purple-600',
+                                        'from-violet-500 to-violet-600',
+                                        'from-indigo-500 to-indigo-600',
+                                        'from-purple-600 to-purple-700',
+                                        'from-violet-600 to-violet-700'
+                                    ];
+                                    const color = colors[index % colors.length];
+                                    
+                                    return (
+                                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                            <div className="flex items-center">
+                                                <div className={`w-4 h-4 bg-gradient-to-r ${color} rounded-full mr-3`}></div>
+                                                <span className="font-medium text-black dark:text-white">{item.category}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <span className="text-sm text-gray-600 dark:text-gray-400">{item.count} eventos</span>
+                                                <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">{item.percentage}%</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center space-x-3">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">{item.count} eventos</span>
-                                            <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">{item.percentage}%</span>
-                                        </div>
+                                    );
+                                }) : (
+                                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                        <Filter className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                        <p>No hay categorías disponibles</p>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </div>
                     </div>
