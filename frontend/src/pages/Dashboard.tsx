@@ -29,6 +29,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useDashboard } from '../hooks/useDashboard';
 import { useAuth } from '../hooks/useAuth';
 import { getEventTypeLabel } from '../types/event.types';
+import { formatDate, formatTime, getEventStatusText, getEventStatusColor } from '../utils/dateUtils';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -135,26 +136,7 @@ const Dashboard: React.FC = () => {
         }
     ] : [];
 
-    // Función para determinar el estado del evento
-    const getEventStatus = (eventDate: string) => {
-        const now = new Date();
-        const event = new Date(eventDate);
-        const diffTime = event.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays < 0) return 'Finalizado';
-        if (diffDays === 0) return 'Activo';
-        return 'Próximo';
-    };
 
-    // Función para formatear fecha
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-    };
 
     // Función para generar avatar
     const generateAvatar = (name: string) => {
@@ -405,20 +387,22 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 
                                 {/* Table Header */}
-                                <div className="grid grid-cols-6 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
+                                <div className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
                                     <div>Evento</div>
                                     <div>Fecha</div>
                                     <div>Participantes</div>
                                     <div>Capacidad</div>
                                     <div>Organizador</div>
+                                    <div>Hora</div>
                                     <div>Estado</div>
                                 </div>
                                 
                                 <div className="space-y-3">
                                     {recentEvents.length > 0 ? recentEvents.map((event) => {
-                                        const status = getEventStatus(event.event_date);
+                                        const statusText = getEventStatusText(event.event_date);
+                                        const statusColor = getEventStatusColor(event.event_date);
                                         return (
-                                            <div key={event.event_id} className="grid grid-cols-6 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                            <div key={event.event_id} className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                                                 <div className="flex items-center">
                                                     <div>
                                                         <h4 className="font-semibold text-black dark:text-white text-sm">{event.title}</h4>
@@ -437,15 +421,12 @@ const Dashboard: React.FC = () => {
                                                 <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
                                                     {event.organizer_name}
                                                 </div>
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                    {formatTime(event.event_date)}
+                                                </div>
                                                 <div className="flex items-center">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                        status === 'Activo' 
-                                                            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
-                                                            : status === 'Próximo'
-                                                            ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white'
-                                                            : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-                                                    }`}>
-                                                        {status}
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>
+                                                        {statusText}
                                                     </span>
                                                 </div>
                                             </div>
