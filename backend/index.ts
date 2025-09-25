@@ -20,6 +20,25 @@ app.use("/api/dashboard", dashboardRouter);
 // Rutas de eventos
 app.use("/api/events", eventRouter);
 
+// Endpoint de prueba sin autenticación (temporal)
+app.get("/api/test/stats", async (req, res) => {
+  try {
+    const { dashboardService } = await import("authentication/services/dashboard.service");
+    const stats = await dashboardService.getDashboardStats();
+    res.json({
+      success: true,
+      data: stats,
+      message: "Endpoint de prueba - sin autenticación"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error en endpoint de prueba",
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 const PORT: number = env.port || 3001;
 
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
