@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Menu, 
@@ -27,11 +27,13 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useDashboard } from '../hooks/useDashboard';
+import { useAuth } from '../hooks/useAuth';
 import { getEventTypeLabel } from '../types/event.types';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
+    const { checkAuth, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
@@ -47,11 +49,16 @@ const Dashboard: React.FC = () => {
         refreshData
     } = useDashboard();
 
+    // Verificar autenticación al cargar
+    useEffect(() => {
+        if (!checkAuth()) {
+            return;
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Solo ejecutar una vez al montar
+
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('firstName');
-        navigate('/login');
+        logout();
     };
 
     const handleNavigateToEvents = () => {

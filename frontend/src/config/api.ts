@@ -18,13 +18,30 @@ export const getDefaultHeaders = () => {
 export const handleApiError = (error: any) => {
   console.error('API Error:', error);
   
-  if (error.message?.includes('401')) {
-    // Token expirado o inválido
+  // Verificar si es un error de token expirado específico
+  if (error.message?.includes('Token expired') || error.message?.includes('TOKEN_EXPIRED')) {
+    // Limpiar datos de sesión
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('firstName');
+    localStorage.removeItem('userId');
+    
+    // Mostrar mensaje y redirigir
+    alert('Tu sesión ha expirado. Serás redirigido al login.');
     window.location.href = '/login';
-    return 'Sesión expirada. Por favor, inicia sesión nuevamente.';
+    return 'Sesión expirada. Redirigiendo al login...';
+  }
+  
+  if (error.message?.includes('401') || error.message?.includes('INVALID_TOKEN')) {
+    // Token inválido
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('firstName');
+    localStorage.removeItem('userId');
+    
+    alert('Token inválido. Serás redirigido al login.');
+    window.location.href = '/login';
+    return 'Token inválido. Redirigiendo al login...';
   }
   
   if (error.message?.includes('403')) {

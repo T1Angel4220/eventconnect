@@ -20,6 +20,22 @@ class EventService {
       const data = await response.json();
       
       if (!response.ok) {
+        // Si es un error 401, verificar si es token expirado
+        if (response.status === 401) {
+          if (data.code === 'TOKEN_EXPIRED' || data.error === 'Token expired') {
+            // Limpiar datos de sesión
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('firstName');
+            localStorage.removeItem('userId');
+            
+            // Mostrar mensaje y redirigir
+            alert('Tu sesión ha expirado. Serás redirigido al login.');
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Redirigiendo al login...');
+          }
+        }
+        
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
       }
       
