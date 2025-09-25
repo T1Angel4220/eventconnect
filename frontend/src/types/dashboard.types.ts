@@ -7,6 +7,17 @@ export interface DashboardStats {
   recent_registrations: number;
 }
 
+export interface DashboardStatsWithGrowth extends DashboardStats {
+  growth: {
+    events_growth: number;
+    participants_growth: number;
+    active_events_growth: number;
+    upcoming_events_growth: number;
+    users_growth: number;
+    registrations_growth: number;
+  };
+}
+
 export interface EventWithOrganizer {
   event_id: number;
   title: string;

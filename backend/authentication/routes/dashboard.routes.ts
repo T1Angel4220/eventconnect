@@ -9,6 +9,7 @@ router.use(authMiddleware);
 
 // Rutas del dashboard
 router.get('/stats', dashboardController.getDashboardStats.bind(dashboardController));
+router.get('/stats-with-growth', dashboardController.getDashboardStatsWithGrowth.bind(dashboardController));
 router.get('/events/recent', dashboardController.getRecentEvents.bind(dashboardController));
 router.get('/events/upcoming', dashboardController.getUpcomingEvents.bind(dashboardController));
 router.get('/events/active', dashboardController.getActiveEvents.bind(dashboardController));

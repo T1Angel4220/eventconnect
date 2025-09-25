@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { dashboardService } from '../services/dashboardService';
 import type { 
-  DashboardStats, 
+  DashboardStatsWithGrowth,
   EventWithOrganizer, 
   TopUser, 
   EventCategory 
 } from '../types/dashboard.types';
 
 export const useDashboard = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<DashboardStatsWithGrowth | null>(null);
   const [recentEvents, setRecentEvents] = useState<EventWithOrganizer[]>([]);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [eventCategories, setEventCategories] = useState<EventCategory[]>([]);
@@ -27,7 +27,7 @@ export const useDashboard = () => {
         topUsersData,
         eventCategoriesData
       ] = await Promise.all([
-        dashboardService.getDashboardStats(),
+        dashboardService.getDashboardStatsWithGrowth(),
         dashboardService.getRecentEvents(10),
         dashboardService.getTopUsers(10),
         dashboardService.getEventCategories()

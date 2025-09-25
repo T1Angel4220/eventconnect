@@ -70,13 +70,31 @@ const Dashboard: React.FC = () => {
         { icon: Settings, label: 'Configuración', active: false, onClick: () => {} },
     ];
 
+    // Función para formatear el cambio
+    const formatChange = (growth: number) => {
+        if (growth > 0) {
+            return `+${growth}%`;
+        } else if (growth < 0) {
+            return `${growth}%`;
+        } else {
+            return '0%';
+        }
+    };
+
+    // Función para determinar el tipo de cambio
+    const getChangeType = (growth: number) => {
+        if (growth > 0) return 'positive';
+        if (growth < 0) return 'negative';
+        return 'neutral';
+    };
+
     // Generar tarjetas de estadísticas dinámicamente
     const statsCards = stats ? [
         {
             title: 'Total Eventos',
             value: stats.total_events.toString(),
-            change: '+12%',
-            changeType: 'positive',
+            change: formatChange(stats.growth.events_growth),
+            changeType: getChangeType(stats.growth.events_growth),
             icon: CalendarIcon,
             color: 'bg-gradient-to-br from-purple-500 to-purple-600',
             iconColor: 'text-purple-100'
@@ -84,8 +102,8 @@ const Dashboard: React.FC = () => {
         {
             title: 'Participantes Totales',
             value: stats.total_participants.toLocaleString(),
-            change: '+23%',
-            changeType: 'positive',
+            change: formatChange(stats.growth.participants_growth),
+            changeType: getChangeType(stats.growth.participants_growth),
             icon: Users,
             color: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
             iconColor: 'text-indigo-100'
@@ -93,8 +111,8 @@ const Dashboard: React.FC = () => {
         {
             title: 'Eventos Activos',
             value: stats.active_events.toString(),
-            change: '+3',
-            changeType: 'positive',
+            change: formatChange(stats.growth.active_events_growth),
+            changeType: getChangeType(stats.growth.active_events_growth),
             icon: Activity,
             color: 'bg-gradient-to-br from-purple-600 to-purple-700',
             iconColor: 'text-purple-100'
@@ -102,8 +120,8 @@ const Dashboard: React.FC = () => {
         {
             title: 'Eventos Próximos',
             value: stats.upcoming_events.toString(),
-            change: '+4',
-            changeType: 'positive',
+            change: formatChange(stats.growth.upcoming_events_growth),
+            changeType: getChangeType(stats.growth.upcoming_events_growth),
             icon: Calendar,
             color: 'bg-gradient-to-br from-indigo-600 to-indigo-700',
             iconColor: 'text-indigo-100'
@@ -345,7 +363,9 @@ const Dashboard: React.FC = () => {
                                         <p className={`text-xs font-medium ${
                                             stat.changeType === 'positive' 
                                                 ? 'text-green-600 dark:text-green-400' 
-                                                : 'text-red-600 dark:text-red-400'
+                                                : stat.changeType === 'negative'
+                                                ? 'text-red-600 dark:text-red-400'
+                                                : 'text-gray-600 dark:text-gray-400'
                                         }`}>
                                             {stat.change} desde el mes pasado
                                         </p>

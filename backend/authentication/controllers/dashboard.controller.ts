@@ -19,6 +19,23 @@ export class DashboardController {
     }
   }
 
+  async getDashboardStatsWithGrowth(req: Request, res: Response) {
+    try {
+      const stats = await dashboardService.getDashboardStatsWithGrowth();
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('Error in getDashboardStatsWithGrowth:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting dashboard statistics with growth',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
   async getRecentEvents(req: Request, res: Response) {
     try {
       const limit = parseInt(req.query.limit as string) || 10;

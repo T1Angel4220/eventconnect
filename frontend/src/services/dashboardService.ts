@@ -1,5 +1,6 @@
 import type { 
   DashboardStats, 
+  DashboardStatsWithGrowth,
   EventWithOrganizer, 
   TopUser, 
   RecentRegistration, 
@@ -41,6 +42,11 @@ class DashboardService {
   // Dashboard Stats
   async getDashboardStats(): Promise<DashboardStats> {
     const response = await this.request<DashboardStats>('/dashboard/stats');
+    return response.data;
+  }
+
+  async getDashboardStatsWithGrowth(): Promise<DashboardStatsWithGrowth> {
+    const response = await this.request<DashboardStatsWithGrowth>('/dashboard/stats-with-growth');
     return response.data;
   }
 

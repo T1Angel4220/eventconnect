@@ -1,6 +1,7 @@
 import { eventRepository } from "authentication/repositories/event.repository";
 import { registrationRepository } from "authentication/repositories/registration.repository";
 import { notificationRepository } from "authentication/repositories/notification.repository";
+import { statsRepository } from "authentication/repositories/stats.repository";
 import { DashboardStats } from "authentication/models/notification.interface";
 import { EventWithOrganizer } from "authentication/models/event.interface";
 import { RegistrationWithDetails } from "authentication/models/registration.interface";
@@ -26,6 +27,23 @@ export class DashboardService {
     } catch (error) {
       console.error('Error getting dashboard stats:', error);
       throw new Error('Failed to get dashboard statistics');
+    }
+  }
+
+  async getDashboardStatsWithGrowth(): Promise<DashboardStats & { growth: any }> {
+    try {
+      const [stats, growth] = await Promise.all([
+        this.getDashboardStats(),
+        statsRepository.getMonthlyGrowth()
+      ]);
+
+      return {
+        ...stats,
+        growth
+      };
+    } catch (error) {
+      console.error('Error getting dashboard stats with growth:', error);
+      throw new Error('Failed to get dashboard statistics with growth');
     }
   }
 
