@@ -10,7 +10,7 @@ class AuthService {
   constructor(private userService: UserService) {}
 
   async register(userData: UserData) {
-    const { firstName, lastName, email, password } = userData;
+    const { firstName, lastName, email, password, role } = userData;
 
     if (!firstName || !lastName || !email || !password) {
       throw new Error("Todos los campos son requeridos");
@@ -37,6 +37,7 @@ class AuthService {
       lastName,
       email,
       password: hashedPassword,
+      role: role || "participant", // Por defecto es participant
     };
 
     const newUser = await this.userService.createUser(userDataToCreate);

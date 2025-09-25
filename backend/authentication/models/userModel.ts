@@ -12,12 +12,13 @@ class User implements UserData {
     lastName: string,
     email: string,
     password: string,
+    role: string = "participant"
   ) {
     this.firstName = firstName;
     this.lastName = lastName;
     this.email = email;
     this.password = password;
-    this.role = "organizer";
+    this.role = role;
   }
 }
 
