@@ -64,22 +64,28 @@ const EventsManagement: React.FC = () => {
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
 
-    // Cerrar dropdown cuando se hace clic fuera
+    // Temporalmente deshabilitado para debug
+    // React.useEffect(() => {
+    //     const handleClickOutside = (event: MouseEvent) => {
+    //         const target = event.target as HTMLElement;
+    //         if (showCategoryDropdown && !target.closest('.category-dropdown')) {
+    //             setShowCategoryDropdown(false);
+    //         }
+    //     };
+
+    //     if (showCategoryDropdown) {
+    //         document.addEventListener('click', handleClickOutside);
+    //     }
+
+    //     return () => {
+    //         document.removeEventListener('click', handleClickOutside);
+    //     };
+    // }, [showCategoryDropdown]);
+
+    // Debug: Log cuando cambia selectedCategory
     React.useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (showCategoryDropdown) {
-                setShowCategoryDropdown(false);
-            }
-        };
-
-        if (showCategoryDropdown) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [showCategoryDropdown]);
+        console.log('🔄 selectedCategory cambió a:', selectedCategory);
+    }, [selectedCategory]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -374,13 +380,14 @@ const EventsManagement: React.FC = () => {
                             event.location.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
         
-        // Debug logs
-        console.log('Filtro - selectedCategory:', selectedCategory);
-        console.log('Filtro - event.category:', event.category);
-        console.log('Filtro - matchesCategory:', matchesCategory);
-        
         return matchesSearch && matchesCategory;
     });
+
+    // Debug log para ver el estado del filtro
+    console.log('Estado del filtro:');
+    console.log('- selectedCategory:', selectedCategory);
+    console.log('- total events:', uiEvents.length);
+    console.log('- filtered events:', filteredEvents.length);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -563,7 +570,7 @@ const EventsManagement: React.FC = () => {
                                     <Download className="w-3 h-3 mr-2" />
                                     <span className="font-medium">Exportar</span>
                                 </button>
-                                <div className="relative">
+                                <div className="relative category-dropdown">
                                     <button
                                         onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
                                         className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-200"
@@ -577,9 +584,19 @@ const EventsManagement: React.FC = () => {
                                     
                                     {showCategoryDropdown && (
                                         <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-600/50 backdrop-blur-sm z-50 overflow-hidden">
+                                            <div className="flex justify-between items-center px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filtrar por categoría</span>
+                                                <button 
+                                                    onClick={() => setShowCategoryDropdown(false)}
+                                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                             <div className="py-2">
                                                 <button
                                                     onClick={() => {
+                                                        console.log('Seleccionando: Todas las categorías');
                                                         setSelectedCategory('all');
                                                         setShowCategoryDropdown(false);
                                                     }}
@@ -600,6 +617,7 @@ const EventsManagement: React.FC = () => {
                                                     <button
                                                         key={category}
                                                         onClick={() => {
+                                                            console.log('Seleccionando categoría:', category);
                                                             setSelectedCategory(category);
                                                             setShowCategoryDropdown(false);
                                                         }}
