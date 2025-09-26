@@ -33,7 +33,6 @@ import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEven
 import Notification from '../components/ui/Notification';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import '../components/ui/CustomSelect.css';
 
 const EventsManagement: React.FC = () => {
@@ -92,77 +91,215 @@ const EventsManagement: React.FC = () => {
     // Función para exportar eventos a PDF
     const exportToPDF = () => {
         try {
-            const doc = new jsPDF();
+            const doc = new jsPDF('landscape');
             
-            // Configurar el documento
-            doc.setFontSize(20);
-            doc.setTextColor(40, 40, 40);
-            doc.text('Reporte de Eventos - EventConnect', 20, 30);
+            // === ENCABEZADO PRINCIPAL MEJORADO ===
+            // Fondo del encabezado con gradiente simulado
+            doc.setFillColor(30, 64, 175); // Azul más oscuro
+            doc.rect(0, 0, doc.internal.pageSize.width, 60, 'F');
             
-            // Información de la empresa
+            // Logo/Ícono mejorado
+            doc.setFillColor(255, 255, 255);
+            doc.circle(35, 30, 18, 'F');
+            doc.setDrawColor(30, 64, 175);
+            doc.setLineWidth(2);
+            doc.circle(35, 30, 18, 'S');
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text('EC', 28, 35);
+            
+            // Título principal con sombra
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(28);
+            doc.setFont(undefined, 'bold');
+            doc.text('REPORTE DE EVENTOS', 70, 25);
+            
+            // Subtítulo
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'normal');
+            doc.text('EventConnect - Sistema de Gestión de Eventos', 70, 35);
+            
+            // Fecha y hora con mejor formato
             doc.setFontSize(12);
-            doc.setTextColor(100, 100, 100);
-            doc.text('Generado el: ' + new Date().toLocaleDateString('es-ES'), 20, 45);
-            doc.text('Total de eventos: ' + filteredEvents.length, 20, 55);
+            const now = new Date();
+            doc.text(`Generado el: ${now.toLocaleDateString('es-ES', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            })} a las ${now.toLocaleTimeString('es-ES')}`, 70, 45);
             
-            // Preparar datos para la tabla
-            const tableData = filteredEvents.map(event => [
-                event.name,
-                event.date,
-                event.time,
-                event.duration + ' min',
-                event.location || 'No especificada',
-                event.category,
-                event.status,
-                event.attendees + '/' + event.capacity
-            ]);
+            // === SECCIÓN DE RESUMEN MEJORADA ===
+            let yPosition = 80;
             
-            // Configurar la tabla
-            doc.autoTable({
-                head: [['Evento', 'Fecha', 'Hora', 'Duración', 'Ubicación', 'Categoría', 'Estado', 'Participantes']],
-                body: tableData,
-                startY: 70,
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 4,
-                },
-                headStyles: {
-                    fillColor: [59, 130, 246], // Azul
-                    textColor: 255,
-                    fontStyle: 'bold'
-                },
-                alternateRowStyles: {
-                    fillColor: [248, 250, 252] // Gris muy claro
-                },
-                columnStyles: {
-                    0: { cellWidth: 40 }, // Evento
-                    1: { cellWidth: 20 }, // Fecha
-                    2: { cellWidth: 15 }, // Hora
-                    3: { cellWidth: 20 }, // Duración
-                    4: { cellWidth: 30 }, // Ubicación
-                    5: { cellWidth: 20 }, // Categoría
-                    6: { cellWidth: 20 }, // Estado
-                    7: { cellWidth: 25 }  // Participantes
-                }
+            // Fondo para resumen con bordes redondeados simulados
+            doc.setFillColor(249, 250, 251);
+            doc.rect(25, yPosition, doc.internal.pageSize.width - 50, 35, 'F');
+            doc.setDrawColor(209, 213, 219);
+            doc.setLineWidth(1);
+            doc.rect(25, yPosition, doc.internal.pageSize.width - 50, 35, 'S');
+            
+            // Título del resumen
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('📊 RESUMEN ESTADÍSTICO', 35, yPosition + 12);
+            
+            // Estadísticas mejoradas
+            const totalEvents = filteredEvents.length;
+            const upcomingEvents = filteredEvents.filter(e => e.status === 'Próximo').length;
+            const inProgressEvents = filteredEvents.filter(e => e.status === 'En Progreso').length;
+            const completedEvents = filteredEvents.filter(e => e.status === 'Finalizado').length;
+            
+            // Crear tarjetas de estadísticas
+            const statsCards = [
+                { label: 'Total de Eventos', value: totalEvents, color: [30, 64, 175] },
+                { label: 'Próximos', value: upcomingEvents, color: [34, 197, 94] },
+                { label: 'En Progreso', value: inProgressEvents, color: [251, 146, 60] },
+                { label: 'Finalizados', value: completedEvents, color: [107, 114, 128] }
+            ];
+            
+            const cardWidth = (doc.internal.pageSize.width - 100) / 4;
+            statsCards.forEach((card, index) => {
+                const cardX = 35 + (index * cardWidth);
+                const cardY = yPosition + 18;
+                
+                // Fondo de la tarjeta
+                doc.setFillColor(card.color[0], card.color[1], card.color[2]);
+                doc.rect(cardX, cardY, cardWidth - 10, 12, 'F');
+                
+                // Texto de la tarjeta
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text(card.value.toString(), cardX + 5, cardY + 7);
+                
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'normal');
+                doc.text(card.label, cardX + 5, cardY + 10);
             });
             
-            // Agregar pie de página
+            yPosition += 50;
+            
+            // === TABLA DE EVENTOS MEJORADA ===
+            const tableStartY = yPosition;
+            const pageWidth = doc.internal.pageSize.width;
+            const margin = 25;
+            const cellHeight = 15;
+            const totalTableWidth = pageWidth - (margin * 2);
+            
+            // Anchos de columna optimizados
+            const colWidths = [
+                totalTableWidth * 0.28, // Evento (28%)
+                totalTableWidth * 0.12, // Fecha (12%)
+                totalTableWidth * 0.08, // Hora (8%)
+                totalTableWidth * 0.08, // Duración (8%)
+                totalTableWidth * 0.16, // Ubicación (16%)
+                totalTableWidth * 0.10, // Categoría (10%)
+                totalTableWidth * 0.10, // Estado (10%)
+                totalTableWidth * 0.08  // Participantes (8%)
+            ];
+            
+            const colPositions = [margin];
+            for (let i = 1; i < colWidths.length; i++) {
+                colPositions.push(colPositions[i-1] + colWidths[i-1]);
+            }
+            
+            // Encabezados de la tabla mejorados
+            doc.setFillColor(30, 64, 175);
+            doc.rect(margin, tableStartY, totalTableWidth, cellHeight, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'bold');
+            
+            const headers = ['EVENTO', 'FECHA', 'HORA', 'DURACIÓN', 'UBICACIÓN', 'CATEGORÍA', 'ESTADO', 'PARTICIPANTES'];
+            headers.forEach((header, index) => {
+                doc.text(header, colPositions[index] + 6, tableStartY + 10);
+            });
+            
+            yPosition = tableStartY + cellHeight;
+            
+            // Datos de la tabla mejorados
+            doc.setTextColor(40, 40, 40);
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(10);
+            
+            filteredEvents.forEach((event, index) => {
+                // Verificar si necesitamos una nueva página
+                if (yPosition + cellHeight > doc.internal.pageSize.height - 40) {
+                    doc.addPage('landscape');
+                    yPosition = 30;
+                    
+                    // Redibujar encabezados en nueva página
+                    doc.setFillColor(30, 64, 175);
+                    doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFont(undefined, 'bold');
+                    doc.setFontSize(11);
+                    headers.forEach((header, colIndex) => {
+                        doc.text(header, colPositions[colIndex] + 6, yPosition + 10);
+                    });
+                    yPosition += cellHeight;
+                }
+                
+                // Alternar colores de fila
+                if (index % 2 === 0) {
+                    doc.setFillColor(249, 250, 251);
+                    doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
+                }
+                
+                // Datos del evento
+                const eventData = [
+                    event.name,
+                    event.date,
+                    event.time,
+                    event.duration + ' min',
+                    event.location || 'No especificada',
+                    event.category,
+                    event.status,
+                    event.attendees + '/' + event.capacity
+                ];
+                
+                eventData.forEach((data, colIndex) => {
+                    let displayText = data.toString();
+                    // Truncar texto según el ancho de la columna
+                    const maxLength = Math.floor(colWidths[colIndex] / 3);
+                    if (displayText.length > maxLength) {
+                        displayText = displayText.substring(0, maxLength - 3) + '...';
+                    }
+                    doc.text(displayText, colPositions[colIndex] + 6, yPosition + 10);
+                });
+                
+                yPosition += cellHeight;
+            });
+            
+            // === PIE DE PÁGINA MEJORADO ===
             const pageCount = doc.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(150, 150, 150);
-                doc.text('Página ' + i + ' de ' + pageCount, 20, doc.internal.pageSize.height - 10);
-                doc.text('EventConnect - Sistema de Gestión de Eventos', doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, { align: 'right' });
+                
+                // Línea separadora elegante
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.5);
+                doc.line(25, doc.internal.pageSize.height - 30, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 30);
+                
+                // Información del pie mejorada
+                doc.setFontSize(9);
+                doc.setTextColor(100, 100, 100);
+                doc.text('Página ' + i + ' de ' + pageCount, 25, doc.internal.pageSize.height - 20);
+                doc.text('EventConnect v1.0', doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 20, { align: 'right' });
+                doc.text('Sistema de Gestión de Eventos', doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 15, { align: 'right' });
+                doc.text('© 2025 EventConnect. Todos los derechos reservados.', doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10, { align: 'right' });
             }
             
-            // Descargar el PDF
-            const fileName = `eventos_${new Date().toISOString().split('T')[0]}.pdf`;
+            // === DESCARGAR ===
+            const fileName = `reporte_eventos_${new Date().toISOString().split('T')[0]}.pdf`;
             doc.save(fileName);
             
             showSuccess(
                 'Exportación exitosa',
-                `Se ha generado el PDF con ${filteredEvents.length} eventos.`
+                `Se ha generado el PDF profesional con ${filteredEvents.length} eventos.`
             );
             
         } catch (error) {
@@ -296,16 +433,16 @@ const EventsManagement: React.FC = () => {
             await loadEvents();
             setShowCreateModal(false);
             setEditingEvent(null);
-        setNewEvent({
-            name: '',
-            date: '',
-            time: '',
+            setNewEvent({
+                name: '',
+                date: '',
+                time: '',
             duration: '',
-            location: '',
-            capacity: '',
-            category: '',
-            description: ''
-        });
+                location: '',
+                capacity: '',
+                category: '',
+                description: ''
+            });
             setFormErrors({});
         } catch (e: any) {
             const errorMessage = e.message || 'Error guardando evento';
@@ -728,7 +865,7 @@ const EventsManagement: React.FC = () => {
                                                         )}
                                                     </button>
                                                 ))}
-                                            </div>
+                                    </div>
                                         </div>
                                     )}
                                 </div>
@@ -1167,9 +1304,9 @@ const EventsManagement: React.FC = () => {
                                             <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Duración</p>
                                             <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedEvent.duration} minutos</p>
                                         </div>
+                                        </div>
                                     </div>
-                                </div>
-
+                                    
                                 <div className="space-y-4">
                                     <div className="group flex items-center p-4 bg-gradient-to-r from-orange-50/80 to-red-50/80 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl border border-orange-200/50 dark:border-orange-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                                         <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
