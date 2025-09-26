@@ -143,7 +143,7 @@ const EventsManagement: React.FC = () => {
             doc.setTextColor(30, 64, 175);
             doc.setFontSize(16);
             doc.setFont(undefined, 'bold');
-            doc.text('📊 RESUMEN ESTADÍSTICO', 35, yPosition + 12);
+            doc.text('RESUMEN ESTADISTICO', 35, yPosition + 12);
             
             // Estadísticas mejoradas
             const totalEvents = filteredEvents.length;
@@ -181,23 +181,27 @@ const EventsManagement: React.FC = () => {
             
             yPosition += 50;
             
+            // Iniciar la tabla en una nueva página para mejor presentación
+            doc.addPage('landscape');
+            yPosition = 30; // Resetear yPosition para la nueva página
+            
             // === TABLA DE EVENTOS MEJORADA ===
             const tableStartY = yPosition;
             const pageWidth = doc.internal.pageSize.width;
-            const margin = 25;
-            const cellHeight = 15;
+            const margin = 20;
+            const cellHeight = 12;
             const totalTableWidth = pageWidth - (margin * 2);
             
-            // Anchos de columna optimizados
+            // Anchos de columna optimizados para mejor distribución
             const colWidths = [
-                totalTableWidth * 0.28, // Evento (28%)
-                totalTableWidth * 0.12, // Fecha (12%)
+                totalTableWidth * 0.20, // Evento (20%) - Reducido para dar espacio a Participantes
+                totalTableWidth * 0.10, // Fecha (10%)
                 totalTableWidth * 0.08, // Hora (8%)
                 totalTableWidth * 0.08, // Duración (8%)
-                totalTableWidth * 0.16, // Ubicación (16%)
-                totalTableWidth * 0.10, // Categoría (10%)
-                totalTableWidth * 0.10, // Estado (10%)
-                totalTableWidth * 0.08  // Participantes (8%)
+                totalTableWidth * 0.18, // Ubicación (18%)
+                totalTableWidth * 0.12, // Categoría (12%)
+                totalTableWidth * 0.12, // Estado (12%)
+                totalTableWidth * 0.12  // Participantes (12%) - Aumentado para evitar truncamiento
             ];
             
             const colPositions = [margin];
@@ -210,46 +214,60 @@ const EventsManagement: React.FC = () => {
             doc.rect(margin, tableStartY, totalTableWidth, cellHeight, 'F');
             
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(11);
+            doc.setFontSize(10);
             doc.setFont(undefined, 'bold');
             
-            const headers = ['EVENTO', 'FECHA', 'HORA', 'DURACIÓN', 'UBICACIÓN', 'CATEGORÍA', 'ESTADO', 'PARTICIPANTES'];
+            const headers = ['EVENTO', 'FECHA', 'HORA', 'DURACION', 'UBICACION', 'CATEGORIA', 'ESTADO', 'PARTICIPANTES'];
             headers.forEach((header, index) => {
-                doc.text(header, colPositions[index] + 6, tableStartY + 10);
+                // Centrar texto en cada columna
+                const textWidth = doc.getTextWidth(header);
+                const centerX = colPositions[index] + (colWidths[index] / 2) - (textWidth / 2);
+                doc.text(header, centerX, tableStartY + 8);
             });
             
             yPosition = tableStartY + cellHeight;
             
             // Datos de la tabla mejorados
-            doc.setTextColor(40, 40, 40);
+            doc.setTextColor(0, 0, 0); // Negro sólido para asegurar visibilidad
             doc.setFont(undefined, 'normal');
-            doc.setFontSize(10);
+            doc.setFontSize(9);
+            
+            console.log('📊 Total de eventos a procesar:', filteredEvents.length);
             
             filteredEvents.forEach((event, index) => {
+                console.log(`📝 Procesando evento ${index + 1}:`, event.name);
+                
                 // Verificar si necesitamos una nueva página
-                if (yPosition + cellHeight > doc.internal.pageSize.height - 40) {
+                if (yPosition + cellHeight > doc.internal.pageSize.height - 50) {
+                    console.log('📄 Creando nueva página...');
                     doc.addPage('landscape');
-                    yPosition = 30;
+                    yPosition = 20;
                     
                     // Redibujar encabezados en nueva página
                     doc.setFillColor(30, 64, 175);
                     doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
                     doc.setTextColor(255, 255, 255);
                     doc.setFont(undefined, 'bold');
-                    doc.setFontSize(11);
+                    doc.setFontSize(10);
                     headers.forEach((header, colIndex) => {
-                        doc.text(header, colPositions[colIndex] + 6, yPosition + 10);
+                        // Centrar texto en cada columna
+                        const textWidth = doc.getTextWidth(header);
+                        const centerX = colPositions[colIndex] + (colWidths[colIndex] / 2) - (textWidth / 2);
+                        doc.text(header, centerX, yPosition + 8);
                     });
                     yPosition += cellHeight;
                 }
                 
-                // Alternar colores de fila
+                // Alternar colores de fila para mejor legibilidad
                 if (index % 2 === 0) {
-                    doc.setFillColor(249, 250, 251);
+                    doc.setFillColor(248, 250, 252);
+                    doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
+                } else {
+                    doc.setFillColor(255, 255, 255);
                     doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
                 }
                 
-                // Datos del evento
+                // Datos del evento - SIN TRUNCAR
                 const eventData = [
                     event.name,
                     event.date,
@@ -261,17 +279,19 @@ const EventsManagement: React.FC = () => {
                     event.attendees + '/' + event.capacity
                 ];
                 
+                // Asegurar que el texto sea negro y visible
+                doc.setTextColor(0, 0, 0);
+                
                 eventData.forEach((data, colIndex) => {
                     let displayText = data.toString();
-                    // Truncar texto según el ancho de la columna
-                    const maxLength = Math.floor(colWidths[colIndex] / 3);
-                    if (displayText.length > maxLength) {
-                        displayText = displayText.substring(0, maxLength - 3) + '...';
-                    }
-                    doc.text(displayText, colPositions[colIndex] + 6, yPosition + 10);
+                    
+                    // NO truncar texto - mostrar todo como solicitado
+                    // Alinear a la izquierda en lugar de centrar para mejor legibilidad
+                    doc.text(displayText, colPositions[colIndex] + 4, yPosition + 8);
                 });
                 
                 yPosition += cellHeight;
+                console.log(`✅ Evento ${index + 1} procesado. Nueva posición Y: ${yPosition}`);
             });
             
             // === PIE DE PÁGINA MEJORADO ===
