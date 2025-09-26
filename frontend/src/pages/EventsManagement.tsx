@@ -902,13 +902,13 @@ const EventsManagement: React.FC = () => {
                         <div className="flex justify-end space-x-3 px-6 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
                             <button
                                 onClick={handleCancelCreate}
-                                className="px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+                                className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleCreateOrUpdateEvent}
-                                className="px-4 py-3 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
+                                className="px-6 py-3 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
                             >
                                 {editingEvent ? 'Actualizar' : 'Crear'} Evento
                             </button>
