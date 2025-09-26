@@ -48,7 +48,6 @@ const EventsManagement: React.FC = () => {
         date: '',
         time: '',
         duration: '',
-        status: 'upcoming',
         location: '',
         capacity: '',
         category: '',
@@ -67,6 +66,21 @@ const EventsManagement: React.FC = () => {
         localStorage.removeItem('role');
         localStorage.removeItem('firstName');
         navigate('/login');
+    };
+
+    // Función para calcular el estado del evento basado en fecha, hora y duración
+    const calculateEventStatus = (eventDate: string, duration: number): string => {
+        const now = new Date();
+        const eventDateTime = new Date(eventDate);
+        const endDateTime = new Date(eventDateTime.getTime() + duration * 60000); // Convertir minutos a milisegundos
+        
+        if (now < eventDateTime) {
+            return 'upcoming';
+        } else if (now >= eventDateTime && now <= endDateTime) {
+            return 'in_progress';
+        } else {
+            return 'completed';
+        }
     };
 
     const loadEvents = async () => {
@@ -149,7 +163,6 @@ const EventsManagement: React.FC = () => {
                 description: newEvent.description || undefined,
                 event_date: eventDateString,
                 duration: Number(newEvent.duration || 0),
-                status: newEvent.status,
                 location: newEvent.location || undefined,
                 event_type: mapUiCategoryToEventType(newEvent.category),
                 capacity: Number(newEvent.capacity || 0),
@@ -175,7 +188,6 @@ const EventsManagement: React.FC = () => {
             date: '',
             time: '',
             duration: '',
-            status: 'upcoming',
             location: '',
             capacity: '',
             category: '',
@@ -249,7 +261,6 @@ const EventsManagement: React.FC = () => {
             date: '',
             time: '',
             duration: '',
-            status: 'upcoming',
             location: '',
             capacity: '',
             category: '',
@@ -306,22 +317,15 @@ const EventsManagement: React.FC = () => {
     const uiEvents = React.useMemo(() => {
         return events.map((e: any) => {
             const dt = new Date(e.event_date);
-            const now = new Date();
-            // Comparar fecha y hora local para determinar estado
-            const eventDateTime = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), dt.getHours(), dt.getMinutes());
-            const currentDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
-            // Usar el status de la base de datos si existe, sino calcular basado en fecha
-            let status = e.status || 'upcoming';
-            if (!e.status) {
-                status = eventDateTime < currentDateTime ? 'completed' : 'upcoming';
-            }
+            // Calcular el estado automáticamente basado en fecha, hora y duración
+            const calculatedStatus = calculateEventStatus(e.event_date, e.duration || 0);
             
             // Mapear status para mostrar en UI
             const statusText = {
                 'upcoming': 'Próximo',
                 'in_progress': 'En Progreso', 
                 'completed': 'Finalizado'
-            }[status] || 'Próximo';
+            }[calculatedStatus] || 'Próximo';
             
             return {
                 id: e.event_id,
@@ -795,28 +799,6 @@ const EventsManagement: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* Campo de Estado */}
-                            <div className="group">
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
-                                    <div className="w-2 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mr-3 animate-pulse"></div>
-                                    Estado
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={newEvent.status}
-                                        onChange={(e) => setNewEvent({...newEvent, status: e.target.value})}
-                                        className="w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] border-gray-200/50 dark:border-gray-600/50 focus:border-green-500 focus:ring-green-100"
-                                    >
-                                        <option value="upcoming">Próximo</option>
-                                        <option value="in_progress">En Progreso</option>
-                                        <option value="completed">Completado</option>
-                                    </select>
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shadow-md">
-                                        <Tag className="w-3 h-3 text-white" />
-                                    </div>
-                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-500/5 to-emerald-500/5 pointer-events-none"></div>
-                                </div>
-                            </div>
 
                             <div className="group">
                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">

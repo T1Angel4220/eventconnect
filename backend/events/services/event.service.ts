@@ -39,8 +39,23 @@ export class EventService {
       throw new Error("La capacidad debe ser mayor a 0");
     }
     
+    // Calcular el estado automáticamente basado en la fecha actual
+    const now = new Date();
+    const eventDateTime = new Date(dto.event_date);
+    const endDateTime = new Date(eventDateTime.getTime() + dto.duration * 60000);
+    
+    let calculatedStatus = 'upcoming';
+    if (now >= eventDateTime && now <= endDateTime) {
+      calculatedStatus = 'in_progress';
+    } else if (now > endDateTime) {
+      calculatedStatus = 'completed';
+    }
+    
+    // Agregar el estado calculado al DTO
+    const dtoWithStatus = { ...dto, status: calculatedStatus };
+    
     console.log("✅ Validación exitosa, creando evento...");
-    return this.repo.create(dto, organizerId);
+    return this.repo.create(dtoWithStatus, organizerId);
   }
 
   async update(eventId: number, dto: UpdateEventDto): Promise<EventEntity | null> {
