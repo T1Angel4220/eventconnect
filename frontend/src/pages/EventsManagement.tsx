@@ -88,6 +88,22 @@ const EventsManagement: React.FC = () => {
         console.log('🔄 selectedCategory cambió a:', selectedCategory);
     }, [selectedCategory]);
 
+    // Función auxiliar para verificar espacio y crear página si es necesario
+    const checkPageSpace = (doc: any, currentY: number, requiredSpace: number) => {
+        const pageHeight = doc.internal.pageSize.height;
+        const footerSpace = 60; // Espacio para pie de página
+        const availableSpace = pageHeight - currentY - footerSpace;
+        
+        console.log(`Verificando espacio: Y=${currentY}, Requerido=${requiredSpace}, Disponible=${availableSpace}`);
+        
+        if (availableSpace < requiredSpace) {
+            console.log('Espacio insuficiente, creando nueva pagina');
+            doc.addPage('landscape');
+            return 30; // Nueva posición Y
+        }
+        return currentY;
+    };
+
     // Función para exportar eventos a PDF
     const exportToPDF = () => {
         try {
@@ -106,18 +122,18 @@ const EventsManagement: React.FC = () => {
             doc.circle(35, 30, 18, 'S');
             doc.setTextColor(30, 64, 175);
             doc.setFontSize(18);
-            doc.setFont(undefined, 'bold');
+            doc.setFont('helvetica', 'bold');
             doc.text('EC', 28, 35);
             
             // Título principal con sombra
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(28);
-            doc.setFont(undefined, 'bold');
+            doc.setFont('helvetica', 'bold');
             doc.text('REPORTE DE EVENTOS', 70, 25);
             
             // Subtítulo
             doc.setFontSize(16);
-            doc.setFont(undefined, 'normal');
+            doc.setFont('helvetica', 'normal');
             doc.text('EventConnect - Sistema de Gestión de Eventos', 70, 35);
             
             // Fecha y hora con mejor formato
@@ -142,7 +158,7 @@ const EventsManagement: React.FC = () => {
             // Título del resumen
             doc.setTextColor(30, 64, 175);
             doc.setFontSize(16);
-            doc.setFont(undefined, 'bold');
+            doc.setFont('helvetica', 'bold');
             doc.text('RESUMEN ESTADISTICO', 35, yPosition + 12);
             
             // Estadísticas mejoradas
@@ -171,11 +187,11 @@ const EventsManagement: React.FC = () => {
                 // Texto de la tarjeta
                 doc.setTextColor(255, 255, 255);
                 doc.setFontSize(10);
-                doc.setFont(undefined, 'bold');
+                doc.setFont('helvetica', 'bold');
                 doc.text(card.value.toString(), cardX + 5, cardY + 7);
                 
                 doc.setFontSize(8);
-                doc.setFont(undefined, 'normal');
+                doc.setFont('helvetica', 'normal');
                 doc.text(card.label, cardX + 5, cardY + 10);
             });
             
@@ -215,7 +231,7 @@ const EventsManagement: React.FC = () => {
             
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(10);
-            doc.setFont(undefined, 'bold');
+            doc.setFont('helvetica', 'bold');
             
             const headers = ['EVENTO', 'FECHA', 'HORA', 'DURACION', 'UBICACION', 'CATEGORIA', 'ESTADO', 'PARTICIPANTES'];
             headers.forEach((header, index) => {
@@ -229,17 +245,17 @@ const EventsManagement: React.FC = () => {
             
             // Datos de la tabla mejorados
             doc.setTextColor(0, 0, 0); // Negro sólido para asegurar visibilidad
-            doc.setFont(undefined, 'normal');
+            doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
             
-            console.log('📊 Total de eventos a procesar:', filteredEvents.length);
+            console.log('Total de eventos a procesar:', filteredEvents.length);
             
             filteredEvents.forEach((event, index) => {
-                console.log(`📝 Procesando evento ${index + 1}:`, event.name);
+                console.log(`Procesando evento ${index + 1}:`, event.name);
                 
                 // Verificar si necesitamos una nueva página
                 if (yPosition + cellHeight > doc.internal.pageSize.height - 50) {
-                    console.log('📄 Creando nueva página...');
+                    console.log('Creando nueva pagina...');
                     doc.addPage('landscape');
                     yPosition = 20;
                     
@@ -247,7 +263,7 @@ const EventsManagement: React.FC = () => {
                     doc.setFillColor(30, 64, 175);
                     doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
                     doc.setTextColor(255, 255, 255);
-                    doc.setFont(undefined, 'bold');
+                    doc.setFont('helvetica', 'bold');
                     doc.setFontSize(10);
                     headers.forEach((header, colIndex) => {
                         // Centrar texto en cada columna
@@ -291,8 +307,401 @@ const EventsManagement: React.FC = () => {
                 });
                 
                 yPosition += cellHeight;
-                console.log(`✅ Evento ${index + 1} procesado. Nueva posición Y: ${yPosition}`);
+                console.log(`Evento ${index + 1} procesado. Nueva posicion Y: ${yPosition}`);
             });
+            
+            // === GRÁFICOS ESTADÍSTICOS ===
+            // Agregar página de gráficos después de la tabla
+            doc.addPage('landscape');
+            yPosition = 30;
+            
+            // Título de la sección de gráficos
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('ANALISIS ESTADISTICO DETALLADO', 35, yPosition);
+            
+            yPosition += 30;
+            
+            // Gráfico de barras - Eventos por categoría
+            const categoryStats = filteredEvents.reduce((acc, event) => {
+                acc[event.category] = (acc[event.category] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+            
+            const categories = Object.keys(categoryStats);
+            const categoryValues = Object.values(categoryStats);
+            const maxCategoryValue = Math.max(...categoryValues);
+            
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Eventos por Categoria', 35, yPosition);
+            
+            const chartStartX = 35;
+            const chartStartY = yPosition + 10;
+            const chartWidth = 200;
+            const chartHeight = 80;
+            const barWidth = chartWidth / categories.length;
+            
+            // Dibujar ejes
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.5);
+            doc.line(chartStartX, chartStartY, chartStartX + chartWidth, chartStartY);
+            doc.line(chartStartX, chartStartY, chartStartX, chartStartY + chartHeight);
+            
+            // Colores para las barras
+            const barColors = [
+                [59, 130, 246],   // Azul
+                [34, 197, 94],    // Verde
+                [251, 146, 60],  // Naranja
+                [168, 85, 247],  // Púrpura
+                [236, 72, 153],  // Rosa
+                [14, 165, 233]   // Cian
+            ];
+            
+            categories.forEach((category, index) => {
+                const barHeight = (categoryValues[index] / maxCategoryValue) * chartHeight;
+                const barX = chartStartX + (index * barWidth) + 5;
+                const barY = chartStartY + chartHeight - barHeight;
+                
+                // Dibujar barra
+                doc.setFillColor(barColors[index % barColors.length][0], 
+                                barColors[index % barColors.length][1], 
+                                barColors[index % barColors.length][2]);
+                doc.rect(barX, barY, barWidth - 10, barHeight, 'F');
+                
+                // Etiqueta de la categoría
+                doc.setTextColor(40, 40, 40);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text(category, barX + (barWidth - 10) / 2 - doc.getTextWidth(category) / 2, chartStartY + chartHeight + 10);
+                
+                // Valor numérico
+                doc.text(categoryValues[index].toString(), barX + (barWidth - 10) / 2 - doc.getTextWidth(categoryValues[index].toString()) / 2, barY - 5);
+            });
+            
+            yPosition += 120;
+            
+            // Gráfico circular - Distribución por estado
+            const statusStats = {
+                'Proximo': filteredEvents.filter(e => e.status === 'Próximo').length,
+                'En Progreso': filteredEvents.filter(e => e.status === 'En Progreso').length,
+                'Finalizado': filteredEvents.filter(e => e.status === 'Finalizado').length
+            };
+            
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Distribucion por Estado', 35, yPosition);
+            
+            // Variables movidas a la nueva página
+            
+            const statusColors = [
+                [34, 197, 94],   // Verde para Próximo
+                [251, 146, 60],  // Naranja para En Progreso
+                [107, 114, 128]  // Gris para Finalizado
+            ];
+            
+            const statusLabels = Object.keys(statusStats);
+            const statusValues = Object.values(statusStats);
+            
+            // Gráfico circular movido a página separada
+            yPosition += 100;
+            
+            // === GRÁFICO CIRCULAR ===
+            // Crear nueva página para el gráfico circular
+            doc.addPage('landscape');
+            yPosition = 30;
+            
+            // Título del gráfico circular
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Distribucion por Estado', 35, yPosition);
+            
+            yPosition += 30;
+            
+            // Dibujar gráfico circular
+            const pieChartX = 35;
+            const pieChartY = yPosition;
+            const pieRadius = 50;
+            
+            const centerX = pieChartX + pieRadius;
+            const centerY = pieChartY + pieRadius;
+            
+            console.log('Dibujando grafico circular en nueva pagina:', centerX, centerY);
+            console.log('Datos del grafico:', statusStats);
+            
+            // Dibujar círculo base
+            doc.setFillColor(240, 240, 240);
+            doc.circle(centerX, centerY, pieRadius, 'F');
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(1);
+            doc.circle(centerX, centerY, pieRadius, 'S');
+            
+            // Calcular ángulos para cada sector
+            const total = statusValues.reduce((sum, val) => sum + val, 0);
+            let currentAngle = 0;
+            
+            statusLabels.forEach((status, index) => {
+                if (statusValues[index] > 0) {
+                    const sliceAngle = (statusValues[index] / total) * 360;
+                    
+                    console.log(`Dibujando sector ${status}:`, statusValues[index], 'angulo:', sliceAngle);
+                    
+                    // Dibujar sector usando arcos
+                    const startAngle = currentAngle;
+                    const endAngle = currentAngle + sliceAngle;
+                    
+                    // Dibujar línea desde el centro
+                    const startX = centerX + Math.cos(startAngle * Math.PI / 180) * pieRadius;
+                    const startY = centerY + Math.sin(startAngle * Math.PI / 180) * pieRadius;
+                    const endX = centerX + Math.cos(endAngle * Math.PI / 180) * pieRadius;
+                    const endY = centerY + Math.sin(endAngle * Math.PI / 180) * pieRadius;
+                    
+                    // Dibujar líneas del sector
+                    doc.setDrawColor(statusColors[index][0], statusColors[index][1], statusColors[index][2]);
+                    doc.setLineWidth(3);
+                    doc.line(centerX, centerY, startX, startY);
+                    doc.line(centerX, centerY, endX, endY);
+                    
+                    // Dibujar arco del borde
+                    const arcRadius = pieRadius * 0.9;
+                    for (let angle = startAngle; angle <= endAngle; angle += 10) {
+                        const x1 = centerX + Math.cos(angle * Math.PI / 180) * arcRadius;
+                        const y1 = centerY + Math.sin(angle * Math.PI / 180) * arcRadius;
+                        const x2 = centerX + Math.cos((angle + 10) * Math.PI / 180) * arcRadius;
+                        const y2 = centerY + Math.sin((angle + 10) * Math.PI / 180) * arcRadius;
+                        doc.line(x1, y1, x2, y2);
+                    }
+                    
+                    currentAngle += sliceAngle;
+                }
+            });
+            
+            // Dibujar leyenda a la derecha del gráfico
+            const legendX = pieChartX + pieRadius * 2 + 20;
+            const legendY = pieChartY;
+            
+            statusLabels.forEach((status, index) => {
+                if (statusValues[index] > 0) {
+                    // Cuadrado de color
+                    doc.setFillColor(statusColors[index][0], statusColors[index][1], statusColors[index][2]);
+                    doc.rect(legendX, legendY + (index * 20), 15, 10, 'F');
+                    
+                    // Texto de la leyenda
+                    doc.setTextColor(40, 40, 40);
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(`${status}: ${statusValues[index]}`, legendX + 20, legendY + (index * 20) + 7);
+                }
+            });
+            
+            yPosition += 150;
+            
+            // === ANÁLISIS ADICIONALES PARA EL ORGANIZADOR ===
+            // Crear nueva página para el análisis
+            doc.addPage('landscape');
+            yPosition = 30;
+            
+            // Título de análisis adicionales
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('ANALISIS AVANZADO PARA ORGANIZADORES', 35, yPosition);
+            
+            yPosition += 30;
+            
+            // Análisis de capacidad vs asistencia
+            const capacityAnalysis = filteredEvents.map(event => ({
+                name: event.name,
+                capacity: event.capacity,
+                attendees: event.attendees,
+                utilization: (event.attendees / event.capacity) * 100
+            }));
+            
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Análisis de Utilización de Capacidad', 35, yPosition);
+            
+            yPosition += 20;
+            
+            // Tabla de análisis de capacidad
+            const analysisTableStartY = yPosition;
+            const analysisMargin = 35;
+            const analysisCellHeight = 15;
+            const analysisTableWidth = doc.internal.pageSize.width - (analysisMargin * 2);
+            
+            // Encabezados de análisis
+            doc.setFillColor(30, 64, 175);
+            doc.rect(analysisMargin, analysisTableStartY, analysisTableWidth, analysisCellHeight, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            
+            const analysisHeaders = ['EVENTO', 'CAPACIDAD', 'ASISTENTES', 'UTILIZACIÓN'];
+            const analysisColWidths = [
+                analysisTableWidth * 0.4, // Evento (40%)
+                analysisTableWidth * 0.2, // Capacidad (20%)
+                analysisTableWidth * 0.2, // Asistentes (20%)
+                analysisTableWidth * 0.2  // Utilización (20%)
+            ];
+            
+            const analysisColPositions = [analysisMargin];
+            for (let i = 1; i < analysisColWidths.length; i++) {
+                analysisColPositions.push(analysisColPositions[i-1] + analysisColWidths[i-1]);
+            }
+            
+            analysisHeaders.forEach((header, index) => {
+                const textWidth = doc.getTextWidth(header);
+                const centerX = analysisColPositions[index] + (analysisColWidths[index] / 2) - (textWidth / 2);
+                doc.text(header, centerX, analysisTableStartY + 8);
+            });
+            
+            yPosition = analysisTableStartY + analysisCellHeight;
+            
+            // Datos de análisis
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            
+            capacityAnalysis.forEach((analysis, index) => {
+                // Alternar colores de fila
+                if (index % 2 === 0) {
+                    doc.setFillColor(248, 250, 252);
+                    doc.rect(analysisMargin, yPosition, analysisTableWidth, analysisCellHeight, 'F');
+                } else {
+                    doc.setFillColor(255, 255, 255);
+                    doc.rect(analysisMargin, yPosition, analysisTableWidth, analysisCellHeight, 'F');
+                }
+                
+                const analysisData = [
+                    analysis.name,
+                    analysis.capacity.toString(),
+                    analysis.attendees.toString(),
+                    `${analysis.utilization.toFixed(1)}%`
+                ];
+                
+                analysisData.forEach((data, colIndex) => {
+                    doc.text(data, analysisColPositions[colIndex] + 4, yPosition + 8);
+                });
+                
+                yPosition += analysisCellHeight;
+            });
+            
+            yPosition += 30;
+            
+            // Verificar espacio para insights
+            yPosition = checkPageSpace(doc, yPosition, 250);
+            
+            // Resumen de insights para el organizador
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INSIGHTS PARA EL ORGANIZADOR', 35, yPosition);
+            
+            yPosition += 25;
+            
+            // Asegurar que el texto sea visible
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            
+            // Calcular insights
+            const totalCapacity = filteredEvents.reduce((sum, event) => sum + event.capacity, 0);
+            const totalAttendees = filteredEvents.reduce((sum, event) => sum + event.attendees, 0);
+            const averageUtilization = (totalAttendees / totalCapacity) * 100;
+            const mostPopularCategory = Object.keys(categoryStats).reduce((a, b) => categoryStats[a] > categoryStats[b] ? a : b);
+            const upcomingEventsCount = filteredEvents.filter(e => e.status === 'Próximo').length;
+            
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            
+            const insights = [
+                `• Utilizacion promedio de capacidad: ${averageUtilization.toFixed(1)}%`,
+                `• Categoria mas popular: ${mostPopularCategory} (${categoryStats[mostPopularCategory]} eventos)`,
+                `• Eventos proximos: ${upcomingEventsCount}`,
+                `• Total de capacidad disponible: ${totalCapacity} personas`,
+                `• Total de asistentes registrados: ${totalAttendees} personas`
+            ];
+            
+            console.log('Generando insights:', insights);
+            
+            insights.forEach((insight, index) => {
+                console.log(`Agregando insight ${index + 1}:`, insight);
+                doc.text(insight, 35, yPosition + (index * 12));
+            });
+            
+            yPosition += 80;
+            
+            // Verificar espacio para recomendaciones
+            yPosition = checkPageSpace(doc, yPosition, 200);
+            
+            // Recomendaciones adicionales para el organizador
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RECOMENDACIONES PARA MEJORAR', 35, yPosition);
+            
+            yPosition += 25;
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            
+            const recommendations = [
+                `• Si la utilizacion promedio es menor al 50%, considera reducir la capacidad de futuros eventos`,
+                `• Enfocate en la categoria "${mostPopularCategory}" que es la mas exitosa`,
+                `• Planifica ${upcomingEventsCount} eventos proximos con anticipacion`,
+                `• Considera estrategias de marketing para aumentar la asistencia`,
+                `• Revisa eventos con baja utilizacion para identificar problemas`
+            ];
+            
+            console.log('Generando recomendaciones:', recommendations);
+            
+            recommendations.forEach((recommendation, index) => {
+                console.log(`Agregando recomendacion ${index + 1}:`, recommendation);
+                doc.text(recommendation, 35, yPosition + (index * 12));
+            });
+            
+            yPosition += 100;
+            
+            // Verificar espacio para resumen ejecutivo
+            yPosition = checkPageSpace(doc, yPosition, 150);
+            
+            // Resumen ejecutivo
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RESUMEN EJECUTIVO', 35, yPosition);
+            
+            yPosition += 25;
+            
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            
+            const executiveSummary = [
+                `Este reporte analiza ${totalEvents} eventos gestionados a traves del sistema EventConnect.`,
+                `La categoria "${mostPopularCategory}" representa el mayor exito con ${categoryStats[mostPopularCategory]} eventos.`,
+                `La utilizacion promedio de ${averageUtilization.toFixed(1)}% indica ${averageUtilization > 70 ? 'excelente' : averageUtilization > 50 ? 'buena' : 'necesita mejora'} gestion de capacidad.`,
+                `Se recomienda continuar enfocandose en eventos de tipo "${mostPopularCategory}" y optimizar la capacidad basada en datos historicos.`
+            ];
+            
+            console.log('Generando resumen ejecutivo:', executiveSummary);
+            console.log('Posicion Y actual:', yPosition);
+            
+            executiveSummary.forEach((summary, index) => {
+                console.log(`Agregando resumen ${index + 1}:`, summary);
+                console.log(`Posicion Y para resumen ${index + 1}:`, yPosition + (index * 12));
+                doc.text(summary, 35, yPosition + (index * 12));
+            });
+            
+            console.log('PDF generado exitosamente con', doc.getNumberOfPages(), 'paginas');
             
             // === PIE DE PÁGINA MEJORADO ===
             const pageCount = doc.getNumberOfPages();
@@ -493,7 +902,7 @@ const EventsManagement: React.FC = () => {
             date: dateStr,
             time: timeStr,
             duration: String(event.duration ?? ''),
-            status: event.status || 'upcoming',
+            // status se calcula automáticamente
             location: event.location || '',
             capacity: String(event.capacity ?? ''),
             category: mapEventTypeToUiCategory(event.event_type),
@@ -511,8 +920,7 @@ const EventsManagement: React.FC = () => {
     const handleCancelCreate = () => {
         // Verificar si hay datos en el formulario
         const hasData = newEvent.name || newEvent.date || newEvent.time || 
-                       newEvent.duration || newEvent.status !== 'upcoming' ||
-                       newEvent.location || newEvent.capacity || newEvent.category || newEvent.description;
+                       newEvent.duration || newEvent.location || newEvent.capacity || newEvent.category || newEvent.description;
         
         if (hasData) {
             setShowCancelModal(true);
