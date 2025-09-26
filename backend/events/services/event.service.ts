@@ -20,6 +20,26 @@ export class EventService {
   }
 
   async create(dto: CreateEventDto, organizerId: number): Promise<EventEntity> {
+    console.log("🔍 Validando datos del evento:", dto);
+    
+    // Validar campos requeridos
+    if (!dto.title) {
+      throw new Error("El título es requerido");
+    }
+    if (!dto.event_date) {
+      throw new Error("La fecha del evento es requerida");
+    }
+    if (!dto.duration || dto.duration <= 0) {
+      throw new Error("La duración debe ser mayor a 0");
+    }
+    if (!dto.event_type) {
+      throw new Error("El tipo de evento es requerido");
+    }
+    if (!dto.capacity || dto.capacity <= 0) {
+      throw new Error("La capacidad debe ser mayor a 0");
+    }
+    
+    console.log("✅ Validación exitosa, creando evento...");
     return this.repo.create(dto, organizerId);
   }
 

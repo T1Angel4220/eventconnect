@@ -1,14 +1,15 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react';
+import { AlertTriangle, X } from 'lucide-react';
 
 interface ConfirmModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
-  title: string
-  message: string
-  confirmText?: string
-  cancelText?: string
-  isDark?: boolean
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'warning' | 'danger' | 'info';
 }
 
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
@@ -17,94 +18,128 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onConfirm,
   title,
   message,
-  confirmText = 'Sí',
-  cancelText = 'No',
-  isDark = false
+  confirmText = 'Confirmar',
+  cancelText = 'Cancelar',
+  type = 'warning'
 }) => {
-  if (!isOpen) return null
+  const [isVisible, setIsVisible] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose()
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+      setIsExiting(false);
+    } else {
+      setIsExiting(true);
+      setTimeout(() => setIsVisible(false), 300);
     }
-  }
+  }, [isOpen]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose()
+  const handleClose = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose();
+      setIsExiting(false);
+    }, 300);
+  };
+
+  const handleConfirm = () => {
+    onConfirm();
+    handleClose();
+  };
+
+  const getTypeStyles = () => {
+    switch (type) {
+      case 'danger':
+        return {
+          icon: 'text-red-500',
+          button: 'bg-red-600 hover:bg-red-700 text-white',
+          border: 'border-red-200 dark:border-red-800'
+        };
+      case 'info':
+        return {
+          icon: 'text-blue-500',
+          button: 'bg-blue-600 hover:bg-blue-700 text-white',
+          border: 'border-blue-200 dark:border-blue-800'
+        };
+      default: // warning
+        return {
+          icon: 'text-yellow-500',
+          button: 'bg-yellow-600 hover:bg-yellow-700 text-white',
+          border: 'border-yellow-200 dark:border-yellow-800'
+        };
     }
-  }
+  };
+
+  const styles = getTypeStyles();
+
+  if (!isVisible) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-      onClick={handleBackdropClick}
-      onKeyDown={handleKeyDown}
-      tabIndex={-1}
-    >
-      <div 
-        className={`relative w-full max-w-md mx-4 p-6 rounded-lg shadow-xl ${
-          isDark 
-            ? 'bg-black border border-gray-700' 
-            : 'bg-white border border-gray-200'
-        }`}
-      >
-        {/* Header */}
-        <div className="flex items-center mb-4">
-          <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-            isDark ? 'bg-red-900' : 'bg-red-100'
-          }`}>
-            <svg 
-              className={`w-6 h-6 ${isDark ? 'text-red-400' : 'text-red-600'}`}
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      {/* Backdrop */}
+      <div
+        className={`
+          fixed inset-0 bg-black transition-opacity duration-300
+          ${isExiting ? 'opacity-0' : 'opacity-50'}
+        `}
+        onClick={handleClose}
+      />
+      
+      {/* Modal */}
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div
+          className={`
+            relative w-full max-w-md transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all duration-300
+            ${isExiting 
+              ? 'scale-95 opacity-0 translate-y-4' 
+              : 'scale-100 opacity-100 translate-y-0'
+            }
+            border ${styles.border}
+          `}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <AlertTriangle className={`w-6 h-6 ${styles.icon} mr-3`} />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {title}
+              </h3>
+            </div>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" 
-              />
-            </svg>
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <h3 className={`ml-3 text-lg font-semibold ${
-            isDark ? 'text-white' : 'text-gray-900'
-          }`}>
-            {title}
-          </h3>
-        </div>
 
-        {/* Message */}
-        <p className={`mb-6 ${
-          isDark ? 'text-gray-300' : 'text-gray-600'
-        }`}>
-          {message}
-        </p>
+          {/* Content */}
+          <div className="p-6">
+            <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+              {message}
+            </p>
+          </div>
 
-        {/* Actions */}
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors ${
-              isDark
-                ? 'border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-            }`}
-          >
-            {cancelText}
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-          >
-            {confirmText}
-          </button>
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 p-6 bg-gray-50 dark:bg-gray-700/50">
+            <button
+              onClick={handleClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+            >
+              {cancelText}
+            </button>
+            <button
+              onClick={handleConfirm}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${styles.button}`}
+            >
+              {confirmText}
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ConfirmModal
+export default ConfirmModal;

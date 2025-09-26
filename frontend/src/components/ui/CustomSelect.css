@@ -1,0 +1,90 @@
+/* Estilos personalizados para los selects */
+.custom-select {
+  position: relative;
+}
+
+.custom-select select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+.custom-select select:focus {
+  outline: none;
+}
+
+/* Estilos para las opciones del select */
+.custom-select select option {
+  padding: 8px 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Estilos específicos para modo claro */
+.custom-select select option {
+  background-color: white;
+  color: #1f2937;
+}
+
+.custom-select select option:hover {
+  background-color: #f3f4f6;
+}
+
+.custom-select select option:checked {
+  background-color: #8b5cf6;
+  color: white;
+}
+
+/* Estilos específicos para modo oscuro */
+.dark .custom-select select option {
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
+.dark .custom-select select option:hover {
+  background-color: #374151;
+}
+
+.dark .custom-select select option:checked {
+  background-color: #8b5cf6;
+  color: white;
+}
+
+/* Estilos para el select del filtro */
+.filter-select {
+  position: relative;
+}
+
+.filter-select select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+  padding-right: 32px;
+}
+
+.filter-select select:focus {
+  outline: none;
+}
+
+/* Mejoras visuales para las opciones del filtro */
+.filter-select select option {
+  padding: 6px 8px;
+  font-weight: 500;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+
+.filter-select select option:hover {
+  background-color: #f3f4f6;
+}
+
+.dark .filter-select select option:hover {
+  background-color: #374151;
+}

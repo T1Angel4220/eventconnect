@@ -3,6 +3,8 @@ export interface EventResponse {
   title: string;
   description: string | null;
   event_date: string; // ISO
+  duration: number; // Duration in minutes
+  status: "upcoming" | "in_progress" | "completed";
   location: string | null;
   event_type: "academic" | "cultural" | "sports";
   capacity: number;
@@ -16,6 +18,8 @@ export interface CreateEventPayload {
   title: string;
   description?: string;
   event_date: string; // ISO datetime
+  duration: number; // Duration in minutes
+  status?: "upcoming" | "in_progress" | "completed"; // Optional, defaults to 'upcoming'
   location?: string;
   event_type: "academic" | "cultural" | "sports";
   capacity: number;

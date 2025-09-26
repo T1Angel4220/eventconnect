@@ -10,21 +10,27 @@ declare module "express" {
 }
 
 async function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  console.log("🔐 Verificando autenticación...");
   const authHeader = req.headers.authorization;
+  console.log("📋 Authorization header:", authHeader);
+  
   const token = authHeader && authHeader.split(" ")[1];
+  console.log("🎫 Token extraído:", token ? "Presente" : "Ausente");
 
   if (!token) {
+    console.log("❌ No token provided");
     return res.status(401).json({ error: "No token provided" });
   }
 
   try {
     // Verificar JWT y adjuntar payload
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log("✅ Token válido, usuario:", decoded);
     req.token = token;
     req.user = decoded;
     next();
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    console.error("❌ Error verificando token:", err.message);
     return res.status(403).json({ error: "Invalid token" });
   }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Menu, 
@@ -26,11 +26,16 @@ import {
   Tag
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { useNotifications } from '../hooks/useNotifications';
 import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEvents as apiFetchEvents, updateEvent as apiUpdateEvent } from '../services/eventsService';
+import Notification from '../components/ui/Notification';
+import ConfirmModal from '../components/ui/ConfirmModal';
+import '../components/ui/CustomSelect.css';
 
 const EventsManagement: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
+    const { notifications, removeNotification, showSuccess, showError, showWarning } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -42,6 +47,8 @@ const EventsManagement: React.FC = () => {
         name: '',
         date: '',
         time: '',
+        duration: '',
+        status: 'upcoming',
         location: '',
         capacity: '',
         category: '',
@@ -50,8 +57,10 @@ const EventsManagement: React.FC = () => {
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
     const [events, setEvents] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [eventToDelete, setEventToDelete] = useState<any>(null);
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -62,14 +71,13 @@ const EventsManagement: React.FC = () => {
 
     const loadEvents = async () => {
         try {
-            setLoading(true);
-            setError(null);
             const data = await apiFetchEvents();
             setEvents(data as any);
         } catch (e: any) {
-            setError(e.message || 'Error cargando eventos');
-        } finally {
-            setLoading(false);
+            showError(
+                'Error cargando eventos',
+                e.message || 'Error cargando eventos'
+            );
         }
     };
 
@@ -77,64 +85,209 @@ const EventsManagement: React.FC = () => {
         loadEvents();
     }, []);
 
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+
+        if (!newEvent.name.trim()) {
+            errors.name = 'El nombre del evento es requerido';
+        }
+
+        if (!newEvent.date) {
+            errors.date = 'La fecha es requerida';
+        } else {
+            const eventDate = new Date(`${newEvent.date}T${newEvent.time || '00:00'}`);
+            const now = new Date();
+            // Comparar solo fecha si no hay hora especificada
+            if (!newEvent.time) {
+                const eventDateOnly = new Date(newEvent.date);
+                const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                if (eventDateOnly < todayOnly) {
+                    errors.date = 'La fecha debe ser futura';
+                }
+            } else {
+                if (eventDate <= now) {
+                    errors.date = 'La fecha y hora deben ser futuras';
+                }
+            }
+        }
+
+        if (!newEvent.time) {
+            errors.time = 'La hora es requerida';
+        }
+
+        if (!newEvent.duration || Number(newEvent.duration) <= 0) {
+            errors.duration = 'La duración debe ser mayor a 0 minutos';
+        }
+
+        if (!newEvent.capacity || Number(newEvent.capacity) <= 0) {
+            errors.capacity = 'La capacidad debe ser mayor a 0';
+        }
+
+        if (!newEvent.category) {
+            errors.category = 'La categoría es requerida';
+        }
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     const handleCreateOrUpdateEvent = async () => {
+        if (!validateForm()) {
+            return;
+        }
+
         try {
-            setError(null);
-            const isoDate = newEvent.date && newEvent.time ? new Date(`${newEvent.date}T${newEvent.time}:00`).toISOString() : '';
+            // Crear fecha correctamente combinando fecha y hora en zona horaria local
+            const [year, month, day] = newEvent.date.split('-');
+            const [hours, minutes] = newEvent.time.split(':');
+            
+            // Crear string de fecha en formato ISO pero manteniendo la hora local
+            const eventDateString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+            
             const payload: any = {
                 title: newEvent.name,
                 description: newEvent.description || undefined,
-                event_date: isoDate,
+                event_date: eventDateString,
+                duration: Number(newEvent.duration || 0),
+                status: newEvent.status,
                 location: newEvent.location || undefined,
                 event_type: mapUiCategoryToEventType(newEvent.category),
                 capacity: Number(newEvent.capacity || 0),
             };
             if (editingEvent?.event_id) {
                 await apiUpdateEvent(editingEvent.event_id, payload);
+                showSuccess(
+                    'Evento actualizado',
+                    `El evento "${newEvent.name}" ha sido actualizado exitosamente.`
+                );
             } else {
                 await apiCreateEvent(payload);
+                showSuccess(
+                    'Evento creado',
+                    `El evento "${newEvent.name}" ha sido creado exitosamente.`
+                );
             }
             await loadEvents();
             setShowCreateModal(false);
             setEditingEvent(null);
-            setNewEvent({
-                name: '',
-                date: '',
-                time: '',
-                location: '',
-                capacity: '',
-                category: '',
-                description: ''
-            });
+        setNewEvent({
+            name: '',
+            date: '',
+            time: '',
+            duration: '',
+            status: 'upcoming',
+            location: '',
+            capacity: '',
+            category: '',
+            description: ''
+        });
+            setFormErrors({});
         } catch (e: any) {
-            setError(e.message || 'Error guardando evento');
+            const errorMessage = e.message || 'Error guardando evento';
+            showError(
+                'Error al guardar evento',
+                errorMessage
+            );
         }
     };
 
     const handleEditEvent = (event: any) => {
         setEditingEvent(event);
         const dt = new Date(event.event_date);
-        const dateStr = isNaN(dt.getTime()) ? '' : dt.toISOString().slice(0,10);
-        const timeStr = isNaN(dt.getTime()) ? '' : dt.toISOString().slice(11,16);
+        
+        // Extraer fecha en formato YYYY-MM-DD sin conversión de zona horaria
+        const year = dt.getFullYear();
+        const month = (dt.getMonth() + 1).toString().padStart(2, '0');
+        const day = dt.getDate().toString().padStart(2, '0');
+        const dateStr = isNaN(dt.getTime()) ? '' : `${year}-${month}-${day}`;
+        
+        // Formatear hora correctamente para el input time (HH:MM)
+        const hours = dt.getHours().toString().padStart(2, '0');
+        const minutes = dt.getMinutes().toString().padStart(2, '0');
+        const timeStr = isNaN(dt.getTime()) ? '' : `${hours}:${minutes}`;
+        
         setNewEvent({
             name: event.title,
             date: dateStr,
             time: timeStr,
+            duration: String(event.duration ?? ''),
+            status: event.status || 'upcoming',
             location: event.location || '',
             capacity: String(event.capacity ?? ''),
             category: mapEventTypeToUiCategory(event.event_type),
             description: event.description || ''
         });
+        setFormErrors({}); // Limpiar errores al editar
         setShowCreateModal(true);
     };
 
-    const handleDeleteEvent = async (eventId: number) => {
-        if (!window.confirm('¿Estás seguro de que quieres eliminar este evento?')) return;
+    const handleDeleteEvent = (event: any) => {
+        setEventToDelete(event);
+        setShowDeleteModal(true);
+    };
+
+    const handleCancelCreate = () => {
+        // Verificar si hay datos en el formulario
+        const hasData = newEvent.name || newEvent.date || newEvent.time || 
+                       newEvent.duration || newEvent.status !== 'upcoming' ||
+                       newEvent.location || newEvent.capacity || newEvent.category || newEvent.description;
+        
+        if (hasData) {
+            setShowCancelModal(true);
+        } else {
+            handleConfirmCancel();
+        }
+    };
+
+    const handleConfirmCancel = () => {
+        const isEditing = editingEvent?.event_id;
+        
+        setShowCreateModal(false);
+        setEditingEvent(null);
+        setNewEvent({
+            name: '',
+            date: '',
+            time: '',
+            duration: '',
+            status: 'upcoming',
+            location: '',
+            capacity: '',
+            category: '',
+            description: ''
+        });
+        setFormErrors({});
+        setShowCancelModal(false);
+        
+        if (isEditing) {
+            showWarning(
+                'Edición cancelada',
+                `Se ha cancelado la edición del evento "${editingEvent.title}". Los cambios no se han guardado.`
+            );
+        } else {
+            showWarning(
+                'Creación cancelada',
+                'Se ha cancelado la creación del evento. Los datos ingresados se han perdido.'
+            );
+        }
+    };
+
+    const confirmDeleteEvent = async () => {
+        if (!eventToDelete) return;
         try {
-            await apiDeleteEvent(eventId);
+            await apiDeleteEvent(eventToDelete.event_id);
             await loadEvents();
+            setShowDeleteModal(false);
+            setEventToDelete(null);
+            showSuccess(
+                'Evento eliminado',
+                `El evento "${eventToDelete.title}" ha sido eliminado exitosamente.`
+            );
         } catch (e: any) {
-            setError(e.message || 'Error eliminando evento');
+            const errorMessage = e.message || 'Error eliminando evento';
+            showError(
+                'Error al eliminar evento',
+                errorMessage
+            );
         }
     };
 
@@ -153,17 +306,33 @@ const EventsManagement: React.FC = () => {
     const uiEvents = React.useMemo(() => {
         return events.map((e: any) => {
             const dt = new Date(e.event_date);
-            const today = new Date();
-            const status = dt.getTime() < today.getTime() ? 'Finalizado' : 'Próximo';
+            const now = new Date();
+            // Comparar fecha y hora local para determinar estado
+            const eventDateTime = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), dt.getHours(), dt.getMinutes());
+            const currentDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
+            // Usar el status de la base de datos si existe, sino calcular basado en fecha
+            let status = e.status || 'upcoming';
+            if (!e.status) {
+                status = eventDateTime < currentDateTime ? 'completed' : 'upcoming';
+            }
+            
+            // Mapear status para mostrar en UI
+            const statusText = {
+                'upcoming': 'Próximo',
+                'in_progress': 'En Progreso', 
+                'completed': 'Finalizado'
+            }[status] || 'Próximo';
+            
             return {
                 id: e.event_id,
                 name: e.title,
-                date: dt.toISOString().slice(0,10),
-                time: dt.toISOString().slice(11,16),
+                date: dt.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+                time: dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                duration: e.duration || 0,
                 location: e.location || '',
                 attendees: e.attendees ?? 0,
                 capacity: e.capacity,
-                status,
+                status: statusText,
                 category: mapEventTypeToUiCategory(e.event_type),
                 organizer: '—',
                 description: e.description || '',
@@ -185,10 +354,13 @@ const EventsManagement: React.FC = () => {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'Activo':
-                return 'bg-gradient-to-r from-green-500 to-green-600 text-white';
+            case 'upcoming':
             case 'Próximo':
                 return 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white';
+            case 'in_progress':
+            case 'En Progreso':
+                return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white';
+            case 'completed':
             case 'Finalizado':
                 return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
             default:
@@ -229,7 +401,7 @@ const EventsManagement: React.FC = () => {
             <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-black border-r border-gray-200 dark:border-white transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
                 <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-white">
                     <div className="flex items-center">
-                        <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center">
+                        <div className="w-6 h-6 bg-black dark:bg-white rounded-lg flex items-center justify-center">
                             <Calendar className="w-5 h-5 text-white dark:text-black" />
                         </div>
                         <span className="ml-3 text-xl font-bold text-black dark:text-white">EventConnect</span>
@@ -248,7 +420,7 @@ const EventsManagement: React.FC = () => {
                             <li key={index}>
                                 <button
                                     onClick={() => navigate(item.path)}
-                                    className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all duration-200 ${
+                                    className={`w-full flex items-center px-4 py-2 text-left rounded-xl transition-all duration-200 ${
                                         item.active
                                             ? 'bg-black dark:bg-white text-white dark:text-black'
                                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white'
@@ -274,7 +446,7 @@ const EventsManagement: React.FC = () => {
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center px-4 py-3 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
+                        className="w-full flex items-center px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
                     >
                         <LogOut className="w-5 h-5 mr-3" />
                         Cerrar Sesión
@@ -339,7 +511,7 @@ const EventsManagement: React.FC = () => {
                 </header>
 
                 {/* Main Content */}
-                <main className="p-6">
+                <main className="p-4">
                     {/* Quick Actions Toolbar */}
                     <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-4 shadow-lg mb-8">
                         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -348,35 +520,46 @@ const EventsManagement: React.FC = () => {
                             </div>
                             <div className="flex flex-wrap items-center gap-3">
                                 <button 
-                                    onClick={() => setShowCreateModal(true)}
+                                    onClick={() => {
+                                        setShowCreateModal(true);
+                                        setFormErrors({}); // Limpiar errores al abrir modal
+                                    }}
                                     className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
                                 >
-                                    <Plus className="w-4 h-4 mr-2" />
+                                    <Plus className="w-3 h-3 mr-2" />
                                     <span className="font-medium">Crear Evento</span>
                                 </button>
                                 <button className="flex items-center px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg">
-                                    <Download className="w-4 h-4 mr-2" />
+                                    <Download className="w-3 h-3 mr-2" />
                                     <span className="font-medium">Exportar</span>
                                 </button>
-                                <div className="flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
-                                    <Filter className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
-                                    <select
-                                        value={selectedCategory}
-                                        onChange={(e) => setSelectedCategory(e.target.value)}
-                                        className="bg-transparent text-gray-700 dark:text-gray-300 text-sm focus:outline-none"
-                                    >
-                                        <option value="all">Todas las categorías</option>
-                                        {categories.map(category => (
-                                            <option key={category} value={category}>{category}</option>
-                                        ))}
-                                    </select>
+                                <div className="relative">
+                                    <div className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-200">
+                                        <Filter className="w-3 h-3 mr-3 text-gray-600 dark:text-gray-400" />
+                                        <select
+                                            value={selectedCategory}
+                                            onChange={(e) => setSelectedCategory(e.target.value)}
+                                            className="bg-transparent text-gray-700 dark:text-gray-300 text-sm focus:outline-none appearance-none cursor-pointer pr-8 font-medium"
+                                            style={{
+                                                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                                                backgroundPosition: 'right 8px center',
+                                                backgroundRepeat: 'no-repeat',
+                                                backgroundSize: '12px'
+                                            }}
+                                        >
+                                            <option value="all" className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 py-2 font-medium">Todas las categorías</option>
+                                            {categories.map(category => (
+                                                <option key={category} value={category} className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 py-2 hover:bg-purple-50 dark:hover:bg-gray-700 font-medium">{category}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Events Table */}
-                    <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
+                    <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-4 shadow-lg">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-bold text-black dark:text-white">Lista de Eventos</h3>
                             <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -385,10 +568,11 @@ const EventsManagement: React.FC = () => {
                         </div>
 
                         {/* Table Header */}
-                        <div className="grid grid-cols-8 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
+                        <div className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
                             <div>Evento</div>
                             <div>Fecha</div>
                             <div>Hora</div>
+                            <div>Duración</div>
                             <div>Ubicación</div>
                             <div>Participantes</div>
                             <div>Categoría</div>
@@ -398,7 +582,7 @@ const EventsManagement: React.FC = () => {
 
                         <div className="space-y-3">
                             {filteredEvents.map((event) => (
-                                <div key={event.id} className="grid grid-cols-8 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                <div key={event.id} className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                                     <div className="flex items-center">
                                         <div>
                                             <h4 className="font-semibold text-black dark:text-white text-sm">{event.name}</h4>
@@ -410,6 +594,10 @@ const EventsManagement: React.FC = () => {
                                     </div>
                                     <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
                                         {event.time}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                        <Clock className="w-3 h-3 mr-1" />
+                                        {event.duration} min
                                     </div>
                                     <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
                                         <MapPin className="w-3 h-3 mr-1" />
@@ -433,19 +621,19 @@ const EventsManagement: React.FC = () => {
                                             onClick={() => handleViewDetails(event)}
                                             className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                         >
-                                            <Eye className="w-4 h-4" />
+                                            <Eye className="w-3 h-3" />
                                         </button>
                                         <button 
                                             onClick={() => handleEditEvent(event.raw)}
                                             className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
                                         >
-                                            <Edit className="w-4 h-4" />
+                                            <Edit className="w-3 h-3" />
                                         </button>
                                         <button 
-                                            onClick={() => handleDeleteEvent(event.id)}
+                                            onClick={() => handleDeleteEvent(event.raw)}
                                             className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 className="w-3 h-3" />
                                         </button>
                                     </div>
                                 </div>
@@ -465,16 +653,29 @@ const EventsManagement: React.FC = () => {
 
             {/* Modal para crear/editar evento */}
             {showCreateModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                    <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 w-full max-w-xl mx-4 shadow-2xl">
-                        <h3 className="text-2xl font-bold text-black dark:text-white">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-md shadow-2xl my-1 transform transition-all duration-300">
+                        {/* Header sobrio */}
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
+                            <div className="flex items-center space-x-4">
+                                <div className="w-6 h-6 bg-gray-600 dark:bg-gray-300 rounded-lg flex items-center justify-center shadow-md">
+                                    <Calendar className="w-3 h-3 text-white dark:text-gray-800" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                             {editingEvent ? 'Editar Evento' : 'Crear Nuevo Evento'}
                         </h3>
-                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Completa la información del evento. Los estilos se adaptan al tema claro/oscuro.</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        {editingEvent ? 'Modifica la información del evento' : 'Completa la información del evento'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
 
-                        <div className="mt-6 space-y-5">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <div className="p-2 space-y-2">
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                                    <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mr-3 animate-pulse"></div>
                                     Nombre del Evento
                                 </label>
                                 <div className="relative">
@@ -482,16 +683,30 @@ const EventsManagement: React.FC = () => {
                                         type="text"
                                         value={newEvent.name}
                                         onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
-                                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                        className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                            formErrors.name 
+                                                ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
+                                                : 'border-gray-200/50 dark:border-gray-600/50 focus:border-blue-500 focus:ring-blue-100'
+                                        }`}
                                         placeholder="Ingresa el nombre del evento"
                                     />
-                                    <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center shadow-md">
+                                        <Tag className="w-3 h-3 text-white" />
+                                    </div>
+                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/5 to-indigo-500/5 pointer-events-none"></div>
                                 </div>
+                                {formErrors.name && (
+                                    <div className="mt-3 flex items-center text-red-500 text-sm">
+                                        <div className="w-1 h-1 bg-red-500 rounded-full mr-2"></div>
+                                        {formErrors.name}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <div className="group">
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                        <div className="w-2 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mr-3 animate-pulse"></div>
                                         Fecha
                                     </label>
                                     <div className="relative">
@@ -499,13 +714,28 @@ const EventsManagement: React.FC = () => {
                                             type="date"
                                             value={newEvent.date}
                                             onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
-                                            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                            min={new Date().toISOString().split('T')[0]}
+                                            className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                                formErrors.date 
+                                                    ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
+                                                    : 'border-gray-200/50 dark:border-gray-600/50 focus:border-green-500 focus:ring-green-100'
+                                            }`}
                                         />
-                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shadow-md">
+                                            <Calendar className="w-3 h-3 text-white" />
+                                        </div>
+                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-500/5 to-emerald-500/5 pointer-events-none"></div>
                                     </div>
+                                    {formErrors.date && (
+                                        <div className="mt-3 flex items-center text-red-500 text-sm">
+                                            <div className="w-1 h-1 bg-red-500 rounded-full mr-2"></div>
+                                            {formErrors.date}
+                                        </div>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <div className="group">
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                        <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mr-3 animate-pulse"></div>
                                         Hora
                                     </label>
                                     <div className="relative">
@@ -513,15 +743,84 @@ const EventsManagement: React.FC = () => {
                                             type="time"
                                             value={newEvent.time}
                                             onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
-                                            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                            className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                                formErrors.time 
+                                                    ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
+                                                    : 'border-gray-200/50 dark:border-gray-600/50 focus:border-purple-500 focus:ring-purple-100'
+                                            }`}
                                         />
-                                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-md">
+                                            <Clock className="w-3 h-3 text-white" />
+                                        </div>
+                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/5 to-pink-500/5 pointer-events-none"></div>
                                     </div>
+                                    {formErrors.time && (
+                                        <div className="mt-3 flex items-center text-red-500 text-sm">
+                                            <div className="w-1 h-1 bg-red-500 rounded-full mr-2"></div>
+                                            {formErrors.time}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            {/* Campo de Duración */}
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                    <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mr-3 animate-pulse"></div>
+                                    Duración (minutos)
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={newEvent.duration}
+                                        onChange={(e) => setNewEvent({...newEvent, duration: e.target.value})}
+                                        placeholder="120"
+                                        className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                            formErrors.duration 
+                                                ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
+                                                : 'border-gray-200/50 dark:border-gray-600/50 focus:border-blue-500 focus:ring-blue-100'
+                                        }`}
+                                    />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center shadow-md">
+                                        <Clock className="w-3 h-3 text-white" />
+                                    </div>
+                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/5 to-cyan-500/5 pointer-events-none"></div>
+                                </div>
+                                {formErrors.duration && (
+                                    <div className="mt-3 flex items-center text-red-500 text-sm">
+                                        <div className="w-1 h-1 bg-red-500 rounded-full mr-2"></div>
+                                        {formErrors.duration}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Campo de Estado */}
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                    <div className="w-2 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mr-3 animate-pulse"></div>
+                                    Estado
+                                </label>
+                                <div className="relative">
+                                    <select
+                                        value={newEvent.status}
+                                        onChange={(e) => setNewEvent({...newEvent, status: e.target.value})}
+                                        className="w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] border-gray-200/50 dark:border-gray-600/50 focus:border-green-500 focus:ring-green-100"
+                                    >
+                                        <option value="upcoming">Próximo</option>
+                                        <option value="in_progress">En Progreso</option>
+                                        <option value="completed">Completado</option>
+                                    </select>
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shadow-md">
+                                        <Tag className="w-3 h-3 text-white" />
+                                    </div>
+                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-500/5 to-emerald-500/5 pointer-events-none"></div>
+                                </div>
+                            </div>
+
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                    <div className="w-2 h-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full mr-3 animate-pulse"></div>
                                     Ubicación
                                 </label>
                                 <div className="relative">
@@ -529,16 +828,20 @@ const EventsManagement: React.FC = () => {
                                         type="text"
                                         value={newEvent.location}
                                         onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
-                                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                        className="w-full pl-12 pr-4 py-2 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-orange-100 focus:border-orange-500 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02]"
                                         placeholder="Ingresa la ubicación"
                                     />
-                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-md">
+                                        <MapPin className="w-3 h-3 text-white" />
+                                    </div>
+                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-orange-500/5 to-red-500/5 pointer-events-none"></div>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <div className="group">
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                        <div className="w-2 h-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full mr-3 animate-pulse"></div>
                                         Capacidad
                                     </label>
                                     <div className="relative">
@@ -546,68 +849,84 @@ const EventsManagement: React.FC = () => {
                                             type="number"
                                             value={newEvent.capacity}
                                             onChange={(e) => setNewEvent({...newEvent, capacity: e.target.value})}
-                                            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                            className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                                formErrors.capacity 
+                                                    ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
+                                                    : 'border-gray-200/50 dark:border-gray-600/50 focus:border-cyan-500 focus:ring-cyan-100'
+                                            }`}
                                             placeholder="100"
                                         />
-                                        <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center shadow-md">
+                                            <Users className="w-3 h-3 text-white" />
+                                        </div>
+                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/5 to-blue-500/5 pointer-events-none"></div>
                                     </div>
+                                    {formErrors.capacity && (
+                                        <div className="mt-3 flex items-center text-red-500 text-sm">
+                                            <div className="w-1 h-1 bg-red-500 rounded-full mr-2"></div>
+                                            {formErrors.capacity}
+                                        </div>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <div className="group">
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                        <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full mr-3 animate-pulse"></div>
                                         Categoría
                                     </label>
-                                    <div className="relative">
+                                    <div className="relative custom-select">
                                         <select
                                             value={newEvent.category}
                                             onChange={(e) => setNewEvent({...newEvent, category: e.target.value})}
-                                            className="w-full pl-12 pr-10 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                            className={`w-full pl-12 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] appearance-none cursor-pointer ${
+                                                formErrors.category 
+                                                    ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
+                                                    : 'border-gray-200/50 dark:border-gray-600/50 focus:border-indigo-500 focus:ring-indigo-100'
+                                            }`}
                                         >
-                                            <option value="">Selecciona una categoría</option>
+                                            <option value="" disabled>Selecciona una categoría</option>
                                             {categories.map(category => (
                                                 <option key={category} value={category}>{category}</option>
                                             ))}
                                         </select>
-                                        <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center shadow-md">
+                                            <Tag className="w-3 h-3 text-white" />
+                                        </div>
+                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-indigo-500/5 to-purple-500/5 pointer-events-none"></div>
                                     </div>
+                                    {formErrors.category && (
+                                        <div className="mt-3 flex items-center text-red-500 text-sm">
+                                            <div className="w-1 h-1 bg-red-500 rounded-full mr-2"></div>
+                                            {formErrors.category}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                    <div className="w-2 h-2 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full mr-3 animate-pulse"></div>
                                     Descripción
                                 </label>
                                 <textarea
                                     value={newEvent.description}
                                     onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
                                     rows={4}
-                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-600"
+                                    className="w-full px-6 py-2 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-500 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02]"
                                     placeholder="Describe el evento..."
                                 />
                             </div>
                         </div>
 
-                        <div className="flex justify-end space-x-3 mt-6">
+                        <div className="flex justify-end space-x-3 px-3 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
                             <button
-                                onClick={() => {
-                                    setShowCreateModal(false);
-                                    setEditingEvent(null);
-                                    setNewEvent({
-                                        name: '',
-                                        date: '',
-                                        time: '',
-                                        location: '',
-                                        capacity: '',
-                                        category: '',
-                                        description: ''
-                                    });
-                                }}
-                                className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-white bg-white dark:bg-black text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                                onClick={handleCancelCreate}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleCreateOrUpdateEvent}
-                                className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
+                                className="px-4 py-2 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
                             >
                                 {editingEvent ? 'Actualizar' : 'Crear'} Evento
                             </button>
@@ -618,64 +937,126 @@ const EventsManagement: React.FC = () => {
 
             {/* Modal para ver detalles del evento */}
             {showDetailsModal && selectedEvent && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 w-full max-w-lg mx-4">
-                        <h3 className="text-xl font-bold text-black dark:text-white mb-6">
-                            Detalles del Evento
-                        </h3>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <h4 className="text-lg font-semibold text-black dark:text-white">{selectedEvent.name}</h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Organizado por: {selectedEvent.organizer}</p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex items-center">
-                                    <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                                    <span className="text-sm text-gray-700 dark:text-gray-300">{selectedEvent.date}</span>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-md mx-4 shadow-2xl transform transition-all duration-300 my-1">
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-10 h-10 bg-gray-600 dark:bg-gray-300 rounded-lg flex items-center justify-center shadow-md">
+                                        <Calendar className="w-5 h-5 text-white dark:text-gray-800" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                                Detalles del Evento
+                            </h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Información completa del evento
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="flex items-center">
-                                    <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                                    <span className="text-sm text-gray-700 dark:text-gray-300">{selectedEvent.time}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center">
-                                <MapPin className="w-4 h-4 mr-2 text-gray-500" />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">{selectedEvent.location}</span>
-                            </div>
-
-                            <div className="flex items-center">
-                                <Users className="w-4 h-4 mr-2 text-gray-500" />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">
-                                    {selectedEvent.attendees} / {selectedEvent.capacity} participantes
-                                </span>
-                            </div>
-
-                            <div className="flex items-center">
-                                <Tag className="w-4 h-4 mr-2 text-gray-500" />
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(selectedEvent.category)} text-white`}>
-                                    {selectedEvent.category}
-                                </span>
-                            </div>
-
-                            <div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedEvent.status)}`}>
-                                    {selectedEvent.status}
-                                </span>
-                            </div>
-
-                            <div>
-                                <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Descripción:</h5>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{selectedEvent.description}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end mt-6">
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
+                                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                            </div>
+                        </div>
+                        
+                        <div className="p-3 space-y-3">
+                            {/* Header del evento */}
+                            <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-purple-50/80 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-4 border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-lg">
+                                <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{selectedEvent.name}</h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Organizado por: {selectedEvent.organizer}</p>
+                                <div className="flex items-center gap-4">
+                                    <span className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(selectedEvent.status)} shadow-lg`}>
+                                        {selectedEvent.status}
+                                    </span>
+                                    <span className={`px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r ${getCategoryColor(selectedEvent.category)} text-white shadow-lg`}>
+                                        {selectedEvent.category}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Información detallada */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-4">
+                                    <div className="group flex items-center p-4 bg-gradient-to-r from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                            <Calendar className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Fecha</p>
+                                            <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedEvent.date}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="group flex items-center p-4 bg-gradient-to-r from-green-50/80 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200/50 dark:border-green-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                            <Clock className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Hora</p>
+                                            <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedEvent.time}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="group flex items-center p-4 bg-gradient-to-r from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                            <Clock className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Duración</p>
+                                            <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedEvent.duration} minutos</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="group flex items-center p-4 bg-gradient-to-r from-orange-50/80 to-red-50/80 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl border border-orange-200/50 dark:border-orange-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                            <MapPin className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Ubicación</p>
+                                            <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedEvent.location || 'No especificada'}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="group flex items-center p-4 bg-gradient-to-r from-purple-50/80 to-pink-50/80 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl border border-purple-200/50 dark:border-purple-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                            <Users className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Participantes</p>
+                                            <p className="text-base font-semibold text-gray-900 dark:text-white">
+                                                {selectedEvent.attendees} / {selectedEvent.capacity}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Descripción */}
+                            {selectedEvent.description && (
+                                <div className="bg-gradient-to-r from-indigo-50/80 to-purple-50/80 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-8 border border-indigo-200/50 dark:border-indigo-700/50 backdrop-blur-sm shadow-lg">
+                                    <h5 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                        <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                                            <Tag className="w-3 h-3 text-white" />
+                                        </div>
+                                        Descripción
+                                    </h5>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl backdrop-blur-sm">{selectedEvent.description}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end px-4 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
+                            <button
+                                onClick={() => setShowDetailsModal(false)}
+                                className="px-6 py-2 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
                             >
                                 Cerrar
                             </button>
@@ -683,6 +1064,78 @@ const EventsManagement: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Modal de confirmación para eliminar evento */}
+            {showDeleteModal && eventToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-4 w-full max-w-md mx-4 shadow-2xl">
+                        <div className="text-center">
+                            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/20 mb-6">
+                                <Trash2 className="h-8 w-8 text-red-600 dark:text-red-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-black dark:text-white mb-4">
+                                ¿Eliminar evento?
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                Estás a punto de eliminar el evento:
+                            </p>
+                            <p className="text-lg font-semibold text-black dark:text-white mb-6">
+                                "{eventToDelete.title}"
+                            </p>
+                            <p className="text-sm text-red-600 dark:text-red-400 mb-8">
+                                Esta acción no se puede deshacer. Se eliminarán también todas las inscripciones asociadas.
+                            </p>
+                        </div>
+
+                        <div className="flex space-x-4">
+                            <button
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setEventToDelete(null);
+                                }}
+                                className="flex-1 px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-white bg-white dark:bg-black text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmDeleteEvent}
+                                className="flex-1 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de confirmación para cancelar creación/edición */}
+            <ConfirmModal
+                isOpen={showCancelModal}
+                onClose={() => setShowCancelModal(false)}
+                onConfirm={handleConfirmCancel}
+                title={editingEvent?.event_id ? "Cancelar edición" : "Cancelar creación"}
+                message={
+                    editingEvent?.event_id 
+                        ? `¿Estás seguro de que quieres cancelar la edición del evento "${editingEvent.title}"? Los cambios no se guardarán.`
+                        : "¿Estás seguro de que quieres cancelar la creación del evento? Se perderán todos los datos ingresados."
+                }
+                confirmText="Sí, cancelar"
+                cancelText={editingEvent?.event_id ? "Continuar editando" : "Continuar creando"}
+                type="warning"
+            />
+
+            {/* Notificaciones */}
+            {notifications.map((notification) => (
+                <Notification
+                    key={notification.id}
+                    id={notification.id}
+                    type={notification.type}
+                    title={notification.title}
+                    message={notification.message}
+                    duration={notification.duration}
+                    onClose={removeNotification}
+                />
+            ))}
         </div>
     );
 };

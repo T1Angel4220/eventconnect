@@ -13,12 +13,12 @@ export class EventRepository {
   }
 
   async create(createDto: CreateEventDto, organizerId: number): Promise<EventEntity> {
-    const { title, description, event_date, location, event_type, capacity } = createDto;
+    const { title, description, event_date, duration, status, location, event_type, capacity } = createDto;
     const result = await pool.query(
-      `INSERT INTO events (title, description, event_date, location, event_type, capacity, organizer_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO events (title, description, event_date, duration, status, location, event_type, capacity, organizer_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [title, description || null, event_date, location || null, event_type, capacity, organizerId]
+      [title, description || null, event_date, duration, status || 'upcoming', location || null, event_type, capacity, organizerId]
     );
     return result.rows[0] as EventEntity;
   }

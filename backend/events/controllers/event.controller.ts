@@ -15,11 +15,22 @@ export const getEvent = async (req: Request, res: Response) => {
 
 export const createEvent = async (req: Request, res: Response) => {
   try {
+    console.log("📝 Creando evento con datos:", JSON.stringify(req.body, null, 2));
+    console.log("👤 Usuario:", req.user);
+    
     const organizerId = req.user?.userId;
-    if (!organizerId) return res.status(401).json({ error: "No autorizado" });
+    if (!organizerId) {
+      console.log("❌ No hay userId en req.user");
+      return res.status(401).json({ error: "No autorizado" });
+    }
+    
+    console.log("🔍 Organizer ID:", organizerId);
     const created = await eventService.create(req.body, organizerId);
+    console.log("✅ Evento creado exitosamente:", created.event_id);
     res.status(201).json(created);
   } catch (e: any) {
+    console.error("❌ Error creando evento:", e.message);
+    console.error("📊 Stack trace:", e.stack);
     res.status(400).json({ error: e.message ?? "Error creando evento" });
   }
 };

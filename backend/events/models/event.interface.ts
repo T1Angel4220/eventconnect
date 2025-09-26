@@ -3,6 +3,8 @@ export interface EventEntity {
   title: string;
   description: string | null;
   event_date: Date;
+  duration: number; // Duration in minutes
+  status: "upcoming" | "in_progress" | "completed";
   location: string | null;
   event_type: "academic" | "cultural" | "sports";
   capacity: number;
@@ -15,6 +17,8 @@ export interface CreateEventDto {
   title: string;
   description?: string;
   event_date: string; // ISO datetime string
+  duration: number; // Duration in minutes
+  status?: "upcoming" | "in_progress" | "completed"; // Optional, defaults to 'upcoming'
   location?: string;
   event_type: "academic" | "cultural" | "sports";
   capacity: number;
