@@ -424,7 +424,7 @@ const EventsManagement: React.FC = () => {
                             <li key={index}>
                                 <button
                                     onClick={() => navigate(item.path)}
-                                    className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all duration-200 ${
+                                    className={`w-full flex items-center px-4 py-2 text-left rounded-xl transition-all duration-200 ${
                                         item.active
                                             ? 'bg-black dark:bg-white text-white dark:text-black'
                                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white'
@@ -450,7 +450,7 @@ const EventsManagement: React.FC = () => {
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center px-4 py-3 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
+                        className="w-full flex items-center px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
                     >
                         <LogOut className="w-5 h-5 mr-3" />
                         Cerrar Sesión
@@ -492,7 +492,7 @@ const EventsManagement: React.FC = () => {
                                     placeholder="Buscar eventos..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent"
+                                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-white rounded-xl bg-gray-50 dark:bg-white text-black dark:text-black placeholder-gray-500 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent"
                                 />
                             </div>
 
@@ -528,17 +528,17 @@ const EventsManagement: React.FC = () => {
                                         setShowCreateModal(true);
                                         setFormErrors({}); // Limpiar errores al abrir modal
                                     }}
-                                    className="flex items-center px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
+                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
                                 >
                                     <Plus className="w-3 h-3 mr-2" />
                                     <span className="font-medium">Crear Evento</span>
                                 </button>
-                                <button className="flex items-center px-4 py-3 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg">
+                                <button className="flex items-center px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg">
                                     <Download className="w-3 h-3 mr-2" />
                                     <span className="font-medium">Exportar</span>
                                 </button>
                                 <div className="relative">
-                                    <div className="flex items-center px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-200">
+                                    <div className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-200">
                                         <Filter className="w-3 h-3 mr-3 text-gray-600 dark:text-gray-400" />
                                         <select
                                             value={selectedCategory}
@@ -551,9 +551,9 @@ const EventsManagement: React.FC = () => {
                                                 backgroundSize: '12px'
                                             }}
                                         >
-                                            <option value="all" className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 py-3 font-medium">Todas las categorías</option>
+                                            <option value="all" className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 py-2 font-medium">Todas las categorías</option>
                                             {categories.map(category => (
-                                                <option key={category} value={category} className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 py-3 hover:bg-purple-50 dark:hover:bg-gray-700 font-medium">{category}</option>
+                                                <option key={category} value={category} className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 py-2 hover:bg-purple-50 dark:hover:bg-gray-700 font-medium">{category}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -658,9 +658,9 @@ const EventsManagement: React.FC = () => {
             {/* Modal para crear/editar evento */}
             {showCreateModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-lg shadow-2xl my-2 transform transition-all duration-300">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-xl shadow-2xl my-1 transform transition-all duration-300">
                         {/* Header sobrio */}
-                        <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
+                        <div className="px-6 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
                             <div className="flex items-center space-x-4">
                                 <div className="w-6 h-6 bg-gray-600 dark:bg-gray-300 rounded-lg flex items-center justify-center shadow-md">
                                     <Calendar className="w-3 h-3 text-white dark:text-gray-800" />
@@ -676,7 +676,7 @@ const EventsManagement: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="p-4 space-y-3">
+                        <div className="p-4 space-y-2">
                             <div className="group">
                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
                                     <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mr-3 animate-pulse"></div>
@@ -687,7 +687,7 @@ const EventsManagement: React.FC = () => {
                                         type="text"
                                         value={newEvent.name}
                                         onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
-                                        className={`w-full pl-12 pr-4 py-3 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                        className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
                                             formErrors.name 
                                                 ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
                                                 : 'border-gray-200/50 dark:border-gray-600/50 focus:border-blue-500 focus:ring-blue-100'
@@ -719,7 +719,7 @@ const EventsManagement: React.FC = () => {
                                             value={newEvent.date}
                                             onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
                                             min={new Date().toISOString().split('T')[0]}
-                                            className={`w-full pl-12 pr-4 py-3 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                            className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
                                                 formErrors.date 
                                                     ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
                                                     : 'border-gray-200/50 dark:border-gray-600/50 focus:border-green-500 focus:ring-green-100'
@@ -747,7 +747,7 @@ const EventsManagement: React.FC = () => {
                                             type="time"
                                             value={newEvent.time}
                                             onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
-                                            className={`w-full pl-12 pr-4 py-3 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                            className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
                                                 formErrors.time 
                                                     ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
                                                     : 'border-gray-200/50 dark:border-gray-600/50 focus:border-purple-500 focus:ring-purple-100'
@@ -780,7 +780,7 @@ const EventsManagement: React.FC = () => {
                                         value={newEvent.duration}
                                         onChange={(e) => setNewEvent({...newEvent, duration: e.target.value})}
                                         placeholder="120"
-                                        className={`w-full pl-12 pr-4 py-3 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                        className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
                                             formErrors.duration 
                                                 ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
                                                 : 'border-gray-200/50 dark:border-gray-600/50 focus:border-blue-500 focus:ring-blue-100'
@@ -810,7 +810,7 @@ const EventsManagement: React.FC = () => {
                                         type="text"
                                         value={newEvent.location}
                                         onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
-                                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-orange-100 focus:border-orange-500 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02]"
+                                        className="w-full pl-12 pr-4 py-2 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-orange-100 focus:border-orange-500 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02]"
                                         placeholder="Ingresa la ubicación"
                                     />
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-md">
@@ -831,7 +831,7 @@ const EventsManagement: React.FC = () => {
                                             type="number"
                                             value={newEvent.capacity}
                                             onChange={(e) => setNewEvent({...newEvent, capacity: e.target.value})}
-                                            className={`w-full pl-12 pr-4 py-3 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
+                                            className={`w-full pl-12 pr-4 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] ${
                                                 formErrors.capacity 
                                                     ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
                                                     : 'border-gray-200/50 dark:border-gray-600/50 focus:border-cyan-500 focus:ring-cyan-100'
@@ -859,7 +859,7 @@ const EventsManagement: React.FC = () => {
                                         <select
                                             value={newEvent.category}
                                             onChange={(e) => setNewEvent({...newEvent, category: e.target.value})}
-                                            className={`w-full pl-12 py-3 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] appearance-none cursor-pointer ${
+                                            className={`w-full pl-12 py-2 border-2 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] appearance-none cursor-pointer ${
                                                 formErrors.category 
                                                     ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
                                                     : 'border-gray-200/50 dark:border-gray-600/50 focus:border-indigo-500 focus:ring-indigo-100'
@@ -893,22 +893,22 @@ const EventsManagement: React.FC = () => {
                                     value={newEvent.description}
                                     onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
                                     rows={4}
-                                    className="w-full px-6 py-3 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-500 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02]"
+                                    className="w-full px-6 py-2 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-500 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02]"
                                     placeholder="Describe el evento..."
                                 />
                             </div>
                         </div>
 
-                        <div className="flex justify-end space-x-3 px-6 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
+                        <div className="flex justify-end space-x-3 px-6 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
                             <button
                                 onClick={handleCancelCreate}
-                                className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+                                className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleCreateOrUpdateEvent}
-                                className="px-6 py-3 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
+                                className="px-6 py-2 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
                             >
                                 {editingEvent ? 'Actualizar' : 'Crear'} Evento
                             </button>
@@ -921,7 +921,7 @@ const EventsManagement: React.FC = () => {
             {showDetailsModal && selectedEvent && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
                     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-md mx-4 shadow-2xl transform transition-all duration-300 my-1">
-                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4">
                                     <div className="w-10 h-10 bg-gray-600 dark:bg-gray-300 rounded-lg flex items-center justify-center shadow-md">
@@ -951,10 +951,10 @@ const EventsManagement: React.FC = () => {
                                 <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{selectedEvent.name}</h4>
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Organizado por: {selectedEvent.organizer}</p>
                                 <div className="flex items-center gap-4">
-                                    <span className={`px-4 py-3 rounded-full text-sm font-bold ${getStatusColor(selectedEvent.status)} shadow-lg`}>
+                                    <span className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(selectedEvent.status)} shadow-lg`}>
                                         {selectedEvent.status}
                                     </span>
-                                    <span className={`px-4 py-3 rounded-full text-sm font-bold bg-gradient-to-r ${getCategoryColor(selectedEvent.category)} text-white shadow-lg`}>
+                                    <span className={`px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r ${getCategoryColor(selectedEvent.category)} text-white shadow-lg`}>
                                         {selectedEvent.category}
                                     </span>
                                 </div>
@@ -1035,10 +1035,10 @@ const EventsManagement: React.FC = () => {
                             )}
                         </div>
 
-                        <div className="flex justify-end px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
+                        <div className="flex justify-end px-4 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="px-6 py-3 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
+                                className="px-6 py-2 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
                             >
                                 Cerrar
                             </button>
@@ -1075,13 +1075,13 @@ const EventsManagement: React.FC = () => {
                                     setShowDeleteModal(false);
                                     setEventToDelete(null);
                                 }}
-                                className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-white bg-white dark:bg-black text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                                className="flex-1 px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-white bg-white dark:bg-black text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={confirmDeleteEvent}
-                                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
+                                className="flex-1 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
                             >
                                 Eliminar
                             </button>
