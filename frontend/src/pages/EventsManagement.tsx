@@ -23,7 +23,9 @@ import {
   UserCheck,
   Clock,
   MapPin,
-  Tag
+  Tag,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';
@@ -59,7 +61,25 @@ const EventsManagement: React.FC = () => {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [eventToDelete, setEventToDelete] = useState<any>(null);
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
+
+    // Cerrar dropdown cuando se hace clic fuera
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showCategoryDropdown) {
+                setShowCategoryDropdown(false);
+            }
+        };
+
+        if (showCategoryDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showCategoryDropdown]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -538,25 +558,65 @@ const EventsManagement: React.FC = () => {
                                     <span className="font-medium">Exportar</span>
                                 </button>
                                 <div className="relative">
-                                    <div className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-200">
+                                    <button
+                                        onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                                        className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-200"
+                                    >
                                         <Filter className="w-3 h-3 mr-3 text-gray-600 dark:text-gray-400" />
-                                        <select
-                                            value={selectedCategory}
-                                            onChange={(e) => setSelectedCategory(e.target.value)}
-                                            className="bg-transparent text-gray-700 dark:text-gray-300 text-sm focus:outline-none appearance-none cursor-pointer pr-8 font-medium"
-                                            style={{
-                                                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                                                backgroundPosition: 'right 8px center',
-                                                backgroundRepeat: 'no-repeat',
-                                                backgroundSize: '12px'
-                                            }}
-                                        >
-                                            <option value="all" className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 py-2 font-medium">Todas las categorías</option>
-                                            {categories.map(category => (
-                                                <option key={category} value={category} className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 py-2 hover:bg-purple-50 dark:hover:bg-gray-700 font-medium">{category}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                        <span className="text-gray-700 dark:text-gray-300 text-sm font-medium">
+                                            {selectedCategory === 'all' ? 'Todas las categorías' : selectedCategory}
+                                        </span>
+                                        <ChevronDown className={`w-3 h-3 ml-2 text-gray-600 dark:text-gray-400 transition-transform duration-200 ${showCategoryDropdown ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    
+                                    {showCategoryDropdown && (
+                                        <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-600/50 backdrop-blur-sm z-50 overflow-hidden">
+                                            <div className="py-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedCategory('all');
+                                                        setShowCategoryDropdown(false);
+                                                    }}
+                                                    className={`w-full flex items-center px-4 py-3 text-left transition-all duration-200 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-900/20 dark:hover:to-indigo-900/20 ${
+                                                        selectedCategory === 'all' 
+                                                            ? 'bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 text-purple-700 dark:text-purple-300' 
+                                                            : 'text-gray-700 dark:text-gray-300'
+                                                    }`}
+                                                >
+                                                    <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full mr-3"></div>
+                                                    <span className="font-semibold">Todas las categorías</span>
+                                                    {selectedCategory === 'all' && (
+                                                        <Check className="w-4 h-4 ml-auto text-purple-600 dark:text-purple-400" />
+                                                    )}
+                                                </button>
+                                                
+                                                {categories.map((category, index) => (
+                                                    <button
+                                                        key={category}
+                                                        onClick={() => {
+                                                            setSelectedCategory(category);
+                                                            setShowCategoryDropdown(false);
+                                                        }}
+                                                        className={`w-full flex items-center px-4 py-3 text-left transition-all duration-200 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-900/20 dark:hover:to-indigo-900/20 ${
+                                                            selectedCategory === category 
+                                                                ? 'bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 text-purple-700 dark:text-purple-300' 
+                                                                : 'text-gray-700 dark:text-gray-300'
+                                                        }`}
+                                                    >
+                                                        <div className={`w-2 h-2 rounded-full mr-3 ${
+                                                            index === 0 ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
+                                                            index === 1 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
+                                                            'bg-gradient-to-r from-orange-500 to-red-500'
+                                                        }`}></div>
+                                                        <span className="font-semibold">{category}</span>
+                                                        {selectedCategory === category && (
+                                                            <Check className="w-4 h-4 ml-auto text-purple-600 dark:text-purple-400" />
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
