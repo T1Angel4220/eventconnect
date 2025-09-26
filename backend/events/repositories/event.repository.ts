@@ -61,6 +61,13 @@ export class EventRepository {
     );
     return result.rows[0]?.count || 0;
   }
+
+  async updateStatus(eventId: number, status: string): Promise<void> {
+    await pool.query(
+      "UPDATE events SET status = $1, updated_at = NOW() WHERE event_id = $2",
+      [status, eventId]
+    );
+  }
 }
 
 export const eventRepository = new EventRepository();

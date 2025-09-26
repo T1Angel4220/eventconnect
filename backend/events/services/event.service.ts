@@ -65,6 +65,39 @@ export class EventService {
   async remove(eventId: number): Promise<void> {
     await this.repo.delete(eventId);
   }
+
+  async updateAllEventStatuses(): Promise<number> {
+    console.log("🔄 Iniciando actualización de estados de eventos...");
+    
+    // Obtener todos los eventos
+    const events = await this.repo.findAll();
+    console.log(`📊 Total de eventos encontrados: ${events.length}`);
+    
+    const now = new Date();
+    let updatedCount = 0;
+    
+    for (const event of events) {
+      const eventDateTime = new Date(event.event_date);
+      const endDateTime = new Date(eventDateTime.getTime() + event.duration * 60000);
+      
+      let newStatus = 'upcoming';
+      if (now >= eventDateTime && now <= endDateTime) {
+        newStatus = 'in_progress';
+      } else if (now > endDateTime) {
+        newStatus = 'completed';
+      }
+      
+      // Solo actualizar si el estado ha cambiado
+      if (event.status !== newStatus) {
+        console.log(`🔄 Actualizando evento ${event.event_id}: ${event.status} -> ${newStatus}`);
+        await this.repo.updateStatus(event.event_id, newStatus);
+        updatedCount++;
+      }
+    }
+    
+    console.log(`✅ Actualización completada. ${updatedCount} eventos actualizados.`);
+    return updatedCount;
+  }
 }
 
 export const eventService = new EventService(eventRepository);

@@ -48,4 +48,19 @@ export const deleteEvent = async (req: Request, res: Response) => {
   res.status(204).send();
 };
 
+export const updateEventStatuses = async (_req: Request, res: Response) => {
+  try {
+    console.log("🔄 Actualizando estados de eventos...");
+    const updatedCount = await eventService.updateAllEventStatuses();
+    console.log(`✅ Se actualizaron ${updatedCount} eventos`);
+    res.json({ 
+      message: `Estados actualizados exitosamente`, 
+      updatedCount 
+    });
+  } catch (e: any) {
+    console.error("❌ Error actualizando estados:", e.message);
+    res.status(500).json({ error: e.message ?? "Error actualizando estados" });
+  }
+};
+
 

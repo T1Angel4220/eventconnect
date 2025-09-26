@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';
-import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEvents as apiFetchEvents, updateEvent as apiUpdateEvent } from '../services/eventsService';
+import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEvents as apiFetchEvents, updateEvent as apiUpdateEvent, updateEventStatuses as apiUpdateEventStatuses } from '../services/eventsService';
 import Notification from '../components/ui/Notification';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import jsPDF from 'jspdf';
@@ -764,6 +764,15 @@ const EventsManagement: React.FC = () => {
 
     const loadEvents = async () => {
         try {
+            // Actualizar estados en la base de datos de forma silenciosa
+            try {
+                await apiUpdateEventStatuses();
+            } catch (updateError) {
+                console.warn('⚠️ No se pudieron actualizar los estados automáticamente:', updateError);
+                // Continuar sin mostrar error al usuario
+            }
+            
+            // Cargar eventos actualizados
             const data = await apiFetchEvents();
             setEvents(data as any);
         } catch (e: any) {
@@ -776,6 +785,18 @@ const EventsManagement: React.FC = () => {
 
     React.useEffect(() => {
         loadEvents();
+        
+        // Actualizar estados automáticamente cada 5 minutos
+        const interval = setInterval(async () => {
+            try {
+                await apiUpdateEventStatuses();
+                console.log('🔄 Estados actualizados automáticamente');
+            } catch (error) {
+                console.warn('⚠️ Error en actualización automática:', error);
+            }
+        }, 5 * 60 * 1000); // 5 minutos
+        
+        return () => clearInterval(interval);
     }, []);
 
     const validateForm = () => {
@@ -862,6 +883,13 @@ const EventsManagement: React.FC = () => {
             await loadEvents();
             setShowCreateModal(false);
             setEditingEvent(null);
+            
+            // Actualizar estados después de crear/editar evento
+            try {
+                await apiUpdateEventStatuses();
+            } catch (error) {
+                console.warn('⚠️ Error actualizando estados después de crear/editar:', error);
+            }
             setNewEvent({
                 name: '',
                 date: '',
@@ -971,6 +999,13 @@ const EventsManagement: React.FC = () => {
                 'Evento eliminado',
                 `El evento "${eventToDelete.title}" ha sido eliminado exitosamente.`
             );
+            
+            // Actualizar estados después de eliminar evento
+            try {
+                await apiUpdateEventStatuses();
+            } catch (error) {
+                console.warn('⚠️ Error actualizando estados después de eliminar:', error);
+            }
         } catch (e: any) {
             const errorMessage = e.message || 'Error eliminando evento';
             showError(
@@ -1359,24 +1394,24 @@ const EventsManagement: React.FC = () => {
                                             {event.status}
                                         </span>
                                     </div>
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-3">
                                         <button 
                                             onClick={() => handleViewDetails(event)}
-                                            className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                            className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
                                         >
-                                            <Eye className="w-3 h-3" />
+                                            <Eye className="w-4 h-4" />
                                         </button>
                                         <button 
                                             onClick={() => handleEditEvent(event.raw)}
-                                            className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                                            className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
                                         >
-                                            <Edit className="w-3 h-3" />
+                                            <Edit className="w-4 h-4" />
                                         </button>
                                         <button 
                                             onClick={() => handleDeleteEvent(event.raw)}
-                                            className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                            className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                                         >
-                                            <Trash2 className="w-3 h-3" />
+                                            <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                 </div>

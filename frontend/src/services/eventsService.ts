@@ -69,4 +69,13 @@ export async function deleteEvent(eventId: number): Promise<void> {
   if (!res.ok) throw new Error("Error eliminando evento");
 }
 
+export async function updateEventStatuses(): Promise<{ message: string; updatedCount: number }> {
+  const res = await fetch(`${API_URL}/events/status/update`, {
+    method: "PUT",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Error actualizando estados");
+  return res.json();
+}
+
 
