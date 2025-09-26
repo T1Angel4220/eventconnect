@@ -32,6 +32,8 @@ import { useNotifications } from '../hooks/useNotifications';
 import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEvents as apiFetchEvents, updateEvent as apiUpdateEvent } from '../services/eventsService';
 import Notification from '../components/ui/Notification';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import '../components/ui/CustomSelect.css';
 
 const EventsManagement: React.FC = () => {
@@ -86,6 +88,91 @@ const EventsManagement: React.FC = () => {
     React.useEffect(() => {
         console.log('🔄 selectedCategory cambió a:', selectedCategory);
     }, [selectedCategory]);
+
+    // Función para exportar eventos a PDF
+    const exportToPDF = () => {
+        try {
+            const doc = new jsPDF();
+            
+            // Configurar el documento
+            doc.setFontSize(20);
+            doc.setTextColor(40, 40, 40);
+            doc.text('Reporte de Eventos - EventConnect', 20, 30);
+            
+            // Información de la empresa
+            doc.setFontSize(12);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Generado el: ' + new Date().toLocaleDateString('es-ES'), 20, 45);
+            doc.text('Total de eventos: ' + filteredEvents.length, 20, 55);
+            
+            // Preparar datos para la tabla
+            const tableData = filteredEvents.map(event => [
+                event.name,
+                event.date,
+                event.time,
+                event.duration + ' min',
+                event.location || 'No especificada',
+                event.category,
+                event.status,
+                event.attendees + '/' + event.capacity
+            ]);
+            
+            // Configurar la tabla
+            doc.autoTable({
+                head: [['Evento', 'Fecha', 'Hora', 'Duración', 'Ubicación', 'Categoría', 'Estado', 'Participantes']],
+                body: tableData,
+                startY: 70,
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 4,
+                },
+                headStyles: {
+                    fillColor: [59, 130, 246], // Azul
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                alternateRowStyles: {
+                    fillColor: [248, 250, 252] // Gris muy claro
+                },
+                columnStyles: {
+                    0: { cellWidth: 40 }, // Evento
+                    1: { cellWidth: 20 }, // Fecha
+                    2: { cellWidth: 15 }, // Hora
+                    3: { cellWidth: 20 }, // Duración
+                    4: { cellWidth: 30 }, // Ubicación
+                    5: { cellWidth: 20 }, // Categoría
+                    6: { cellWidth: 20 }, // Estado
+                    7: { cellWidth: 25 }  // Participantes
+                }
+            });
+            
+            // Agregar pie de página
+            const pageCount = doc.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text('Página ' + i + ' de ' + pageCount, 20, doc.internal.pageSize.height - 10);
+                doc.text('EventConnect - Sistema de Gestión de Eventos', doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, { align: 'right' });
+            }
+            
+            // Descargar el PDF
+            const fileName = `eventos_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+            
+            showSuccess(
+                'Exportación exitosa',
+                `Se ha generado el PDF con ${filteredEvents.length} eventos.`
+            );
+            
+        } catch (error) {
+            console.error('Error al exportar PDF:', error);
+            showError(
+                'Error al exportar',
+                'No se pudo generar el archivo PDF. Inténtalo de nuevo.'
+            );
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -566,7 +653,10 @@ const EventsManagement: React.FC = () => {
                                     <Plus className="w-3 h-3 mr-2" />
                                     <span className="font-medium">Crear Evento</span>
                                 </button>
-                                <button className="flex items-center px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg">
+                                <button 
+                                    onClick={exportToPDF}
+                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg"
+                                >
                                     <Download className="w-3 h-3 mr-2" />
                                     <span className="font-medium">Exportar</span>
                                 </button>
