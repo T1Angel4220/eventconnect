@@ -373,6 +373,12 @@ const EventsManagement: React.FC = () => {
                             event.organizer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             event.location.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
+        
+        // Debug logs
+        console.log('Filtro - selectedCategory:', selectedCategory);
+        console.log('Filtro - event.category:', event.category);
+        console.log('Filtro - matchesCategory:', matchesCategory);
+        
         return matchesSearch && matchesCategory;
     });
 
@@ -394,9 +400,9 @@ const EventsManagement: React.FC = () => {
 
     const getCategoryColor = (category: string) => {
         const colors: Record<string, string> = {
-            'Académico': 'from-indigo-500 to-indigo-600',
-            'Cultural': 'from-purple-500 to-purple-600',
-            'Deportes': 'from-violet-500 to-violet-600'
+            'Académico': 'from-blue-500 to-cyan-500',
+            'Cultural': 'from-green-500 to-emerald-500',
+            'Deportes': 'from-orange-500 to-red-500'
         };
         return colors[category] || 'from-gray-500 to-gray-600';
     };
