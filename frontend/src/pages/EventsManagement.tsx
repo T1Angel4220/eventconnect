@@ -65,6 +65,7 @@ const EventsManagement: React.FC = () => {
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
 
+
     // Temporalmente deshabilitado para debug
     // React.useEffect(() => {
     //     const handleClickOutside = (event: MouseEvent) => {
@@ -87,6 +88,7 @@ const EventsManagement: React.FC = () => {
     React.useEffect(() => {
         console.log('🔄 selectedCategory cambió a:', selectedCategory);
     }, [selectedCategory]);
+
 
     // Función auxiliar para verificar espacio y crear página si es necesario
     const checkPageSpace = (doc: any, currentY: number, requiredSpace: number) => {
@@ -299,7 +301,7 @@ const EventsManagement: React.FC = () => {
                 doc.setTextColor(0, 0, 0);
                 
                 eventData.forEach((data, colIndex) => {
-                    let displayText = data.toString();
+                    const displayText = data.toString();
                     
                     // NO truncar texto - mostrar todo como solicitado
                     // Alinear a la izquierda en lugar de centrar para mejor legibilidad
@@ -762,25 +764,26 @@ const EventsManagement: React.FC = () => {
         }
     };
 
-    const loadEvents = async () => {
+    const loadEvents = React.useCallback(async () => {
         try {
-            // Actualizar estados en la base de datos de forma silenciosa
+            // Actualizar estados en la base de datos primero
             try {
                 await apiUpdateEventStatuses();
-            } catch (updateError) {
-                console.warn('⚠️ No se pudieron actualizar los estados automáticamente:', updateError);
-                // Continuar sin mostrar error al usuario
+            } catch (updateError: any) {
+                // Solo logear errores críticos, no errores de autenticación
+                if (!updateError.message?.includes('401') && 
+                    !updateError.message?.includes('403')) {
+                    console.warn('⚠️ Error actualizando estados:', updateError.message);
+                }
             }
             
             // Cargar eventos actualizados
             const response = await apiFetchEvents();
-            console.log('📊 Respuesta recibida:', response);
             
             // Extraer el array de datos del objeto de respuesta
-            let eventsData = response;
+            let eventsData: any[] = response as any[];
             if (response && typeof response === 'object' && 'data' in response) {
-                eventsData = response.data;
-                console.log('📊 Datos extraídos:', eventsData);
+                eventsData = (response as any).data;
             }
             
             // Validar que eventsData sea un array
@@ -802,23 +805,42 @@ const EventsManagement: React.FC = () => {
                 e.message || 'Error cargando eventos'
             );
         }
-    };
+    }, [showError]);
 
     React.useEffect(() => {
         loadEvents();
         
-        // Actualizar estados automáticamente cada 5 minutos
+        // Actualizar estados automáticamente cada 2 minutos para sincronización más frecuente
         const interval = setInterval(async () => {
             try {
                 await apiUpdateEventStatuses();
-                console.log('🔄 Estados actualizados automáticamente');
-            } catch (error) {
-                console.warn('⚠️ Error en actualización automática:', error);
+            } catch (error: any) {
+                // Solo logear errores críticos
+                if (!error.message?.includes('401') && 
+                    !error.message?.includes('403')) {
+                    console.warn('⚠️ Error en actualización automática:', error.message);
+                }
             }
-        }, 5 * 60 * 1000); // 5 minutos
+        }, 2 * 60 * 1000); // 2 minutos para actualización más frecuente
         
-        return () => clearInterval(interval);
-    }, []);
+        // Actualizar estados cada minuto para verificar cambios de estado más frecuentemente
+        const quickInterval = setInterval(async () => {
+            try {
+                await apiUpdateEventStatuses();
+            } catch (error: any) {
+                // Solo logear errores críticos
+                if (!error.message?.includes('401') && 
+                    !error.message?.includes('403')) {
+                    console.warn('⚠️ Error en actualización rápida:', error.message);
+                }
+            }
+        }, 60 * 1000); // 1 minuto para verificación más frecuente
+        
+        return () => {
+            clearInterval(interval);
+            clearInterval(quickInterval);
+        };
+    }, [loadEvents]);
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
@@ -908,8 +930,12 @@ const EventsManagement: React.FC = () => {
             // Actualizar estados después de crear/editar evento
             try {
                 await apiUpdateEventStatuses();
-            } catch (error) {
-                console.warn('⚠️ Error actualizando estados después de crear/editar:', error);
+            } catch (error: any) {
+                // Solo logear errores críticos
+                if (!error.message?.includes('401') && 
+                    !error.message?.includes('403')) {
+                    console.warn('⚠️ Error actualizando estados después de crear/editar:', error.message);
+                }
             }
             setNewEvent({
                 name: '',
@@ -1024,8 +1050,12 @@ const EventsManagement: React.FC = () => {
             // Actualizar estados después de eliminar evento
             try {
                 await apiUpdateEventStatuses();
-            } catch (error) {
-                console.warn('⚠️ Error actualizando estados después de eliminar:', error);
+            } catch (error: any) {
+                // Solo logear errores críticos
+                if (!error.message?.includes('401') && 
+                    !error.message?.includes('403')) {
+                    console.warn('⚠️ Error actualizando estados después de eliminar:', error.message);
+                }
             }
         } catch (e: any) {
             const errorMessage = e.message || 'Error eliminando evento';
@@ -1095,11 +1125,9 @@ const EventsManagement: React.FC = () => {
         return matchesSearch && matchesCategory;
     });
 
-    // Debug log para ver el estado del filtro
-    console.log('Estado del filtro:');
-    console.log('- selectedCategory:', selectedCategory);
-    console.log('- total events:', uiEvents.length);
-    console.log('- filtered events:', filteredEvents.length);
+    // Debug log para ver el estado del filtro (solo cuando sea necesario)
+    // Comentado para evitar logs repetitivos
+    // console.log('Estado del filtro:', selectedCategory, uiEvents.length, filteredEvents.length);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -1718,8 +1746,8 @@ const EventsManagement: React.FC = () => {
 
             {/* Modal para ver detalles del evento */}
             {showDetailsModal && selectedEvent && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-md mx-4 shadow-2xl transform transition-all duration-300 my-1">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-2xl mx-2 shadow-2xl transform transition-all duration-300 my-2 max-h-[90vh] overflow-y-auto">
                         <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4">
@@ -1744,92 +1772,86 @@ const EventsManagement: React.FC = () => {
                             </div>
                         </div>
                         
-                        <div className="p-3 space-y-3">
+                        <div className="p-4 space-y-4">
                             {/* Header del evento */}
-                            <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-purple-50/80 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-4 border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-lg">
-                                <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{selectedEvent.name}</h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Organizado por: {selectedEvent.organizer}</p>
-                                <div className="flex items-center gap-4">
-                                    <span className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(selectedEvent.status)} shadow-lg`}>
+                            <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-purple-50/80 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-lg">
+                                <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{selectedEvent.name}</h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Organizado por: {selectedEvent.organizer}</p>
+                                <div className="flex items-center gap-3">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(selectedEvent.status)} shadow-lg`}>
                                         {selectedEvent.status}
                                     </span>
-                                    <span className={`px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r ${getCategoryColor(selectedEvent.category)} text-white shadow-lg`}>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r ${getCategoryColor(selectedEvent.category)} text-white shadow-lg`}>
                                         {selectedEvent.category}
                                     </span>
                                 </div>
                             </div>
 
-                            {/* Información detallada */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-4">
-                                    <div className="group flex items-center p-4 bg-gradient-to-r from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                            <Calendar className="w-6 h-6 text-white" />
-                                        </div>
+                            {/* Información detallada - Grid más compacto */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="flex items-center p-3 bg-gradient-to-r from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-lg">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                                        <Calendar className="w-4 h-4 text-white" />
+                                    </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Fecha</p>
-                                            <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedEvent.date}</p>
+                                        <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Fecha</p>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{selectedEvent.date}</p>
                                         </div>
                                     </div>
                                     
-                                    <div className="group flex items-center p-4 bg-gradient-to-r from-green-50/80 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200/50 dark:border-green-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                            <Clock className="w-6 h-6 text-white" />
-                                        </div>
+                                <div className="flex items-center p-3 bg-gradient-to-r from-green-50/80 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200/50 dark:border-green-700/50 backdrop-blur-sm shadow-lg">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                                        <Clock className="w-4 h-4 text-white" />
+                                    </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Hora</p>
-                                            <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedEvent.time}</p>
+                                        <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Hora</p>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{selectedEvent.time}</p>
                                         </div>
+                                </div>
+                                
+                                <div className="flex items-center p-3 bg-gradient-to-r from-purple-50/80 to-pink-50/80 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50 backdrop-blur-sm shadow-lg">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                                        <Clock className="w-4 h-4 text-white" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Duración</p>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{selectedEvent.duration} min</p>
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="group flex items-center p-4 bg-gradient-to-r from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                            <Clock className="w-6 h-6 text-white" />
-                                        </div>
+                                <div className="flex items-center p-3 bg-gradient-to-r from-orange-50/80 to-red-50/80 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl border border-orange-200/50 dark:border-orange-700/50 backdrop-blur-sm shadow-lg">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                                        <MapPin className="w-4 h-4 text-white" />
+                                    </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Duración</p>
-                                            <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedEvent.duration} minutos</p>
-                                        </div>
+                                        <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Ubicación</p>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{selectedEvent.location || 'No especificada'}</p>
                                         </div>
                                     </div>
                                     
-                                <div className="space-y-4">
-                                    <div className="group flex items-center p-4 bg-gradient-to-r from-orange-50/80 to-red-50/80 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl border border-orange-200/50 dark:border-orange-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                            <MapPin className="w-6 h-6 text-white" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Ubicación</p>
-                                            <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedEvent.location || 'No especificada'}</p>
-                                        </div>
+                                <div className="flex items-center p-3 bg-gradient-to-r from-indigo-50/80 to-blue-50/80 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-xl border border-indigo-200/50 dark:border-indigo-700/50 backdrop-blur-sm shadow-lg col-span-2">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                                        <Users className="w-4 h-4 text-white" />
                                     </div>
-                                    
-                                    <div className="group flex items-center p-4 bg-gradient-to-r from-purple-50/80 to-pink-50/80 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl border border-purple-200/50 dark:border-purple-700/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-5 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                            <Users className="w-6 h-6 text-white" />
-                                        </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Participantes</p>
-                                            <p className="text-base font-semibold text-gray-900 dark:text-white">
+                                        <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Participantes</p>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                                 {selectedEvent.attendees} / {selectedEvent.capacity}
                                             </p>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Descripción */}
+                            {/* Descripción - Más compacta */}
                             {selectedEvent.description && (
-                                <div className="bg-gradient-to-r from-indigo-50/80 to-purple-50/80 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-8 border border-indigo-200/50 dark:border-indigo-700/50 backdrop-blur-sm shadow-lg">
-                                    <h5 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
-                                        <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                                <div className="bg-gradient-to-r from-indigo-50/80 to-purple-50/80 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-200/50 dark:border-indigo-700/50 backdrop-blur-sm shadow-lg">
+                                    <h5 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                                        <div className="w-5 h-5 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center mr-2 shadow-lg">
                                             <Tag className="w-3 h-3 text-white" />
                                         </div>
                                         Descripción
                                     </h5>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl backdrop-blur-sm">{selectedEvent.description}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-white/60 dark:bg-gray-800/60 p-3 rounded-lg backdrop-blur-sm">{selectedEvent.description}</p>
                                 </div>
                             )}
                         </div>

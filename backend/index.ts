@@ -5,7 +5,7 @@ import pool from "./config/db";
 import authRouter from "authentication/routes/auth.routes";
 import passwordRouter from "authentication/routes/password.routes";
 import dashboardRouter from "authentication/routes/dashboard.routes";
-import eventRouter from "authentication/routes/event.routes";
+import eventRouter from "events/routes/event.routes";
 
 const app: Application = express();
 app.use(cors());

@@ -4,12 +4,12 @@ import { createEvent, deleteEvent, getEvent, listEvents, updateEvent, updateEven
 
 const eventRouter: Router = Router();
 
-eventRouter.get("/events", authMiddleware, listEvents);
-eventRouter.get("/events/:id", authMiddleware, getEvent);
-eventRouter.post("/events", authMiddleware, createEvent);
-eventRouter.put("/events/:id", authMiddleware, updateEvent);
-eventRouter.delete("/events/:id", authMiddleware, deleteEvent);
-eventRouter.put("/events/status/update", authMiddleware, updateEventStatuses);
+eventRouter.get("/", authMiddleware, listEvents);
+eventRouter.get("/:id", authMiddleware, getEvent);
+eventRouter.post("/", authMiddleware, createEvent);
+eventRouter.put("/:id", authMiddleware, updateEvent);
+eventRouter.delete("/:id", authMiddleware, deleteEvent);
+eventRouter.put("/status/update", authMiddleware, updateEventStatuses);
 
 export default eventRouter;
 
