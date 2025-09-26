@@ -1,0 +1,72 @@
+DROP DATABASE IF EXISTS eventconnect;
+CREATE DATABASE eventconnect;
+\c eventconnect;
+
+-- Users table
+CREATE TABLE users (
+user_id SERIAL PRIMARY KEY,
+first_name VARCHAR(100) NOT NULL,
+last_name VARCHAR(100) NOT NULL,
+email VARCHAR(150) UNIQUE NOT NULL,
+password VARCHAR(200) NOT NULL,
+role VARCHAR(50) CHECK (role IN ('participant', 'organizer', 'admin')) NOT NULL,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Events table
+CREATE TABLE events (
+event_id SERIAL PRIMARY KEY,
+title VARCHAR(200) NOT NULL,
+description TEXT,
+event_date TIMESTAMP NOT NULL,
+duration INT CHECK (duration > 0) NOT NULL, -- Duration in minutes
+status VARCHAR(50) CHECK (status IN ('upcoming', 'in_progress', 'completed')) DEFAULT 'upcoming',
+location VARCHAR(200),
+event_type VARCHAR(50) CHECK (event_type IN ('academic', 'cultural', 'sports')) NOT NULL,
+capacity INT CHECK (capacity > 0),
+organizer_id INT NOT NULL,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (organizer_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Registrations table
+CREATE TABLE registrations (
+registration_id SERIAL PRIMARY KEY,
+user_id INT NOT NULL,
+event_id INT NOT NULL,
+registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+status VARCHAR(50) CHECK (status IN ('registered', 'canceled')) DEFAULT 'registered',
+FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE,
+UNIQUE(user_id, event_id)
+);
+
+-- Notifications table
+CREATE TABLE notifications (
+notification_id SERIAL PRIMARY KEY,
+user_id INT NOT NULL,
+message TEXT NOT NULL,
+sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+status VARCHAR(50) CHECK (status IN ('sent', 'pending', 'read')) DEFAULT 'pending',
+FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Password reset codes table
+CREATE TABLE password_reset_codes (
+reset_id SERIAL PRIMARY KEY,
+user_id INT NOT NULL,
+code VARCHAR(6) NOT NULL,
+expires_at TIMESTAMP NOT NULL,
+used BOOLEAN DEFAULT FALSE,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- ==============================
+-- Insert sample users
+-- ==============================
+INSERT INTO users (first_name, last_name, email, password, role)
+VALUES
+('Admin', 'Johnson', 'admin@eventconnect.com', '$2b$10$LR4X0.IhJFhY1v4YGsW1GO58aYLHdm5MsQzD9kxPWVvHt40Wuhhu2', 'admin'), "Contraseña : Admin123"
+('Organizador', 'Smith', 'organizer@eventconnect.com', '$2b$10$Ev..m0X4g8bqgJ2wyFDDDOVH0tDiX5PZ0RrDb7RV8k/8.SudESFCi', 'organizer'), "Contraseña: organizer123"

@@ -29,9 +29,33 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     req.token = token;
     req.user = decoded;
     next();
-  } catch (err: any) {
-    console.error("❌ Error verificando token:", err.message);
-    return res.status(403).json({ error: "Invalid token" });
+  } catch (err) {
+    console.error('JWT Error:', err);
+    
+    // Manejar específicamente el error de token expirado
+    if (err instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ 
+        error: "Token expired", 
+        code: "TOKEN_EXPIRED",
+        message: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+      });
+    }
+    
+    // Otros errores de JWT
+    if (err instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ 
+        error: "Invalid token", 
+        code: "INVALID_TOKEN",
+        message: "Token inválido. Por favor, inicia sesión nuevamente."
+      });
+    }
+    
+    // Error genérico
+    return res.status(401).json({ 
+      error: "Authentication failed", 
+      code: "AUTH_FAILED",
+      message: "Error de autenticación. Por favor, inicia sesión nuevamente."
+    });
   }
 }
 

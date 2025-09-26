@@ -9,8 +9,8 @@ class UserService {
   constructor(private userModel: UserRepository) {}
 
   async createUser(userData: UserData) {
-    const { firstName, lastName, email, password } = userData;
-    const newUser: User = new User(firstName, lastName, email, password);
+    const { firstName, lastName, email, password, role } = userData;
+    const newUser: User = new User(firstName, lastName, email, password, role);
 
     return this.userModel.create(newUser);
   }
