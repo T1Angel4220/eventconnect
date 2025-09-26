@@ -773,9 +773,30 @@ const EventsManagement: React.FC = () => {
             }
             
             // Cargar eventos actualizados
-            const data = await apiFetchEvents();
-            setEvents(data as any);
+            const response = await apiFetchEvents();
+            console.log('📊 Respuesta recibida:', response);
+            
+            // Extraer el array de datos del objeto de respuesta
+            let eventsData = response;
+            if (response && typeof response === 'object' && 'data' in response) {
+                eventsData = response.data;
+                console.log('📊 Datos extraídos:', eventsData);
+            }
+            
+            // Validar que eventsData sea un array
+            if (Array.isArray(eventsData)) {
+                setEvents(eventsData);
+            } else {
+                console.error('❌ Los datos extraídos no son un array:', eventsData);
+                setEvents([]);
+                showError(
+                    'Error en formato de datos',
+                    'Los datos recibidos del servidor no tienen el formato esperado'
+                );
+            }
         } catch (e: any) {
+            console.error('❌ Error cargando eventos:', e);
+            setEvents([]);
             showError(
                 'Error cargando eventos',
                 e.message || 'Error cargando eventos'
@@ -1028,6 +1049,10 @@ const EventsManagement: React.FC = () => {
     ];
 
     const uiEvents = React.useMemo(() => {
+        if (!Array.isArray(events)) {
+            console.warn('⚠️ events no es un array:', events);
+            return [];
+        }
         return events.map((e: any) => {
             const dt = new Date(e.event_date);
             // Calcular el estado automáticamente basado en fecha, hora y duración

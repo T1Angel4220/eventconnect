@@ -1,6 +1,7 @@
 import cors from "cors";
 import express, { Application } from "express";
 import env from "./config/env";
+import pool from "./config/db";
 import authRouter from "authentication/routes/auth.routes";
 import passwordRouter from "authentication/routes/password.routes";
 import dashboardRouter from "authentication/routes/dashboard.routes";
