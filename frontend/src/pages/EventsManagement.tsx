@@ -90,19 +90,69 @@ const EventsManagement: React.FC = () => {
     }, [selectedCategory]);
 
 
-    // Función auxiliar para verificar espacio y crear página si es necesario
-    const checkPageSpace = (doc: any, currentY: number, requiredSpace: number) => {
+
+    // Función auxiliar para verificar si hay espacio suficiente para una fila de tabla
+    const checkTableRowSpace = (doc: any, currentY: number, cellHeight: number = 12) => {
         const pageHeight = doc.internal.pageSize.height;
-        const footerSpace = 60; // Espacio para pie de página
+        const footerSpace = 100; // Espacio aumentado para pie de página
         const availableSpace = pageHeight - currentY - footerSpace;
         
-        console.log(`Verificando espacio: Y=${currentY}, Requerido=${requiredSpace}, Disponible=${availableSpace}`);
+        if (availableSpace < cellHeight + 5) { // 5px de margen adicional
+            doc.addPage('landscape');
+            return 20; // Nueva posición Y para encabezados
+        }
+        return currentY;
+    };
+
+    // Función auxiliar para dibujar encabezados de tabla en nueva página
+    const drawTableHeaders = (doc: any, yPosition: number, margin: number, totalTableWidth: number, cellHeight: number, headers: string[], colPositions: number[], colWidths: number[]) => {
+        // Encabezados de la tabla
+        doc.setFillColor(30, 64, 175);
+        doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
         
-        if (availableSpace < requiredSpace) {
-            console.log('Espacio insuficiente, creando nueva pagina');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        
+        headers.forEach((header, index) => {
+            // Centrar texto en cada columna
+            const textWidth = doc.getTextWidth(header);
+            const centerX = colPositions[index] + (colWidths[index] / 2) - (textWidth / 2);
+            doc.text(header, centerX, yPosition + 8);
+        });
+        
+        return yPosition + cellHeight;
+    };
+
+    // Función auxiliar para truncar texto que exceda el ancho de columna
+    const truncateText = (doc: any, text: string, maxWidth: number, fontSize: number = 9) => {
+        doc.setFontSize(fontSize);
+        const textWidth = doc.getTextWidth(text);
+        
+        if (textWidth <= maxWidth) {
+            return text;
+        }
+        
+        // Truncar texto agregando "..." al final
+        let truncatedText = text;
+        while (doc.getTextWidth(truncatedText + '...') > maxWidth && truncatedText.length > 0) {
+            truncatedText = truncatedText.slice(0, -1);
+        }
+        
+        return truncatedText + '...';
+    };
+
+    // Función auxiliar para verificar si el contenido se superpone con el pie de página
+    const ensureFooterSpace = (doc: any, currentY: number, contentHeight: number) => {
+        const pageHeight = doc.internal.pageSize.height;
+        const footerSpace = 100; // Espacio aumentado para pie de página
+        const availableSpace = pageHeight - currentY - footerSpace;
+        
+        if (availableSpace < contentHeight) {
             doc.addPage('landscape');
             return 30; // Nueva posición Y
         }
+        
         return currentY;
     };
 
@@ -255,25 +305,13 @@ const EventsManagement: React.FC = () => {
             filteredEvents.forEach((event, index) => {
                 console.log(`Procesando evento ${index + 1}:`, event.name);
                 
-                // Verificar si necesitamos una nueva página
-                if (yPosition + cellHeight > doc.internal.pageSize.height - 50) {
-                    console.log('Creando nueva pagina...');
-                    doc.addPage('landscape');
-                    yPosition = 20;
-                    
-                    // Redibujar encabezados en nueva página
-                    doc.setFillColor(30, 64, 175);
-                    doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
-                    doc.setTextColor(255, 255, 255);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(10);
-                    headers.forEach((header, colIndex) => {
-                        // Centrar texto en cada columna
-                        const textWidth = doc.getTextWidth(header);
-                        const centerX = colPositions[colIndex] + (colWidths[colIndex] / 2) - (textWidth / 2);
-                        doc.text(header, centerX, yPosition + 8);
-                    });
-                    yPosition += cellHeight;
+                // Verificar espacio para la fila actual usando la función mejorada
+                yPosition = checkTableRowSpace(doc, yPosition, cellHeight);
+                
+                // Si se creó una nueva página, redibujar encabezados
+                if (yPosition === 20) {
+                    console.log('Redibujando encabezados en nueva página...');
+                    yPosition = drawTableHeaders(doc, yPosition, margin, totalTableWidth, cellHeight, headers, colPositions, colWidths);
                 }
                 
                 // Alternar colores de fila para mejor legibilidad
@@ -285,7 +323,7 @@ const EventsManagement: React.FC = () => {
                     doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
                 }
                 
-                // Datos del evento - SIN TRUNCAR
+                // Datos del evento con truncamiento inteligente
                 const eventData = [
                     event.name,
                     event.date,
@@ -297,15 +335,21 @@ const EventsManagement: React.FC = () => {
                     event.attendees + '/' + event.capacity
                 ];
                 
-                // Asegurar que el texto sea negro y visible
-                doc.setTextColor(0, 0, 0);
-                
+                // Asegurar que el texto sea negro y visible en cada celda
                 eventData.forEach((data, colIndex) => {
-                    const displayText = data.toString();
+                    // Forzar color negro en cada celda para máxima visibilidad
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
                     
-                    // NO truncar texto - mostrar todo como solicitado
-                    // Alinear a la izquierda en lugar de centrar para mejor legibilidad
-                    doc.text(displayText, colPositions[colIndex] + 4, yPosition + 8);
+                    const displayText = data.toString();
+                    const maxWidth = colWidths[colIndex] - 8; // 8px de margen interno
+                    
+                    // Truncar texto si excede el ancho de columna
+                    const truncatedText = truncateText(doc, displayText, maxWidth, 9);
+                    
+                    // Alinear a la izquierda para mejor legibilidad
+                    doc.text(truncatedText, colPositions[colIndex] + 4, yPosition + 8);
                 });
                 
                 yPosition += cellHeight;
@@ -338,7 +382,7 @@ const EventsManagement: React.FC = () => {
             doc.setTextColor(40, 40, 40);
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
-            doc.text('Eventos por Categoria', 35, yPosition);
+            doc.text('Eventos por Categoría', 35, yPosition);
             
             const chartStartX = 35;
             const chartStartY = yPosition + 10;
@@ -387,18 +431,12 @@ const EventsManagement: React.FC = () => {
             
             // Gráfico circular - Distribución por estado
             const statusStats = {
-                'Proximo': filteredEvents.filter(e => e.status === 'Próximo').length,
+                'Próximo': filteredEvents.filter(e => e.status === 'Próximo').length,
                 'En Progreso': filteredEvents.filter(e => e.status === 'En Progreso').length,
                 'Finalizado': filteredEvents.filter(e => e.status === 'Finalizado').length
             };
             
-            doc.setTextColor(40, 40, 40);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Distribucion por Estado', 35, yPosition);
-            
             // Variables movidas a la nueva página
-            
             const statusColors = [
                 [34, 197, 94],   // Verde para Próximo
                 [251, 146, 60],  // Naranja para En Progreso
@@ -408,43 +446,47 @@ const EventsManagement: React.FC = () => {
             const statusLabels = Object.keys(statusStats);
             const statusValues = Object.values(statusStats);
             
-            // Gráfico circular movido a página separada
-            yPosition += 100;
-            
             // === GRÁFICO CIRCULAR ===
             // Crear nueva página para el gráfico circular
             doc.addPage('landscape');
             yPosition = 30;
             
-            // Título del gráfico circular
+            // Título del gráfico circular (solo una vez, con ortografía correcta)
             doc.setTextColor(40, 40, 40);
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
-            doc.text('Distribucion por Estado', 35, yPosition);
+            doc.text('Distribución por Estado', 35, yPosition);
             
             yPosition += 30;
             
-            // Dibujar gráfico circular
-            const pieChartX = 35;
-            const pieChartY = yPosition;
-            const pieRadius = 50;
+            // === GRÁFICO CIRCULAR MEJORADO Y PROFESIONAL ===
+            const pieChartX = 80;
+            const pieChartY = yPosition + 10;
+            const pieRadius = 35; // Más reducido para asegurar espacio del pie de página
             
             const centerX = pieChartX + pieRadius;
             const centerY = pieChartY + pieRadius;
             
-            console.log('Dibujando grafico circular en nueva pagina:', centerX, centerY);
+            console.log('Dibujando grafico circular mejorado:', centerX, centerY);
             console.log('Datos del grafico:', statusStats);
             
-            // Dibujar círculo base
-            doc.setFillColor(240, 240, 240);
-            doc.circle(centerX, centerY, pieRadius, 'F');
-            doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(1);
-            doc.circle(centerX, centerY, pieRadius, 'S');
+            // === FONDO DEL GRÁFICO CON SOMBRA ===
+            // Sombra sutil
+            doc.setFillColor(220, 220, 220);
+            doc.circle(centerX + 2, centerY + 2, pieRadius + 2, 'F');
             
-            // Calcular ángulos para cada sector
+            // Fondo principal
+            doc.setFillColor(248, 250, 252);
+            doc.circle(centerX, centerY, pieRadius + 2, 'F');
+            
+            // Borde elegante
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(2);
+            doc.circle(centerX, centerY, pieRadius + 2, 'S');
+            
+            // === DIBUJAR SECTORES DEL GRÁFICO ===
             const total = statusValues.reduce((sum, val) => sum + val, 0);
-            let currentAngle = 0;
+            let currentAngle = -90; // Empezar desde arriba
             
             statusLabels.forEach((status, index) => {
                 if (statusValues[index] > 0) {
@@ -452,55 +494,131 @@ const EventsManagement: React.FC = () => {
                     
                     console.log(`Dibujando sector ${status}:`, statusValues[index], 'angulo:', sliceAngle);
                     
-                    // Dibujar sector usando arcos
+                    // === DIBUJAR SECTOR CON GRADIENTE SIMULADO ===
                     const startAngle = currentAngle;
                     const endAngle = currentAngle + sliceAngle;
                     
-                    // Dibujar línea desde el centro
+                    // Color base del sector
+                    const baseColor = statusColors[index];
+                    
+                    // Dibujar sector con múltiples arcos para simular gradiente
+                    for (let radius = pieRadius; radius > 0; radius -= 3) {
+                        const alpha = (pieRadius - radius) / pieRadius;
+                        const r = Math.floor(baseColor[0] + (255 - baseColor[0]) * alpha);
+                        const g = Math.floor(baseColor[1] + (255 - baseColor[1]) * alpha);
+                        const b = Math.floor(baseColor[2] + (255 - baseColor[2]) * alpha);
+                        
+                        doc.setFillColor(r, g, b);
+                        
+                        // Dibujar arco del sector
+                        for (let angle = startAngle; angle <= endAngle; angle += 5) {
+                            const x1 = centerX + Math.cos(angle * Math.PI / 180) * radius;
+                            const y1 = centerY + Math.sin(angle * Math.PI / 180) * radius;
+                            const x2 = centerX + Math.cos((angle + 5) * Math.PI / 180) * radius;
+                            const y2 = centerY + Math.sin((angle + 5) * Math.PI / 180) * radius;
+                            
+                            // Dibujar línea del arco
+                            doc.setDrawColor(r, g, b);
+                            doc.setLineWidth(2);
+                            doc.line(x1, y1, x2, y2);
+                        }
+                    }
+                    
+                    // === BORDES DEL SECTOR ===
+                    // Líneas divisorias elegantes
+                    doc.setDrawColor(255, 255, 255);
+                    doc.setLineWidth(3);
+                    
                     const startX = centerX + Math.cos(startAngle * Math.PI / 180) * pieRadius;
                     const startY = centerY + Math.sin(startAngle * Math.PI / 180) * pieRadius;
                     const endX = centerX + Math.cos(endAngle * Math.PI / 180) * pieRadius;
                     const endY = centerY + Math.sin(endAngle * Math.PI / 180) * pieRadius;
                     
-                    // Dibujar líneas del sector
-                    doc.setDrawColor(statusColors[index][0], statusColors[index][1], statusColors[index][2]);
-                    doc.setLineWidth(3);
                     doc.line(centerX, centerY, startX, startY);
                     doc.line(centerX, centerY, endX, endY);
                     
-                    // Dibujar arco del borde
-                    const arcRadius = pieRadius * 0.9;
-                    for (let angle = startAngle; angle <= endAngle; angle += 10) {
-                        const x1 = centerX + Math.cos(angle * Math.PI / 180) * arcRadius;
-                        const y1 = centerY + Math.sin(angle * Math.PI / 180) * arcRadius;
-                        const x2 = centerX + Math.cos((angle + 10) * Math.PI / 180) * arcRadius;
-                        const y2 = centerY + Math.sin((angle + 10) * Math.PI / 180) * arcRadius;
-                        doc.line(x1, y1, x2, y2);
-                    }
+                    // === ETIQUETAS EN EL GRÁFICO ===
+                    const labelAngle = (startAngle + endAngle) / 2;
+                    const labelRadius = pieRadius * 0.7;
+                    const labelX = centerX + Math.cos(labelAngle * Math.PI / 180) * labelRadius;
+                    const labelY = centerY + Math.sin(labelAngle * Math.PI / 180) * labelRadius;
+                    
+                    // Fondo para la etiqueta
+                    doc.setFillColor(255, 255, 255);
+                    doc.circle(labelX, labelY, 8, 'F');
+                    doc.setDrawColor(200, 200, 200);
+                    doc.setLineWidth(1);
+                    doc.circle(labelX, labelY, 8, 'S');
+                    
+                    // Texto de la etiqueta
+                    doc.setTextColor(40, 40, 40);
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'bold');
+                    const percentage = ((statusValues[index] / total) * 100).toFixed(0);
+                    doc.text(percentage + '%', labelX - 2, labelY + 2);
                     
                     currentAngle += sliceAngle;
                 }
             });
             
-            // Dibujar leyenda a la derecha del gráfico
+            // === LEYENDA MEJORADA ===
             const legendX = pieChartX + pieRadius * 2 + 20;
             const legendY = pieChartY;
             
+            // Título de la leyenda
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Estados de Eventos', legendX, legendY - 8);
+            
             statusLabels.forEach((status, index) => {
                 if (statusValues[index] > 0) {
-                    // Cuadrado de color
-                    doc.setFillColor(statusColors[index][0], statusColors[index][1], statusColors[index][2]);
-                    doc.rect(legendX, legendY + (index * 20), 15, 10, 'F');
+                    const legendItemY = legendY + (index * 16);
                     
-                    // Texto de la leyenda
+                    // === TARJETA DE LEYENDA ULTRA COMPACTA ===
+                    // Fondo de la tarjeta (ultra compacta)
+                    doc.setFillColor(255, 255, 255);
+                    doc.rect(legendX, legendItemY - 2, 90, 12, 'F');
+                    doc.setDrawColor(220, 220, 220);
+                    doc.setLineWidth(0.5);
+                    doc.rect(legendX, legendItemY - 2, 90, 12, 'S');
+                    
+                    // Círculo de color (muy pequeño)
+                    doc.setFillColor(statusColors[index][0], statusColors[index][1], statusColors[index][2]);
+                    doc.circle(legendX + 6, legendItemY + 4, 3, 'F');
+                    doc.setDrawColor(255, 255, 255);
+                    doc.setLineWidth(0.5);
+                    doc.circle(legendX + 6, legendItemY + 4, 3, 'S');
+                    
+                    // Texto de la leyenda (ultra compacto)
                     doc.setTextColor(40, 40, 40);
-                    doc.setFontSize(10);
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(status, legendX + 12, legendItemY + 1);
+                    
+                    // Valor y porcentaje (en una sola línea, más pequeño)
                     doc.setFont('helvetica', 'normal');
-                    doc.text(`${status}: ${statusValues[index]}`, legendX + 20, legendY + (index * 20) + 7);
+                    doc.setFontSize(7);
+                    const percentage = ((statusValues[index] / total) * 100).toFixed(1);
+                    doc.text(`${statusValues[index]} (${percentage}%)`, legendX + 12, legendItemY + 6);
                 }
             });
             
-            yPosition += 150;
+            // === INFORMACIÓN ADICIONAL (ULTRA COMPACTA) ===
+            const infoY = legendY + (statusLabels.length * 16) + 10;
+            
+            // Total de eventos (ultra compacto)
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Total: ${total} eventos`, legendX, infoY);
+            
+            // Fecha de generación (muy pequeña)
+            doc.setTextColor(100, 100, 100);
+            doc.setFontSize(6);
+            doc.text('Gen: ' + new Date().toLocaleDateString('es-ES'), legendX, infoY + 8);
+            
+            yPosition = infoY + 15; // Posición final más conservadora para evitar superposición
             
             // === ANÁLISIS ADICIONALES PARA EL ORGANIZADOR ===
             // Crear nueva página para el análisis
@@ -571,6 +689,29 @@ const EventsManagement: React.FC = () => {
             doc.setFontSize(9);
             
             capacityAnalysis.forEach((analysis, index) => {
+                // Verificar espacio para la fila actual
+                yPosition = checkTableRowSpace(doc, yPosition, analysisCellHeight);
+                
+                // Si se creó una nueva página, redibujar encabezados de análisis
+                if (yPosition === 20) {
+                    console.log('Redibujando encabezados de análisis en nueva página...');
+                    // Redibujar encabezados de análisis
+                    doc.setFillColor(30, 64, 175);
+                    doc.rect(analysisMargin, yPosition, analysisTableWidth, analysisCellHeight, 'F');
+                    
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'bold');
+                    
+                    analysisHeaders.forEach((header, colIndex) => {
+                        const textWidth = doc.getTextWidth(header);
+                        const centerX = analysisColPositions[colIndex] + (analysisColWidths[colIndex] / 2) - (textWidth / 2);
+                        doc.text(header, centerX, yPosition + 8);
+                    });
+                    
+                    yPosition += analysisCellHeight;
+                }
+                
                 // Alternar colores de fila
                 if (index % 2 === 0) {
                     doc.setFillColor(248, 250, 252);
@@ -588,7 +729,18 @@ const EventsManagement: React.FC = () => {
                 ];
                 
                 analysisData.forEach((data, colIndex) => {
-                    doc.text(data, analysisColPositions[colIndex] + 4, yPosition + 8);
+                    // Forzar color negro en cada celda para máxima visibilidad
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    
+                    const displayText = data.toString();
+                    const maxWidth = analysisColWidths[colIndex] - 8; // 8px de margen interno
+                    
+                    // Truncar texto si excede el ancho de columna
+                    const truncatedText = truncateText(doc, displayText, maxWidth, 9);
+                    
+                    doc.text(truncatedText, analysisColPositions[colIndex] + 4, yPosition + 8);
                 });
                 
                 yPosition += analysisCellHeight;
@@ -597,7 +749,7 @@ const EventsManagement: React.FC = () => {
             yPosition += 30;
             
             // Verificar espacio para insights
-            yPosition = checkPageSpace(doc, yPosition, 250);
+            yPosition = ensureFooterSpace(doc, yPosition, 250);
             
             // Resumen de insights para el organizador
             doc.setTextColor(30, 64, 175);
@@ -624,9 +776,9 @@ const EventsManagement: React.FC = () => {
             doc.setFont('helvetica', 'normal');
             
             const insights = [
-                `• Utilizacion promedio de capacidad: ${averageUtilization.toFixed(1)}%`,
-                `• Categoria mas popular: ${mostPopularCategory} (${categoryStats[mostPopularCategory]} eventos)`,
-                `• Eventos proximos: ${upcomingEventsCount}`,
+                `• Utilización promedio de capacidad: ${averageUtilization.toFixed(1)}%`,
+                `• Categoría más popular: ${mostPopularCategory} (${categoryStats[mostPopularCategory]} eventos)`,
+                `• Eventos próximos: ${upcomingEventsCount}`,
                 `• Total de capacidad disponible: ${totalCapacity} personas`,
                 `• Total de asistentes registrados: ${totalAttendees} personas`
             ];
@@ -635,13 +787,16 @@ const EventsManagement: React.FC = () => {
             
             insights.forEach((insight, index) => {
                 console.log(`Agregando insight ${index + 1}:`, insight);
-                doc.text(insight, 35, yPosition + (index * 12));
+                // Verificar espacio antes de agregar cada insight
+                yPosition = ensureFooterSpace(doc, yPosition, 15);
+                doc.text(insight, 35, yPosition);
+                yPosition += 12;
             });
             
             yPosition += 80;
             
             // Verificar espacio para recomendaciones
-            yPosition = checkPageSpace(doc, yPosition, 200);
+            yPosition = ensureFooterSpace(doc, yPosition, 200);
             
             // Recomendaciones adicionales para el organizador
             doc.setTextColor(30, 64, 175);
@@ -656,24 +811,27 @@ const EventsManagement: React.FC = () => {
             doc.setFont('helvetica', 'normal');
             
             const recommendations = [
-                `• Si la utilizacion promedio es menor al 50%, considera reducir la capacidad de futuros eventos`,
-                `• Enfocate en la categoria "${mostPopularCategory}" que es la mas exitosa`,
-                `• Planifica ${upcomingEventsCount} eventos proximos con anticipacion`,
+                `• Si la utilización promedio es menor al 50%, considera reducir la capacidad de futuros eventos`,
+                `• Enfócate en la categoría "${mostPopularCategory}" que es la más exitosa`,
+                `• Planifica ${upcomingEventsCount} eventos próximos con anticipación`,
                 `• Considera estrategias de marketing para aumentar la asistencia`,
-                `• Revisa eventos con baja utilizacion para identificar problemas`
+                `• Revisa eventos con baja utilización para identificar problemas`
             ];
             
             console.log('Generando recomendaciones:', recommendations);
             
             recommendations.forEach((recommendation, index) => {
                 console.log(`Agregando recomendacion ${index + 1}:`, recommendation);
-                doc.text(recommendation, 35, yPosition + (index * 12));
+                // Verificar espacio antes de agregar cada recomendación
+                yPosition = ensureFooterSpace(doc, yPosition, 15);
+                doc.text(recommendation, 35, yPosition);
+                yPosition += 12;
             });
             
             yPosition += 100;
             
             // Verificar espacio para resumen ejecutivo
-            yPosition = checkPageSpace(doc, yPosition, 150);
+            yPosition = ensureFooterSpace(doc, yPosition, 150);
             
             // Resumen ejecutivo
             doc.setTextColor(30, 64, 175);
@@ -688,10 +846,10 @@ const EventsManagement: React.FC = () => {
             doc.setFont('helvetica', 'normal');
             
             const executiveSummary = [
-                `Este reporte analiza ${totalEvents} eventos gestionados a traves del sistema EventConnect.`,
-                `La categoria "${mostPopularCategory}" representa el mayor exito con ${categoryStats[mostPopularCategory]} eventos.`,
-                `La utilizacion promedio de ${averageUtilization.toFixed(1)}% indica ${averageUtilization > 70 ? 'excelente' : averageUtilization > 50 ? 'buena' : 'necesita mejora'} gestion de capacidad.`,
-                `Se recomienda continuar enfocandose en eventos de tipo "${mostPopularCategory}" y optimizar la capacidad basada en datos historicos.`
+                `Este reporte analiza ${totalEvents} eventos gestionados a través del sistema EventConnect.`,
+                `La categoría "${mostPopularCategory}" representa el mayor éxito con ${categoryStats[mostPopularCategory]} eventos.`,
+                `La utilización promedio de ${averageUtilization.toFixed(1)}% indica ${averageUtilization > 70 ? 'excelente' : averageUtilization > 50 ? 'buena' : 'necesita mejora'} gestión de capacidad.`,
+                `Se recomienda continuar enfocándose en eventos de tipo "${mostPopularCategory}" y optimizar la capacidad basada en datos históricos.`
             ];
             
             console.log('Generando resumen ejecutivo:', executiveSummary);
@@ -699,29 +857,39 @@ const EventsManagement: React.FC = () => {
             
             executiveSummary.forEach((summary, index) => {
                 console.log(`Agregando resumen ${index + 1}:`, summary);
-                console.log(`Posicion Y para resumen ${index + 1}:`, yPosition + (index * 12));
-                doc.text(summary, 35, yPosition + (index * 12));
+                // Verificar espacio antes de agregar cada línea del resumen
+                yPosition = ensureFooterSpace(doc, yPosition, 15);
+                console.log(`Posicion Y para resumen ${index + 1}:`, yPosition);
+                doc.text(summary, 35, yPosition);
+                yPosition += 12;
             });
             
             console.log('PDF generado exitosamente con', doc.getNumberOfPages(), 'paginas');
             
-            // === PIE DE PÁGINA MEJORADO ===
+            // === PIE DE PÁGINA MEJORADO Y CONSISTENTE ===
             const pageCount = doc.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
                 
+                // Verificar que no haya contenido en el área del pie de página
+                const footerY = doc.internal.pageSize.height - 50;
+                
                 // Línea separadora elegante
                 doc.setDrawColor(200, 200, 200);
                 doc.setLineWidth(0.5);
-                doc.line(25, doc.internal.pageSize.height - 30, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 30);
+                doc.line(25, footerY, doc.internal.pageSize.width - 25, footerY);
                 
-                // Información del pie mejorada
-                doc.setFontSize(9);
+                // Información del pie mejorada con mejor espaciado
+                doc.setFontSize(8);
                 doc.setTextColor(100, 100, 100);
-                doc.text('Página ' + i + ' de ' + pageCount, 25, doc.internal.pageSize.height - 20);
-                doc.text('EventConnect v1.0', doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 20, { align: 'right' });
-                doc.text('Sistema de Gestión de Eventos', doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 15, { align: 'right' });
-                doc.text('© 2025 EventConnect. Todos los derechos reservados.', doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10, { align: 'right' });
+                
+                // Página actual
+                doc.text('Página ' + i + ' de ' + pageCount, 25, footerY + 8);
+                
+                // Información de la empresa (alineada a la derecha)
+                doc.text('EventConnect v1.0', doc.internal.pageSize.width - 25, footerY + 8, { align: 'right' });
+                doc.text('Sistema de Gestión de Eventos', doc.internal.pageSize.width - 25, footerY + 15, { align: 'right' });
+                doc.text('© 2025 EventConnect. Todos los derechos reservados.', doc.internal.pageSize.width - 25, footerY + 22, { align: 'right' });
             }
             
             // === DESCARGAR ===
