@@ -15,6 +15,13 @@ export interface ComparativeStats {
   recent_registrations_previous_month: number;
 }
 
+export interface MonthlyParticipantsData {
+  month: string;
+  year: number;
+  participants: number;
+  events: number;
+}
+
 export interface StatsRepository {
   getComparativeStats(): Promise<ComparativeStats>;
   getMonthlyGrowth(): Promise<{
@@ -133,6 +140,41 @@ class StatsRepositoryImpl implements StatsRepository {
       users_growth: calculateGrowth(stats.total_users, stats.total_users_previous_month),
       registrations_growth: calculateGrowth(stats.recent_registrations, stats.recent_registrations_previous_month)
     };
+  }
+
+  async getParticipantsByMonth(months: number = 6): Promise<MonthlyParticipantsData[]> {
+    const query = `
+      WITH month_series AS (
+        SELECT 
+          generate_series(
+            DATE_TRUNC('month', CURRENT_DATE - INTERVAL '${months - 1} months'),
+            DATE_TRUNC('month', CURRENT_DATE),
+            '1 month'::interval
+          ) as month_start
+      ),
+      monthly_data AS (
+        SELECT 
+          DATE_TRUNC('month', r.registered_at) as month,
+          COUNT(DISTINCT r.user_id) as participants,
+          COUNT(DISTINCT e.event_id) as events
+        FROM registrations r
+        JOIN events e ON r.event_id = e.event_id
+        WHERE r.status = 'registered'
+          AND r.registered_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '${months - 1} months')
+        GROUP BY DATE_TRUNC('month', r.registered_at)
+      )
+      SELECT 
+        TO_CHAR(ms.month_start, 'Month') as month,
+        EXTRACT(YEAR FROM ms.month_start) as year,
+        COALESCE(md.participants, 0) as participants,
+        COALESCE(md.events, 0) as events
+      FROM month_series ms
+      LEFT JOIN monthly_data md ON ms.month_start = md.month
+      ORDER BY ms.month_start
+    `;
+    
+    const result = await pool.query(query);
+    return result.rows;
   }
 }
 

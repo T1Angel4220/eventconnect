@@ -115,6 +115,15 @@ export class DashboardService {
     }
   }
 
+  async getParticipantsByMonth(months: number = 6): Promise<Array<{ month: string; year: number; participants: number; events: number }>> {
+    try {
+      return await statsRepository.getParticipantsByMonth(months);
+    } catch (error) {
+      console.error('Error getting participants by month:', error);
+      throw new Error('Failed to get participants by month data');
+    }
+  }
+
   async getUserNotifications(userId: number): Promise<Array<{ notification_id: number; message: string; sent_at: Date; status: string; is_unread: boolean }>> {
     try {
       const notifications = await notificationRepository.findByUser(userId);

@@ -16,6 +16,7 @@ router.get('/events/active', dashboardController.getActiveEvents.bind(dashboardC
 router.get('/users/top', dashboardController.getTopUsers.bind(dashboardController));
 router.get('/registrations/recent', dashboardController.getRecentRegistrations.bind(dashboardController));
 router.get('/events/categories', dashboardController.getEventCategories.bind(dashboardController));
+router.get('/participants-by-month', dashboardController.getParticipantsByMonth.bind(dashboardController));
 router.get('/notifications/:userId', dashboardController.getUserNotifications.bind(dashboardController));
 router.get('/notifications/:userId/unread-count', dashboardController.getUnreadNotificationCount.bind(dashboardController));
 

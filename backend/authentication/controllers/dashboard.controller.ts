@@ -142,6 +142,24 @@ export class DashboardController {
     }
   }
 
+  async getParticipantsByMonth(req: Request, res: Response) {
+    try {
+      const months = parseInt(req.query.months as string) || 6;
+      const data = await dashboardService.getParticipantsByMonth(months);
+      res.json({
+        success: true,
+        data: data
+      });
+    } catch (error) {
+      console.error('Error in getParticipantsByMonth:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting participants by month data',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
   async getUserNotifications(req: Request, res: Response) {
     try {
       const userId = parseInt(req.params.userId);
