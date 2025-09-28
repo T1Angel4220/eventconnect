@@ -21,23 +21,34 @@ import {
   Filter,
   UserCheck,
   Clock,
-  Mail,
-  Phone,
-  MapPin,
   Calendar as CalendarIcon,
   User
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { useNotifications } from '../hooks/useNotifications';
+import { 
+  getAllRegistrations, 
+  updateRegistrationStatus, 
+  mapRegistrationStatusToSpanish,
+  mapEventTypeToSpanish,
+  formatDate,
+  formatDateTime,
+  type RegistrationWithDetails 
+} from '../services/registrationService';
+import Notification from '../components/ui/Notification';
 
 const RegistrationsManagement: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
+    const { notifications, removeNotification, showSuccess, showError } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [selectedEvent, setSelectedEvent] = useState('all');
     const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [selectedRegistration, setSelectedRegistration] = useState(null);
+    const [selectedRegistration, setSelectedRegistration] = useState<RegistrationWithDetails | null>(null);
+    const [registrations, setRegistrations] = useState<RegistrationWithDetails[]>([]);
+    const [loading, setLoading] = useState(true);
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
 
@@ -48,6 +59,28 @@ const RegistrationsManagement: React.FC = () => {
         navigate('/login');
     };
 
+    // Cargar inscripciones desde el backend
+    const loadRegistrations = React.useCallback(async () => {
+        try {
+            setLoading(true);
+            const data = await getAllRegistrations();
+            setRegistrations(data);
+        } catch (error: unknown) {
+            console.error('Error cargando inscripciones:', error);
+            showError(
+                'Error cargando inscripciones',
+                error instanceof Error ? error.message : 'Error cargando inscripciones'
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [showError]);
+
+    // Cargar datos al montar el componente
+    React.useEffect(() => {
+        loadRegistrations();
+    }, [loadRegistrations]);
+
     const menuItems = [
         { icon: Home, label: 'Dashboard', active: false, path: '/dashboard' },
         { icon: Calendar, label: 'Eventos', active: false, path: '/events' },
@@ -55,171 +88,82 @@ const RegistrationsManagement: React.FC = () => {
         { icon: Settings, label: 'Configuración', active: false, path: '/settings' },
     ];
 
-    const registrations = [
-        {
-            id: 1,
-            eventName: 'Conferencia de Tecnología',
-            eventDate: '2025-01-15',
-            eventLocation: 'Centro de Convenciones',
-            participant: {
-                name: 'Ana Rodríguez',
-                email: 'ana.rodriguez@email.com',
-                phone: '+1 234 567 8900',
-                company: 'Tech Solutions Inc.',
-                position: 'Desarrolladora Senior',
-                experience: '5 años en desarrollo web'
-            },
-            registrationDate: '2025-01-12',
-            status: 'Pendiente',
-            motivation: 'Interesada en aprender sobre las últimas tendencias en desarrollo de software y networking con otros profesionales.',
-            previousEvents: 3,
-            notes: 'Participante activa en eventos anteriores'
-        },
-        {
-            id: 2,
-            eventName: 'Workshop de Diseño',
-            eventDate: '2025-01-18',
-            eventLocation: 'Sala de Talleres',
-            participant: {
-                name: 'Carlos Mendoza',
-                email: 'carlos.mendoza@email.com',
-                phone: '+1 234 567 8901',
-                company: 'Design Studio',
-                position: 'Diseñador UX/UI',
-                experience: '3 años en diseño digital'
-            },
-            registrationDate: '2025-01-13',
-            status: 'Aprobada',
-            motivation: 'Busco mejorar mis habilidades en diseño UX/UI y conocer nuevas herramientas del mercado.',
-            previousEvents: 1,
-            notes: 'Primera vez en nuestros eventos'
-        },
-        {
-            id: 3,
-            eventName: 'Seminario de Marketing',
-            eventDate: '2025-01-20',
-            eventLocation: 'Auditorio Principal',
-            participant: {
-                name: 'Laura Silva',
-                email: 'laura.silva@email.com',
-                phone: '+1 234 567 8902',
-                company: 'Marketing Pro',
-                position: 'Especialista en Marketing Digital',
-                experience: '4 años en marketing digital'
-            },
-            registrationDate: '2025-01-14',
-            status: 'Rechazada',
-            motivation: 'Necesito actualizar mis conocimientos en estrategias de marketing digital para mi empresa.',
-            previousEvents: 0,
-            notes: 'Capacidad del evento completada'
-        },
-        {
-            id: 4,
-            eventName: 'Networking Event',
-            eventDate: '2025-01-22',
-            eventLocation: 'Hotel Downtown',
-            participant: {
-                name: 'Diego Torres',
-                email: 'diego.torres@email.com',
-                phone: '+1 234 567 8903',
-                company: 'StartupTech',
-                position: 'CEO',
-                experience: '7 años en emprendimiento'
-            },
-            registrationDate: '2025-01-15',
-            status: 'Pendiente',
-            motivation: 'Busco oportunidades de networking para mi startup y posibles inversores.',
-            previousEvents: 2,
-            notes: 'CEO de startup emergente'
-        },
-        {
-            id: 5,
-            eventName: 'Curso de Programación',
-            eventDate: '2025-01-25',
-            eventLocation: 'Laboratorio de Computación',
-            participant: {
-                name: 'María González',
-                email: 'maria.gonzalez@email.com',
-                phone: '+1 234 567 8904',
-                company: 'Freelance',
-                position: 'Desarrolladora Frontend',
-                experience: '2 años en desarrollo frontend'
-            },
-            registrationDate: '2025-01-16',
-            status: 'Aprobada',
-            motivation: 'Quiero mejorar mis habilidades en JavaScript y React para avanzar en mi carrera.',
-            previousEvents: 1,
-            notes: 'Desarrolladora freelance con potencial'
-        },
-        {
-            id: 6,
-            eventName: 'Expo de Innovación',
-            eventDate: '2025-01-28',
-            eventLocation: 'Centro de Exposiciones',
-            participant: {
-                name: 'Roberto Pérez',
-                email: 'roberto.perez@email.com',
-                phone: '+1 234 567 8905',
-                company: 'Innovation Labs',
-                position: 'CTO',
-                experience: '10 años en tecnología'
-            },
-            registrationDate: '2025-01-17',
-            status: 'Pendiente',
-            motivation: 'Interesado en presentar nuestro proyecto innovador y conocer otras iniciativas.',
-            previousEvents: 4,
-            notes: 'CTO con amplia experiencia'
-        }
-    ];
-
-    const events = ['Conferencia de Tecnología', 'Workshop de Diseño', 'Seminario de Marketing', 'Networking Event', 'Curso de Programación', 'Expo de Innovación'];
+    // Obtener lista única de eventos para el filtro
+    const events = React.useMemo(() => {
+        const uniqueEvents = [...new Set(registrations.map(r => r.event_title))];
+        return uniqueEvents.sort();
+    }, [registrations]);
 
     const filteredRegistrations = registrations.filter(registration => {
-        const matchesSearch = registration.participant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            registration.participant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            registration.eventName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = selectedStatus === 'all' || registration.status === selectedStatus;
-        const matchesEvent = selectedEvent === 'all' || registration.eventName === selectedEvent;
+        const participantName = `${registration.user_first_name} ${registration.user_last_name}`;
+        const matchesSearch = participantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            registration.user_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            registration.event_title.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const spanishStatus = mapRegistrationStatusToSpanish(registration.status);
+        const matchesStatus = selectedStatus === 'all' || spanishStatus === selectedStatus;
+        const matchesEvent = selectedEvent === 'all' || registration.event_title === selectedEvent;
+        
         return matchesSearch && matchesStatus && matchesEvent;
     });
 
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status: 'registered' | 'canceled') => {
         switch (status) {
-            case 'Aprobada':
+            case 'registered':
                 return 'bg-gradient-to-r from-green-500 to-green-600 text-white';
-            case 'Rechazada':
+            case 'canceled':
                 return 'bg-gradient-to-r from-red-500 to-red-600 text-white';
-            case 'Pendiente':
-                return 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white';
             default:
                 return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
         }
     };
 
-    const getStatusIcon = (status: string) => {
+    const getStatusIcon = (status: 'registered' | 'canceled') => {
         switch (status) {
-            case 'Aprobada':
+            case 'registered':
                 return <CheckCircle className="w-4 h-4" />;
-            case 'Rechazada':
+            case 'canceled':
                 return <XCircle className="w-4 h-4" />;
-            case 'Pendiente':
-                return <Clock className="w-4 h-4" />;
             default:
                 return <Clock className="w-4 h-4" />;
         }
     };
 
-    const handleApprove = (registrationId: number) => {
-        console.log('Aprobar inscripción:', registrationId);
-        // Aquí iría la lógica para aprobar la inscripción
+    const handleApprove = async (registrationId: number) => {
+        try {
+            await updateRegistrationStatus(registrationId, { status: 'registered' });
+            showSuccess(
+                'Inscripción aprobada',
+                'La inscripción ha sido aprobada exitosamente'
+            );
+            await loadRegistrations(); // Recargar datos
+        } catch (error: unknown) {
+            console.error('Error aprobando inscripción:', error);
+            showError(
+                'Error aprobando inscripción',
+                error instanceof Error ? error.message : 'Error aprobando inscripción'
+            );
+        }
     };
 
-    const handleReject = (registrationId: number) => {
-        console.log('Rechazar inscripción:', registrationId);
-        // Aquí iría la lógica para rechazar la inscripción
+    const handleReject = async (registrationId: number) => {
+        try {
+            await updateRegistrationStatus(registrationId, { status: 'canceled' });
+            showSuccess(
+                'Inscripción rechazada',
+                'La inscripción ha sido rechazada exitosamente'
+            );
+            await loadRegistrations(); // Recargar datos
+        } catch (error: unknown) {
+            console.error('Error rechazando inscripción:', error);
+            showError(
+                'Error rechazando inscripción',
+                error instanceof Error ? error.message : 'Error rechazando inscripción'
+            );
+        }
     };
 
-    const handleViewDetails = (registration: any) => {
+    const handleViewDetails = (registration: RegistrationWithDetails) => {
         setSelectedRegistration(registration);
         setShowDetailsModal(true);
     };
@@ -360,9 +304,8 @@ const RegistrationsManagement: React.FC = () => {
                                         className="bg-transparent text-gray-700 dark:text-gray-300 text-sm focus:outline-none"
                                     >
                                         <option value="all">Todos los estados</option>
-                                        <option value="Pendiente">Pendientes</option>
-                                        <option value="Aprobada">Aprobadas</option>
-                                        <option value="Rechazada">Rechazadas</option>
+                                        <option value="Registrado">Registrados</option>
+                                        <option value="Cancelado">Cancelados</option>
                                     </select>
                                 </div>
                                 <div className="flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
@@ -402,38 +345,46 @@ const RegistrationsManagement: React.FC = () => {
                             <div>Acciones</div>
                         </div>
 
+                        {loading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto mb-4"></div>
+                                <p className="text-gray-600 dark:text-gray-400">Cargando inscripciones...</p>
+                            </div>
+                        ) : (
                         <div className="space-y-3">
                             {filteredRegistrations.map((registration) => (
-                                <div key={registration.id} className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                <div key={registration.registration_id} className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                                     <div className="flex items-center">
                                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mr-3 shadow-lg">
                                             <User className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-black dark:text-white text-sm">{registration.participant.name}</h4>
-                                            <p className="text-xs text-gray-600 dark:text-gray-400">{registration.participant.company}</p>
+                                            <h4 className="font-semibold text-black dark:text-white text-sm">
+                                                {registration.user_first_name} {registration.user_last_name}
+                                            </h4>
+                                            <p className="text-xs text-gray-600 dark:text-gray-400">{registration.user_email}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center">
                                         <div>
-                                            <p className="text-sm font-medium text-black dark:text-white">{registration.eventName}</p>
-                                            <p className="text-xs text-gray-600 dark:text-gray-400">{registration.eventDate}</p>
+                                            <p className="text-sm font-medium text-black dark:text-white">{registration.event_title}</p>
+                                            <p className="text-xs text-gray-600 dark:text-gray-400">{formatDate(registration.event_date)}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {registration.registrationDate}
+                                        {formatDate(registration.registered_at)}
                                     </div>
                                     <div className="flex items-center">
                                         <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(registration.status)}`}>
                                             {getStatusIcon(registration.status)}
-                                            <span className="ml-1">{registration.status}</span>
+                                            <span className="ml-1">{mapRegistrationStatusToSpanish(registration.status)}</span>
                                         </span>
                                     </div>
                                     <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {registration.participant.experience}
+                                        {registration.user_role}
                                     </div>
                                     <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {registration.previousEvents} eventos
+                                        {mapEventTypeToSpanish(registration.event_type)}
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <button 
@@ -442,17 +393,19 @@ const RegistrationsManagement: React.FC = () => {
                                         >
                                             <Eye className="w-4 h-4" />
                                         </button>
-                                        {registration.status === 'Pendiente' && (
+                                        {registration.status === 'registered' && (
                                             <>
                                                 <button 
-                                                    onClick={() => handleApprove(registration.id)}
+                                                    onClick={() => handleApprove(registration.registration_id)}
                                                     className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                                                    title="Aprobar inscripción"
                                                 >
                                                     <CheckCircle className="w-4 h-4" />
                                                 </button>
                                                 <button 
-                                                    onClick={() => handleReject(registration.id)}
+                                                    onClick={() => handleReject(registration.registration_id)}
                                                     className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                    title="Rechazar inscripción"
                                                 >
                                                     <XCircle className="w-4 h-4" />
                                                 </button>
@@ -462,8 +415,9 @@ const RegistrationsManagement: React.FC = () => {
                                 </div>
                             ))}
                         </div>
+                        )}
 
-                        {filteredRegistrations.length === 0 && (
+                        {!loading && filteredRegistrations.length === 0 && (
                             <div className="text-center py-12">
                                 <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                                 <p className="text-gray-600 dark:text-gray-400 font-medium">No se encontraron inscripciones</p>
@@ -495,19 +449,27 @@ const RegistrationsManagement: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Evento:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.eventName}</p>
+                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.event_title}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Fecha:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.eventDate}</p>
+                                        <p className="font-medium text-black dark:text-white">{formatDateTime(selectedRegistration.event_date)}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Ubicación:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.eventLocation}</p>
+                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.event_location || 'No especificada'}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Fecha de Solicitud:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.registrationDate}</p>
+                                        <p className="font-medium text-black dark:text-white">{formatDateTime(selectedRegistration.registered_at)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 dark:text-gray-400">Tipo:</p>
+                                        <p className="font-medium text-black dark:text-white">{mapEventTypeToSpanish(selectedRegistration.event_type)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 dark:text-gray-400">Capacidad:</p>
+                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.event_capacity} personas</p>
                                     </div>
                                 </div>
                             </div>
@@ -518,65 +480,47 @@ const RegistrationsManagement: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Nombre:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.name}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-600 dark:text-gray-400">Empresa:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.company}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-600 dark:text-gray-400">Posición:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.position}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-600 dark:text-gray-400">Experiencia:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.experience}</p>
+                                        <p className="font-medium text-black dark:text-white">
+                                            {selectedRegistration.user_first_name} {selectedRegistration.user_last_name}
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Email:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.email}</p>
+                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.user_email}</p>
                                     </div>
                                     <div>
-                                        <p className="text-gray-600 dark:text-gray-400">Teléfono:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.phone}</p>
+                                        <p className="text-gray-600 dark:text-gray-400">Rol:</p>
+                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.user_role}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 dark:text-gray-400">Estado:</p>
+                                        <p className="font-medium text-black dark:text-white">{mapRegistrationStatusToSpanish(selectedRegistration.status)}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Motivation */}
-                            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-                                <h4 className="font-semibold text-black dark:text-white mb-3">Motivación</h4>
-                                <p className="text-sm text-gray-700 dark:text-gray-300">{selectedRegistration.motivation}</p>
-                            </div>
-
-                            {/* Notes */}
-                            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-                                <h4 className="font-semibold text-black dark:text-white mb-3">Notas</h4>
-                                <p className="text-sm text-gray-700 dark:text-gray-300">{selectedRegistration.notes}</p>
-                            </div>
-
                             {/* Actions */}
-                            {selectedRegistration.status === 'Pendiente' && (
+                            {selectedRegistration.status === 'registered' && (
                                 <div className="flex space-x-3">
                                     <button
                                         onClick={() => {
-                                            handleApprove(selectedRegistration.id);
+                                            handleApprove(selectedRegistration.registration_id);
                                             setShowDetailsModal(false);
                                         }}
                                         className="flex-1 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg"
                                     >
                                         <CheckCircle className="w-4 h-4 mr-2" />
-                                        Aprobar Inscripción
+                                        Confirmar Inscripción
                                     </button>
                                     <button
                                         onClick={() => {
-                                            handleReject(selectedRegistration.id);
+                                            handleReject(selectedRegistration.registration_id);
                                             setShowDetailsModal(false);
                                         }}
                                         className="flex-1 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
                                     >
                                         <XCircle className="w-4 h-4 mr-2" />
-                                        Rechazar Inscripción
+                                        Cancelar Inscripción
                                     </button>
                                 </div>
                             )}
@@ -584,6 +528,21 @@ const RegistrationsManagement: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Notifications */}
+            <div className="fixed top-4 right-4 z-50 space-y-2">
+                {notifications.map((notification) => (
+                    <Notification
+                        key={notification.id}
+                        id={notification.id}
+                        type={notification.type}
+                        title={notification.title}
+                        message={notification.message}
+                        duration={notification.duration}
+                        onClose={removeNotification}
+                    />
+                ))}
+            </div>
         </div>
     );
 };

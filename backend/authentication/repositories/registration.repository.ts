@@ -20,6 +20,8 @@ export interface RegistrationRepository {
   getRegistrationsByEvent(eventId: number): Promise<RegistrationWithDetails[]>;
   getRegistrationsByUser(userId: number): Promise<RegistrationWithDetails[]>;
   checkEventCapacity(eventId: number): Promise<{ current: number; capacity: number }>;
+  getTopUsers(limit: number): Promise<Array<{ user_id: number; user_name: string; events_attended: number; favorite_category: string; join_date: string }>>;
+  getRecentRegistrations(limit: number): Promise<RegistrationWithDetails[]>;
 }
 
 class RegistrationRepositoryImpl implements RegistrationRepository {
@@ -238,6 +240,91 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
       current: parseInt(row.current_registrations) || 0,
       capacity: parseInt(row.capacity)
     };
+  }
+
+  // Obtener usuarios más activos (con más inscripciones)
+  async getTopUsers(limit: number = 10): Promise<Array<{ user_id: number; user_name: string; events_attended: number; favorite_category: string; join_date: string }>> {
+    const query = `
+      SELECT 
+        u.user_id,
+        CONCAT(u.first_name, ' ', u.last_name) as user_name,
+        COUNT(r.registration_id) as events_attended,
+        COALESCE(
+          (SELECT e.event_type 
+           FROM registrations r2 
+           JOIN events e ON r2.event_id = e.event_id 
+           WHERE r2.user_id = u.user_id AND r2.status = 'registered'
+           GROUP BY e.event_type 
+           ORDER BY COUNT(*) DESC 
+           LIMIT 1), 
+          'N/A'
+        ) as favorite_category,
+        u.created_at::text as join_date
+      FROM users u
+      LEFT JOIN registrations r ON u.user_id = r.user_id AND r.status = 'registered'
+      WHERE u.role = 'participant'
+      GROUP BY u.user_id, u.first_name, u.last_name, u.created_at
+      ORDER BY events_attended DESC, u.created_at ASC
+      LIMIT $1
+    `;
+    
+    const result = await pool.query(query, [limit]);
+    return result.rows.map(row => ({
+      user_id: row.user_id,
+      user_name: row.user_name,
+      events_attended: parseInt(row.events_attended) || 0,
+      favorite_category: row.favorite_category,
+      join_date: row.join_date
+    }));
+  }
+
+  // Obtener inscripciones recientes
+  async getRecentRegistrations(limit: number = 10): Promise<RegistrationWithDetails[]> {
+    const query = `
+      SELECT 
+        r.registration_id,
+        r.user_id,
+        r.event_id,
+        r.registered_at,
+        r.status,
+        u.first_name as user_first_name,
+        u.last_name as user_last_name,
+        u.email as user_email,
+        u.role as user_role,
+        e.title as event_title,
+        e.event_date,
+        e.location as event_location,
+        e.event_type,
+        e.capacity as event_capacity,
+        o.first_name || ' ' || o.last_name as organizer_name,
+        o.user_id as organizer_id
+      FROM registrations r
+      JOIN users u ON r.user_id = u.user_id
+      JOIN events e ON r.event_id = e.event_id
+      JOIN users o ON e.organizer_id = o.user_id
+      ORDER BY r.registered_at DESC
+      LIMIT $1
+    `;
+    
+    const result = await pool.query(query, [limit]);
+    return result.rows.map(row => ({
+      registration_id: row.registration_id,
+      user_id: row.user_id,
+      event_id: row.event_id,
+      registered_at: row.registered_at,
+      status: row.status,
+      user_first_name: row.user_first_name,
+      user_last_name: row.user_last_name,
+      user_email: row.user_email,
+      user_role: row.user_role,
+      event_title: row.event_title,
+      event_date: row.event_date,
+      event_location: row.event_location,
+      event_type: row.event_type,
+      event_capacity: row.event_capacity,
+      organizer_name: row.organizer_name,
+      organizer_id: row.organizer_id
+    }));
   }
 }
 
