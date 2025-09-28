@@ -160,41 +160,9 @@ export async function getRegistrationById(registrationId: number): Promise<Regis
   return result.data;
 }
 
-// Actualizar estado de inscripción
-export async function updateRegistrationStatus(
-  registrationId: number, 
-  payload: UpdateRegistrationStatusPayload
-): Promise<RegistrationResponse> {
-  const res = await fetch(`${API_URL}/registrations/${registrationId}/status`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || "Error actualizando estado de inscripción");
-  }
-  
-  const result = await res.json();
-  return result.data;
-}
-
-// Cancelar inscripción
-export async function cancelRegistration(registrationId: number): Promise<RegistrationResponse> {
-  const res = await fetch(`${API_URL}/registrations/${registrationId}/cancel`, {
-    method: "PUT",
-    headers: authHeaders(),
-  });
-  
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || "Error cancelando inscripción");
-  }
-  
-  const result = await res.json();
-  return result.data;
-}
+// En eventos universitarios, los participantes se auto-inscriben
+// No hay necesidad de funciones de aprobación/rechazo
+// Las inscripciones se confirman automáticamente
 
 // Eliminar inscripción (solo admin)
 export async function deleteRegistration(registrationId: number): Promise<void> {

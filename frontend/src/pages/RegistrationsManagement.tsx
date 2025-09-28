@@ -28,7 +28,6 @@ import { useTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';
 import { 
   getAllRegistrations, 
-  updateRegistrationStatus, 
   mapRegistrationStatusToSpanish,
   mapEventTypeToSpanish,
   formatDate,
@@ -36,11 +35,12 @@ import {
   type RegistrationWithDetails 
 } from '../services/registrationService';
 import Notification from '../components/ui/Notification';
+import CustomDropdown from '../components/ui/CustomDropdown';
 
 const RegistrationsManagement: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
-    const { notifications, removeNotification, showSuccess, showError } = useNotifications();
+    const { notifications, removeNotification, showError } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('all');
@@ -94,6 +94,18 @@ const RegistrationsManagement: React.FC = () => {
         return uniqueEvents.sort();
     }, [registrations]);
 
+    // Opciones para los dropdowns
+    const statusOptions = [
+        { value: 'all', label: 'Todos los estados' },
+        { value: 'Registrado', label: 'Registrados' },
+        { value: 'Cancelado', label: 'Cancelados' }
+    ];
+
+    const eventOptions = React.useMemo(() => [
+        { value: 'all', label: 'Todos los eventos' },
+        ...events.map(event => ({ value: event, label: event }))
+    ], [events]);
+
     const filteredRegistrations = registrations.filter(registration => {
         const participantName = `${registration.user_first_name} ${registration.user_last_name}`;
         const matchesSearch = participantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,39 +141,8 @@ const RegistrationsManagement: React.FC = () => {
         }
     };
 
-    const handleApprove = async (registrationId: number) => {
-        try {
-            await updateRegistrationStatus(registrationId, { status: 'registered' });
-            showSuccess(
-                'Inscripción aprobada',
-                'La inscripción ha sido aprobada exitosamente'
-            );
-            await loadRegistrations(); // Recargar datos
-        } catch (error: unknown) {
-            console.error('Error aprobando inscripción:', error);
-            showError(
-                'Error aprobando inscripción',
-                error instanceof Error ? error.message : 'Error aprobando inscripción'
-            );
-        }
-    };
-
-    const handleReject = async (registrationId: number) => {
-        try {
-            await updateRegistrationStatus(registrationId, { status: 'canceled' });
-            showSuccess(
-                'Inscripción rechazada',
-                'La inscripción ha sido rechazada exitosamente'
-            );
-            await loadRegistrations(); // Recargar datos
-        } catch (error: unknown) {
-            console.error('Error rechazando inscripción:', error);
-            showError(
-                'Error rechazando inscripción',
-                error instanceof Error ? error.message : 'Error rechazando inscripción'
-            );
-        }
-    };
+    // En eventos universitarios, los participantes se auto-inscriben
+    // No hay necesidad de funciones de aprobar/rechazar
 
     const handleViewDetails = (registration: RegistrationWithDetails) => {
         setSelectedRegistration(registration);
@@ -296,31 +277,22 @@ const RegistrationsManagement: React.FC = () => {
                                     <Download className="w-4 h-4 mr-2" />
                                     <span className="font-medium">Exportar</span>
                                 </button>
-                                <div className="flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
-                                    <Filter className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
-                                    <select
-                                        value={selectedStatus}
-                                        onChange={(e) => setSelectedStatus(e.target.value)}
-                                        className="bg-transparent text-gray-700 dark:text-gray-300 text-sm focus:outline-none"
-                                    >
-                                        <option value="all">Todos los estados</option>
-                                        <option value="Registrado">Registrados</option>
-                                        <option value="Cancelado">Cancelados</option>
-                                    </select>
-                                </div>
-                                <div className="flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
-                                    <CalendarIcon className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
-                                    <select
-                                        value={selectedEvent}
-                                        onChange={(e) => setSelectedEvent(e.target.value)}
-                                        className="bg-transparent text-gray-700 dark:text-gray-300 text-sm focus:outline-none"
-                                    >
-                                        <option value="all">Todos los eventos</option>
-                                        {events.map(event => (
-                                            <option key={event} value={event}>{event}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                
+                                <CustomDropdown
+                                    options={statusOptions}
+                                    value={selectedStatus}
+                                    onChange={setSelectedStatus}
+                                    icon={<Filter className="w-4 h-4" />}
+                                    className="min-w-[180px]"
+                                />
+                                
+                                <CustomDropdown
+                                    options={eventOptions}
+                                    value={selectedEvent}
+                                    onChange={setSelectedEvent}
+                                    icon={<CalendarIcon className="w-4 h-4" />}
+                                    className="min-w-[200px]"
+                                />
                             </div>
                         </div>
                     </div>
@@ -328,7 +300,12 @@ const RegistrationsManagement: React.FC = () => {
                     {/* Registrations Table */}
                     <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-black dark:text-white">Solicitudes de Inscripción</h3>
+                            <div>
+                                <h3 className="text-xl font-bold text-black dark:text-white">Inscripciones Confirmadas</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    En eventos universitarios, los participantes se auto-inscriben directamente
+                                </p>
+                            </div>
                             <div className="text-sm text-gray-600 dark:text-gray-400">
                                 {filteredRegistrations.length} de {registrations.length} inscripciones
                             </div>
@@ -338,10 +315,10 @@ const RegistrationsManagement: React.FC = () => {
                         <div className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
                             <div>Participante</div>
                             <div>Evento</div>
-                            <div>Fecha de Solicitud</div>
+                            <div>Fecha de Inscripción</div>
                             <div>Estado</div>
-                            <div>Experiencia</div>
-                            <div>Eventos Anteriores</div>
+                            <div>Rol</div>
+                            <div>Tipo de Evento</div>
                             <div>Acciones</div>
                         </div>
 
@@ -359,19 +336,19 @@ const RegistrationsManagement: React.FC = () => {
                                             <User className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-black dark:text-white text-sm">
+                                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                                 {registration.user_first_name} {registration.user_last_name}
                                             </h4>
-                                            <p className="text-xs text-gray-600 dark:text-gray-400">{registration.user_email}</p>
+                                            <p className="text-xs text-gray-600 dark:text-gray-300">{registration.user_email}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center">
                                         <div>
-                                            <p className="text-sm font-medium text-black dark:text-white">{registration.event_title}</p>
-                                            <p className="text-xs text-gray-600 dark:text-gray-400">{formatDate(registration.event_date)}</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{registration.event_title}</p>
+                                            <p className="text-xs text-gray-600 dark:text-gray-300">{formatDate(registration.event_date)}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                    <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
                                         {formatDate(registration.registered_at)}
                                     </div>
                                     <div className="flex items-center">
@@ -380,37 +357,27 @@ const RegistrationsManagement: React.FC = () => {
                                             <span className="ml-1">{mapRegistrationStatusToSpanish(registration.status)}</span>
                                         </span>
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                    <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
                                         {registration.user_role}
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {mapEventTypeToSpanish(registration.event_type)}
+                                    <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
+                                        <div className="text-center">
+                                            <div className="font-medium">{mapEventTypeToSpanish(registration.event_type)}</div>
+                                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                Capacidad: {registration.event_capacity}
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <button 
                                             onClick={() => handleViewDetails(registration)}
                                             className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                            title="Ver detalles de la inscripción"
                                         >
                                             <Eye className="w-4 h-4" />
                                         </button>
-                                        {registration.status === 'registered' && (
-                                            <>
-                                                <button 
-                                                    onClick={() => handleApprove(registration.registration_id)}
-                                                    className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
-                                                    title="Aprobar inscripción"
-                                                >
-                                                    <CheckCircle className="w-4 h-4" />
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleReject(registration.registration_id)}
-                                                    className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                                    title="Rechazar inscripción"
-                                                >
-                                                    <XCircle className="w-4 h-4" />
-                                                </button>
-                                            </>
-                                        )}
+                                        {/* En eventos universitarios, los participantes se auto-inscriben */}
+                                        {/* No hay necesidad de aprobar/rechazar inscripciones */}
                                     </div>
                                 </div>
                             ))}
@@ -449,27 +416,27 @@ const RegistrationsManagement: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Evento:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.event_title}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.event_title}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Fecha:</p>
-                                        <p className="font-medium text-black dark:text-white">{formatDateTime(selectedRegistration.event_date)}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{formatDateTime(selectedRegistration.event_date)}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Ubicación:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.event_location || 'No especificada'}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.event_location || 'No especificada'}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Fecha de Solicitud:</p>
-                                        <p className="font-medium text-black dark:text-white">{formatDateTime(selectedRegistration.registered_at)}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{formatDateTime(selectedRegistration.registered_at)}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Tipo:</p>
-                                        <p className="font-medium text-black dark:text-white">{mapEventTypeToSpanish(selectedRegistration.event_type)}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{mapEventTypeToSpanish(selectedRegistration.event_type)}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Capacidad:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.event_capacity} personas</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.event_capacity} personas</p>
                                     </div>
                                 </div>
                             </div>
@@ -480,50 +447,39 @@ const RegistrationsManagement: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Nombre:</p>
-                                        <p className="font-medium text-black dark:text-white">
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">
                                             {selectedRegistration.user_first_name} {selectedRegistration.user_last_name}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Email:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.user_email}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.user_email}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Rol:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.user_role}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.user_role}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Estado:</p>
-                                        <p className="font-medium text-black dark:text-white">{mapRegistrationStatusToSpanish(selectedRegistration.status)}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{mapRegistrationStatusToSpanish(selectedRegistration.status)}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Actions */}
-                            {selectedRegistration.status === 'registered' && (
-                                <div className="flex space-x-3">
-                                    <button
-                                        onClick={() => {
-                                            handleApprove(selectedRegistration.registration_id);
-                                            setShowDetailsModal(false);
-                                        }}
-                                        className="flex-1 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg"
-                                    >
+                            {/* Información adicional para organizadores universitarios */}
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                                    📋 Información para Organizadores
+                                </h4>
+                                <p className="text-sm text-blue-800 dark:text-blue-200">
+                                    En eventos universitarios, los participantes se auto-inscriben directamente. 
+                                    Esta inscripción está confirmada automáticamente.
+                                </p>
+                                <div className="mt-3 flex items-center text-sm text-blue-700 dark:text-blue-300">
                                         <CheckCircle className="w-4 h-4 mr-2" />
-                                        Confirmar Inscripción
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            handleReject(selectedRegistration.registration_id);
-                                            setShowDetailsModal(false);
-                                        }}
-                                        className="flex-1 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
-                                    >
-                                        <XCircle className="w-4 h-4 mr-2" />
-                                        Cancelar Inscripción
-                                    </button>
+                                    <span>Inscripción confirmada automáticamente</span>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 </div>

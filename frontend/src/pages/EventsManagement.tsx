@@ -298,8 +298,8 @@ const EventsManagement: React.FC = () => {
                 ];
                 
                 // Asegurar que el texto sea negro y visible
-                doc.setTextColor(0, 0, 0);
-                
+                    doc.setTextColor(0, 0, 0);
+                    
                 eventData.forEach((data, colIndex) => {
                     const displayText = data.toString();
                     

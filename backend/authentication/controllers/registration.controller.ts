@@ -3,7 +3,7 @@ import { registrationService } from "authentication/services/registration.servic
 
 export class RegistrationController {
   
-  // Crear una nueva inscripción
+  // Crear una nueva inscripción (auto-inscripción universitaria)
   async createRegistration(req: Request, res: Response) {
     try {
       const { event_id } = req.body;
@@ -37,7 +37,7 @@ export class RegistrationController {
       res.status(201).json({
         success: true,
         data: registration,
-        message: 'Inscripción creada exitosamente'
+        message: 'Inscripción confirmada automáticamente'
       });
     } catch (error) {
       console.error('Error in createRegistration:', error);
@@ -160,105 +160,10 @@ export class RegistrationController {
     }
   }
 
-  // Actualizar estado de inscripción
-  async updateRegistrationStatus(req: Request, res: Response) {
-    try {
-      const registrationId = parseInt(req.params.id);
-      const { status } = req.body;
+  // En eventos universitarios, los participantes se auto-inscriben directamente
+  // No hay necesidad de métodos de aprobación/rechazo por parte de organizadores
 
-      if (isNaN(registrationId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID de inscripción inválido'
-        });
-      }
-
-      if (!status || !['registered', 'canceled'].includes(status)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Estado inválido. Debe ser "registered" o "canceled"'
-        });
-      }
-
-      const registration = await registrationService.updateRegistrationStatus(registrationId, { status });
-      if (!registration) {
-        return res.status(404).json({
-          success: false,
-          message: 'Inscripción no encontrada'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: registration,
-        message: 'Estado de inscripción actualizado exitosamente'
-      });
-    } catch (error) {
-      console.error('Error in updateRegistrationStatus:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error actualizando estado de inscripción',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  }
-
-  // Cancelar inscripción
-  async cancelRegistration(req: Request, res: Response) {
-    try {
-      const registrationId = parseInt(req.params.id);
-      const userId = (req as any).user?.user_id;
-
-      if (isNaN(registrationId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID de inscripción inválido'
-        });
-      }
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuario no autenticado'
-        });
-      }
-
-      // Verificar que la inscripción pertenece al usuario o es admin/organizer
-      const registration = await registrationService.getRegistrationById(registrationId);
-      const userRole = (req as any).user?.role;
-      
-      if (!registration) {
-        return res.status(404).json({
-          success: false,
-          message: 'Inscripción no encontrada'
-        });
-      }
-
-      if (registration.user_id !== userId && userRole !== 'admin' && userRole !== 'organizer') {
-        return res.status(403).json({
-          success: false,
-          message: 'No tienes permisos para cancelar esta inscripción'
-        });
-      }
-
-      const canceledRegistration = await registrationService.cancelRegistration(registrationId);
-      
-      res.json({
-        success: true,
-        data: canceledRegistration,
-        message: 'Inscripción cancelada exitosamente'
-      });
-    } catch (error) {
-      console.error('Error in cancelRegistration:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error cancelando inscripción',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  }
-
-  // Eliminar inscripción completamente
+  // Eliminar inscripción completamente (solo para casos excepcionales - duplicados, errores técnicos)
   async deleteRegistration(req: Request, res: Response) {
     try {
       const registrationId = parseInt(req.params.id);

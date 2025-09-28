@@ -79,26 +79,8 @@ export class RegistrationService {
     }
   }
 
-  // Actualizar estado de inscripción
-  async updateRegistrationStatus(registrationId: number, statusData: UpdateRegistrationStatusPayload): Promise<RegistrationRow | null> {
-    try {
-      return await registrationRepository.updateStatus(registrationId, statusData);
-    } catch (error) {
-      console.error('Error updating registration status:', error);
-      throw new Error('Failed to update registration status');
-    }
-  }
-
-  // Cancelar inscripción
-  async cancelRegistration(registrationId: number): Promise<RegistrationRow | null> {
-    try {
-      const statusData: UpdateRegistrationStatusPayload = { status: 'canceled' };
-      return await registrationRepository.updateStatus(registrationId, statusData);
-    } catch (error) {
-      console.error('Error canceling registration:', error);
-      throw new Error('Failed to cancel registration');
-    }
-  }
+  // En eventos universitarios, los participantes se auto-inscriben directamente
+  // No hay necesidad de métodos de aprobación/rechazo por parte de organizadores
 
   // Eliminar inscripción completamente
   async deleteRegistration(registrationId: number): Promise<boolean> {

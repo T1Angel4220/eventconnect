@@ -7,8 +7,11 @@ const router = Router();
 // Aplicar middleware de autenticación a todas las rutas de registrations
 router.use(authMiddleware);
 
-// Rutas de registrations
-// POST /api/registrations - Crear nueva inscripción
+// Rutas de registrations para eventos universitarios
+// En eventos universitarios, los participantes se auto-inscriben directamente
+// No hay necesidad de aprobación/rechazo por parte de organizadores
+
+// POST /api/registrations - Crear nueva inscripción (auto-inscripción)
 router.post('/', registrationController.createRegistration.bind(registrationController));
 
 // GET /api/registrations/my - Obtener inscripciones del usuario autenticado
@@ -32,13 +35,8 @@ router.get('/event/:eventId/capacity', registrationController.getEventCapacity.b
 // GET /api/registrations/:id - Obtener inscripción por ID
 router.get('/:id', registrationController.getRegistrationById.bind(registrationController));
 
-// PUT /api/registrations/:id/status - Actualizar estado de inscripción
-router.put('/:id/status', registrationController.updateRegistrationStatus.bind(registrationController));
-
-// PUT /api/registrations/:id/cancel - Cancelar inscripción
-router.put('/:id/cancel', registrationController.cancelRegistration.bind(registrationController));
-
 // DELETE /api/registrations/:id - Eliminar inscripción completamente (solo admin)
+// Solo para casos excepcionales (duplicados, errores técnicos)
 router.delete('/:id', registrationController.deleteRegistration.bind(registrationController));
 
 export default router;
