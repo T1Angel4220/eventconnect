@@ -45,6 +45,7 @@ const Dashboard: React.FC = () => {
         category: 'all',
         status: 'all'
     });
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
     
@@ -69,7 +70,12 @@ const Dashboard: React.FC = () => {
     }, []); // Solo ejecutar una vez al montar
 
     const handleLogout = () => {
+        setShowLogoutModal(true);
+    };
+
+    const confirmLogout = () => {
         logout();
+        setShowLogoutModal(false);
     };
 
     const handleNavigateToEvents = () => {
@@ -275,7 +281,7 @@ const Dashboard: React.FC = () => {
                         </div>
                         <div className="ml-3">
                             <p className="text-sm font-semibold text-black dark:text-white">{firstName}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{role}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{role === 'organizer' ? 'Organizador' : role}</p>
                         </div>
                     </div>
                     <button
@@ -826,6 +832,46 @@ const Dashboard: React.FC = () => {
                             >
                                 Aplicar Filtros
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Confirmación de Logout */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md mx-4 shadow-2xl transform transition-all duration-300 scale-100">
+                        <div className="text-center">
+                            {/* Icono de advertencia */}
+                            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900 mb-4">
+                                <LogOut className="h-8 w-8 text-red-600 dark:text-red-400" />
+                            </div>
+                            
+                            {/* Título */}
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                                ¿Cerrar Sesión?
+                            </h3>
+                            
+                            {/* Mensaje */}
+                            <p className="text-gray-600 dark:text-gray-300 mb-6">
+                                ¿Estás seguro de que quieres cerrar sesión? Tendrás que volver a iniciar sesión para acceder a tu cuenta.
+                            </p>
+                            
+                            {/* Botones */}
+                            <div className="flex space-x-3">
+                                <button
+                                    onClick={() => setShowLogoutModal(false)}
+                                    className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-all duration-200"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={confirmLogout}
+                                    className="flex-1 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
+                                >
+                                    Sí, Cerrar Sesión
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
