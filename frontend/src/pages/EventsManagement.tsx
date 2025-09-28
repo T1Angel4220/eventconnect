@@ -336,6 +336,7 @@ const EventsManagement: React.FC = () => {
                 ];
                 
                 // Asegurar que el texto sea negro y visible en cada celda
+                doc.setTextColor(0, 0, 0);
                 eventData.forEach((data, colIndex) => {
                     // Forzar color negro en cada celda para máxima visibilidad
                     doc.setTextColor(0, 0, 0);

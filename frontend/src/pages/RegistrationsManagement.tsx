@@ -21,23 +21,37 @@ import {
   Filter,
   UserCheck,
   Clock,
-  Mail,
-  Phone,
-  MapPin,
   Calendar as CalendarIcon,
   User
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { useNotifications } from '../hooks/useNotifications';
+import { 
+  getAllRegistrations, 
+  mapRegistrationStatusToSpanish,
+  mapEventTypeToSpanish,
+  formatDate,
+  formatDateTime,
+  type RegistrationWithDetails 
+} from '../services/registrationService';
+import Notification from '../components/ui/Notification';
+import CustomDropdown from '../components/ui/CustomDropdown';
+import ExportModal from '../components/ui/ExportModal';
+import { generateRegistrationsPDF } from '../utils/pdfGenerator';
 
 const RegistrationsManagement: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
+    const { notifications, removeNotification, showSuccess, showError } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [selectedEvent, setSelectedEvent] = useState('all');
     const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [selectedRegistration, setSelectedRegistration] = useState(null);
+    const [selectedRegistration, setSelectedRegistration] = useState<RegistrationWithDetails | null>(null);
+    const [registrations, setRegistrations] = useState<RegistrationWithDetails[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showExportModal, setShowExportModal] = useState(false);
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
 
@@ -48,6 +62,28 @@ const RegistrationsManagement: React.FC = () => {
         navigate('/login');
     };
 
+    // Cargar inscripciones desde el backend
+    const loadRegistrations = React.useCallback(async () => {
+        try {
+            setLoading(true);
+            const data = await getAllRegistrations();
+            setRegistrations(data);
+        } catch (error: unknown) {
+            console.error('Error cargando inscripciones:', error);
+            showError(
+                'Error cargando inscripciones',
+                error instanceof Error ? error.message : 'Error cargando inscripciones'
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [showError]);
+
+    // Cargar datos al montar el componente
+    React.useEffect(() => {
+        loadRegistrations();
+    }, [loadRegistrations]);
+
     const menuItems = [
         { icon: Home, label: 'Dashboard', active: false, path: '/dashboard' },
         { icon: Calendar, label: 'Eventos', active: false, path: '/events' },
@@ -55,173 +91,111 @@ const RegistrationsManagement: React.FC = () => {
         { icon: Settings, label: 'Configuración', active: false, path: '/settings' },
     ];
 
-    const registrations = [
-        {
-            id: 1,
-            eventName: 'Conferencia de Tecnología',
-            eventDate: '2025-01-15',
-            eventLocation: 'Centro de Convenciones',
-            participant: {
-                name: 'Ana Rodríguez',
-                email: 'ana.rodriguez@email.com',
-                phone: '+1 234 567 8900',
-                company: 'Tech Solutions Inc.',
-                position: 'Desarrolladora Senior',
-                experience: '5 años en desarrollo web'
-            },
-            registrationDate: '2025-01-12',
-            status: 'Pendiente',
-            motivation: 'Interesada en aprender sobre las últimas tendencias en desarrollo de software y networking con otros profesionales.',
-            previousEvents: 3,
-            notes: 'Participante activa en eventos anteriores'
-        },
-        {
-            id: 2,
-            eventName: 'Workshop de Diseño',
-            eventDate: '2025-01-18',
-            eventLocation: 'Sala de Talleres',
-            participant: {
-                name: 'Carlos Mendoza',
-                email: 'carlos.mendoza@email.com',
-                phone: '+1 234 567 8901',
-                company: 'Design Studio',
-                position: 'Diseñador UX/UI',
-                experience: '3 años en diseño digital'
-            },
-            registrationDate: '2025-01-13',
-            status: 'Aprobada',
-            motivation: 'Busco mejorar mis habilidades en diseño UX/UI y conocer nuevas herramientas del mercado.',
-            previousEvents: 1,
-            notes: 'Primera vez en nuestros eventos'
-        },
-        {
-            id: 3,
-            eventName: 'Seminario de Marketing',
-            eventDate: '2025-01-20',
-            eventLocation: 'Auditorio Principal',
-            participant: {
-                name: 'Laura Silva',
-                email: 'laura.silva@email.com',
-                phone: '+1 234 567 8902',
-                company: 'Marketing Pro',
-                position: 'Especialista en Marketing Digital',
-                experience: '4 años en marketing digital'
-            },
-            registrationDate: '2025-01-14',
-            status: 'Rechazada',
-            motivation: 'Necesito actualizar mis conocimientos en estrategias de marketing digital para mi empresa.',
-            previousEvents: 0,
-            notes: 'Capacidad del evento completada'
-        },
-        {
-            id: 4,
-            eventName: 'Networking Event',
-            eventDate: '2025-01-22',
-            eventLocation: 'Hotel Downtown',
-            participant: {
-                name: 'Diego Torres',
-                email: 'diego.torres@email.com',
-                phone: '+1 234 567 8903',
-                company: 'StartupTech',
-                position: 'CEO',
-                experience: '7 años en emprendimiento'
-            },
-            registrationDate: '2025-01-15',
-            status: 'Pendiente',
-            motivation: 'Busco oportunidades de networking para mi startup y posibles inversores.',
-            previousEvents: 2,
-            notes: 'CEO de startup emergente'
-        },
-        {
-            id: 5,
-            eventName: 'Curso de Programación',
-            eventDate: '2025-01-25',
-            eventLocation: 'Laboratorio de Computación',
-            participant: {
-                name: 'María González',
-                email: 'maria.gonzalez@email.com',
-                phone: '+1 234 567 8904',
-                company: 'Freelance',
-                position: 'Desarrolladora Frontend',
-                experience: '2 años en desarrollo frontend'
-            },
-            registrationDate: '2025-01-16',
-            status: 'Aprobada',
-            motivation: 'Quiero mejorar mis habilidades en JavaScript y React para avanzar en mi carrera.',
-            previousEvents: 1,
-            notes: 'Desarrolladora freelance con potencial'
-        },
-        {
-            id: 6,
-            eventName: 'Expo de Innovación',
-            eventDate: '2025-01-28',
-            eventLocation: 'Centro de Exposiciones',
-            participant: {
-                name: 'Roberto Pérez',
-                email: 'roberto.perez@email.com',
-                phone: '+1 234 567 8905',
-                company: 'Innovation Labs',
-                position: 'CTO',
-                experience: '10 años en tecnología'
-            },
-            registrationDate: '2025-01-17',
-            status: 'Pendiente',
-            motivation: 'Interesado en presentar nuestro proyecto innovador y conocer otras iniciativas.',
-            previousEvents: 4,
-            notes: 'CTO con amplia experiencia'
-        }
+    // Obtener lista única de eventos para el filtro
+    const events = React.useMemo(() => {
+        const uniqueEvents = [...new Set(registrations.map(r => r.event_title))];
+        return uniqueEvents.sort();
+    }, [registrations]);
+
+    // Opciones para los dropdowns
+    const statusOptions = [
+        { value: 'all', label: 'Todos los estados' },
+        { value: 'Registrado', label: 'Registrados' },
+        { value: 'Cancelado', label: 'Cancelados' }
     ];
 
-    const events = ['Conferencia de Tecnología', 'Workshop de Diseño', 'Seminario de Marketing', 'Networking Event', 'Curso de Programación', 'Expo de Innovación'];
+    const eventOptions = React.useMemo(() => [
+        { value: 'all', label: 'Todos los eventos' },
+        ...events.map(event => ({ value: event, label: event }))
+    ], [events]);
 
     const filteredRegistrations = registrations.filter(registration => {
-        const matchesSearch = registration.participant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            registration.participant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            registration.eventName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = selectedStatus === 'all' || registration.status === selectedStatus;
-        const matchesEvent = selectedEvent === 'all' || registration.eventName === selectedEvent;
+        const participantName = `${registration.user_first_name} ${registration.user_last_name}`;
+        const matchesSearch = participantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            registration.user_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            registration.event_title.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const spanishStatus = mapRegistrationStatusToSpanish(registration.status);
+        const matchesStatus = selectedStatus === 'all' || spanishStatus === selectedStatus;
+        const matchesEvent = selectedEvent === 'all' || registration.event_title === selectedEvent;
+        
         return matchesSearch && matchesStatus && matchesEvent;
     });
 
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status: 'registered' | 'canceled') => {
         switch (status) {
-            case 'Aprobada':
+            case 'registered':
                 return 'bg-gradient-to-r from-green-500 to-green-600 text-white';
-            case 'Rechazada':
+            case 'canceled':
                 return 'bg-gradient-to-r from-red-500 to-red-600 text-white';
-            case 'Pendiente':
-                return 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white';
             default:
                 return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
         }
     };
 
-    const getStatusIcon = (status: string) => {
+    const getStatusIcon = (status: 'registered' | 'canceled') => {
         switch (status) {
-            case 'Aprobada':
+            case 'registered':
                 return <CheckCircle className="w-4 h-4" />;
-            case 'Rechazada':
+            case 'canceled':
                 return <XCircle className="w-4 h-4" />;
-            case 'Pendiente':
-                return <Clock className="w-4 h-4" />;
             default:
                 return <Clock className="w-4 h-4" />;
         }
     };
 
-    const handleApprove = (registrationId: number) => {
-        console.log('Aprobar inscripción:', registrationId);
-        // Aquí iría la lógica para aprobar la inscripción
-    };
+    // En eventos universitarios, los participantes se auto-inscriben
+    // No hay necesidad de funciones de aprobar/rechazar
 
-    const handleReject = (registrationId: number) => {
-        console.log('Rechazar inscripción:', registrationId);
-        // Aquí iría la lógica para rechazar la inscripción
-    };
-
-    const handleViewDetails = (registration: any) => {
+    const handleViewDetails = (registration: RegistrationWithDetails) => {
         setSelectedRegistration(registration);
         setShowDetailsModal(true);
+    };
+
+    // Función para manejar la exportación
+    const handleExport = (options: {
+        type: 'all' | 'specific' | 'filtered';
+        eventTitle?: string;
+        status?: string;
+        eventType?: string;
+        includeStats: boolean;
+        includeEventInfo: boolean;
+    }) => {
+        try {
+            let dataToExport = registrations;
+
+            // Aplicar filtros según las opciones
+            if (options.type === 'specific' && options.eventTitle && options.eventTitle !== 'all') {
+                dataToExport = dataToExport.filter(r => r.event_title === options.eventTitle);
+            }
+
+            if (options.status && options.status !== 'all') {
+                const englishStatus = options.status === 'Registrado' ? 'registered' : 'canceled';
+                dataToExport = dataToExport.filter(r => r.status === englishStatus);
+            }
+
+            if (options.eventType && options.eventType !== 'all') {
+                dataToExport = dataToExport.filter(r => r.event_type === options.eventType);
+            }
+
+            // Generar PDF
+            generateRegistrationsPDF(
+                dataToExport,
+                options,
+                firstName || 'Organizador'
+            );
+
+            showSuccess(
+                'PDF generado exitosamente',
+                `Se ha generado el reporte con ${dataToExport.length} inscripciones`
+            );
+        } catch (error: unknown) {
+            console.error('Error generando PDF:', error);
+            showError(
+                'Error generando PDF',
+                error instanceof Error ? error.message : 'Error generando el reporte'
+            );
+        }
     };
 
     return (
@@ -348,36 +322,29 @@ const RegistrationsManagement: React.FC = () => {
                                 <h3 className="text-lg font-semibold text-black dark:text-white">Filtros y Acciones</h3>
                             </div>
                             <div className="flex flex-wrap items-center gap-3">
-                                <button className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg">
+                                <button 
+                                    onClick={() => setShowExportModal(true)}
+                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
+                                >
                                     <Download className="w-4 h-4 mr-2" />
                                     <span className="font-medium">Exportar</span>
                                 </button>
-                                <div className="flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
-                                    <Filter className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
-                                    <select
+                                
+                                <CustomDropdown
+                                    options={statusOptions}
                                         value={selectedStatus}
-                                        onChange={(e) => setSelectedStatus(e.target.value)}
-                                        className="bg-transparent text-gray-700 dark:text-gray-300 text-sm focus:outline-none"
-                                    >
-                                        <option value="all">Todos los estados</option>
-                                        <option value="Pendiente">Pendientes</option>
-                                        <option value="Aprobada">Aprobadas</option>
-                                        <option value="Rechazada">Rechazadas</option>
-                                    </select>
-                                </div>
-                                <div className="flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
-                                    <CalendarIcon className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
-                                    <select
+                                    onChange={setSelectedStatus}
+                                    icon={<Filter className="w-4 h-4" />}
+                                    className="min-w-[180px]"
+                                />
+                                
+                                <CustomDropdown
+                                    options={eventOptions}
                                         value={selectedEvent}
-                                        onChange={(e) => setSelectedEvent(e.target.value)}
-                                        className="bg-transparent text-gray-700 dark:text-gray-300 text-sm focus:outline-none"
-                                    >
-                                        <option value="all">Todos los eventos</option>
-                                        {events.map(event => (
-                                            <option key={event} value={event}>{event}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                    onChange={setSelectedEvent}
+                                    icon={<CalendarIcon className="w-4 h-4" />}
+                                    className="min-w-[200px]"
+                                />
                             </div>
                         </div>
                     </div>
@@ -385,7 +352,12 @@ const RegistrationsManagement: React.FC = () => {
                     {/* Registrations Table */}
                     <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-black dark:text-white">Solicitudes de Inscripción</h3>
+                            <div>
+                                <h3 className="text-xl font-bold text-black dark:text-white">Inscripciones Confirmadas</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    En eventos universitarios, los participantes se auto-inscriben directamente
+                                </p>
+                            </div>
                             <div className="text-sm text-gray-600 dark:text-gray-400">
                                 {filteredRegistrations.length} de {registrations.length} inscripciones
                             </div>
@@ -395,75 +367,76 @@ const RegistrationsManagement: React.FC = () => {
                         <div className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
                             <div>Participante</div>
                             <div>Evento</div>
-                            <div>Fecha de Solicitud</div>
+                            <div>Fecha de Inscripción</div>
                             <div>Estado</div>
-                            <div>Experiencia</div>
-                            <div>Eventos Anteriores</div>
+                            <div>Rol</div>
+                            <div>Tipo de Evento</div>
                             <div>Acciones</div>
                         </div>
 
+                        {loading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto mb-4"></div>
+                                <p className="text-gray-600 dark:text-gray-400">Cargando inscripciones...</p>
+                            </div>
+                        ) : (
                         <div className="space-y-3">
                             {filteredRegistrations.map((registration) => (
-                                <div key={registration.id} className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                <div key={registration.registration_id} className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                                     <div className="flex items-center">
                                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mr-3 shadow-lg">
                                             <User className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-black dark:text-white text-sm">{registration.participant.name}</h4>
-                                            <p className="text-xs text-gray-600 dark:text-gray-400">{registration.participant.company}</p>
+                                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                                {registration.user_first_name} {registration.user_last_name}
+                                            </h4>
+                                            <p className="text-xs text-gray-600 dark:text-gray-300">{registration.user_email}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center">
                                         <div>
-                                            <p className="text-sm font-medium text-black dark:text-white">{registration.eventName}</p>
-                                            <p className="text-xs text-gray-600 dark:text-gray-400">{registration.eventDate}</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{registration.event_title}</p>
+                                            <p className="text-xs text-gray-600 dark:text-gray-300">{formatDate(registration.event_date)}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {registration.registrationDate}
+                                    <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
+                                        {formatDate(registration.registered_at)}
                                     </div>
                                     <div className="flex items-center">
                                         <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(registration.status)}`}>
                                             {getStatusIcon(registration.status)}
-                                            <span className="ml-1">{registration.status}</span>
+                                            <span className="ml-1">{mapRegistrationStatusToSpanish(registration.status)}</span>
                                         </span>
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {registration.participant.experience}
+                                    <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
+                                        {registration.user_role}
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {registration.previousEvents} eventos
+                                    <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
+                                        <div className="text-center">
+                                            <div className="font-medium">{mapEventTypeToSpanish(registration.event_type)}</div>
+                                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                Capacidad: {registration.event_capacity}
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <button 
                                             onClick={() => handleViewDetails(registration)}
                                             className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                            title="Ver detalles de la inscripción"
                                         >
                                             <Eye className="w-4 h-4" />
                                         </button>
-                                        {registration.status === 'Pendiente' && (
-                                            <>
-                                                <button 
-                                                    onClick={() => handleApprove(registration.id)}
-                                                    className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
-                                                >
-                                                    <CheckCircle className="w-4 h-4" />
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleReject(registration.id)}
-                                                    className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                                >
-                                                    <XCircle className="w-4 h-4" />
-                                                </button>
-                                            </>
-                                        )}
+                                        {/* En eventos universitarios, los participantes se auto-inscriben */}
+                                        {/* No hay necesidad de aprobar/rechazar inscripciones */}
                                     </div>
                                 </div>
                             ))}
                         </div>
+                        )}
 
-                        {filteredRegistrations.length === 0 && (
+                        {!loading && filteredRegistrations.length === 0 && (
                             <div className="text-center py-12">
                                 <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                                 <p className="text-gray-600 dark:text-gray-400 font-medium">No se encontraron inscripciones</p>
@@ -495,19 +468,27 @@ const RegistrationsManagement: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Evento:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.eventName}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.event_title}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Fecha:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.eventDate}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{formatDateTime(selectedRegistration.event_date)}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Ubicación:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.eventLocation}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.event_location || 'No especificada'}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Fecha de Solicitud:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.registrationDate}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{formatDateTime(selectedRegistration.registered_at)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 dark:text-gray-400">Tipo:</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{mapEventTypeToSpanish(selectedRegistration.event_type)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 dark:text-gray-400">Capacidad:</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.event_capacity} personas</p>
                                     </div>
                                 </div>
                             </div>
@@ -518,72 +499,67 @@ const RegistrationsManagement: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Nombre:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.name}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-600 dark:text-gray-400">Empresa:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.company}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-600 dark:text-gray-400">Posición:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.position}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-600 dark:text-gray-400">Experiencia:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.experience}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                                            {selectedRegistration.user_first_name} {selectedRegistration.user_last_name}
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Email:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.email}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.user_email}</p>
                                     </div>
                                     <div>
-                                        <p className="text-gray-600 dark:text-gray-400">Teléfono:</p>
-                                        <p className="font-medium text-black dark:text-white">{selectedRegistration.participant.phone}</p>
+                                        <p className="text-gray-600 dark:text-gray-400">Rol:</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.user_role}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 dark:text-gray-400">Estado:</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{mapRegistrationStatusToSpanish(selectedRegistration.status)}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Motivation */}
-                            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-                                <h4 className="font-semibold text-black dark:text-white mb-3">Motivación</h4>
-                                <p className="text-sm text-gray-700 dark:text-gray-300">{selectedRegistration.motivation}</p>
-                            </div>
-
-                            {/* Notes */}
-                            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-                                <h4 className="font-semibold text-black dark:text-white mb-3">Notas</h4>
-                                <p className="text-sm text-gray-700 dark:text-gray-300">{selectedRegistration.notes}</p>
-                            </div>
-
-                            {/* Actions */}
-                            {selectedRegistration.status === 'Pendiente' && (
-                                <div className="flex space-x-3">
-                                    <button
-                                        onClick={() => {
-                                            handleApprove(selectedRegistration.id);
-                                            setShowDetailsModal(false);
-                                        }}
-                                        className="flex-1 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg"
-                                    >
+                            {/* Información adicional para organizadores universitarios */}
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                                    📋 Información para Organizadores
+                                </h4>
+                                <p className="text-sm text-blue-800 dark:text-blue-200">
+                                    En eventos universitarios, los participantes se auto-inscriben directamente. 
+                                    Esta inscripción está confirmada automáticamente.
+                                </p>
+                                <div className="mt-3 flex items-center text-sm text-blue-700 dark:text-blue-300">
                                         <CheckCircle className="w-4 h-4 mr-2" />
-                                        Aprobar Inscripción
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            handleReject(selectedRegistration.id);
-                                            setShowDetailsModal(false);
-                                        }}
-                                        className="flex-1 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
-                                    >
-                                        <XCircle className="w-4 h-4 mr-2" />
-                                        Rechazar Inscripción
-                                    </button>
+                                    <span>Inscripción confirmada automáticamente</span>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Export Modal */}
+            <ExportModal
+                isOpen={showExportModal}
+                onClose={() => setShowExportModal(false)}
+                onExport={handleExport}
+                registrations={registrations}
+                events={events}
+            />
+
+            {/* Notifications */}
+            <div className="fixed top-4 right-4 z-50 space-y-2">
+                {notifications.map((notification) => (
+                    <Notification
+                        key={notification.id}
+                        id={notification.id}
+                        type={notification.type}
+                        title={notification.title}
+                        message={notification.message}
+                        duration={notification.duration}
+                        onClose={removeNotification}
+                    />
+                ))}
+            </div>
         </div>
     );
 };
