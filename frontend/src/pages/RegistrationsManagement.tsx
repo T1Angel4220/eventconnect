@@ -36,11 +36,13 @@ import {
 } from '../services/registrationService';
 import Notification from '../components/ui/Notification';
 import CustomDropdown from '../components/ui/CustomDropdown';
+import ExportModal from '../components/ui/ExportModal';
+import { generateRegistrationsPDF } from '../utils/pdfGenerator';
 
 const RegistrationsManagement: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
-    const { notifications, removeNotification, showError } = useNotifications();
+    const { notifications, removeNotification, showSuccess, showError } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('all');
@@ -49,6 +51,7 @@ const RegistrationsManagement: React.FC = () => {
     const [selectedRegistration, setSelectedRegistration] = useState<RegistrationWithDetails | null>(null);
     const [registrations, setRegistrations] = useState<RegistrationWithDetails[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showExportModal, setShowExportModal] = useState(false);
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
 
@@ -147,6 +150,52 @@ const RegistrationsManagement: React.FC = () => {
     const handleViewDetails = (registration: RegistrationWithDetails) => {
         setSelectedRegistration(registration);
         setShowDetailsModal(true);
+    };
+
+    // Función para manejar la exportación
+    const handleExport = (options: {
+        type: 'all' | 'specific' | 'filtered';
+        eventTitle?: string;
+        status?: string;
+        eventType?: string;
+        includeStats: boolean;
+        includeEventInfo: boolean;
+    }) => {
+        try {
+            let dataToExport = registrations;
+
+            // Aplicar filtros según las opciones
+            if (options.type === 'specific' && options.eventTitle && options.eventTitle !== 'all') {
+                dataToExport = dataToExport.filter(r => r.event_title === options.eventTitle);
+            }
+
+            if (options.status && options.status !== 'all') {
+                const englishStatus = options.status === 'Registrado' ? 'registered' : 'canceled';
+                dataToExport = dataToExport.filter(r => r.status === englishStatus);
+            }
+
+            if (options.eventType && options.eventType !== 'all') {
+                dataToExport = dataToExport.filter(r => r.event_type === options.eventType);
+            }
+
+            // Generar PDF
+            generateRegistrationsPDF(
+                dataToExport,
+                options,
+                firstName || 'Organizador'
+            );
+
+            showSuccess(
+                'PDF generado exitosamente',
+                `Se ha generado el reporte con ${dataToExport.length} inscripciones`
+            );
+        } catch (error: unknown) {
+            console.error('Error generando PDF:', error);
+            showError(
+                'Error generando PDF',
+                error instanceof Error ? error.message : 'Error generando el reporte'
+            );
+        }
     };
 
     return (
@@ -273,14 +322,17 @@ const RegistrationsManagement: React.FC = () => {
                                 <h3 className="text-lg font-semibold text-black dark:text-white">Filtros y Acciones</h3>
                             </div>
                             <div className="flex flex-wrap items-center gap-3">
-                                <button className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg">
+                                <button 
+                                    onClick={() => setShowExportModal(true)}
+                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
+                                >
                                     <Download className="w-4 h-4 mr-2" />
                                     <span className="font-medium">Exportar</span>
                                 </button>
                                 
                                 <CustomDropdown
                                     options={statusOptions}
-                                    value={selectedStatus}
+                                        value={selectedStatus}
                                     onChange={setSelectedStatus}
                                     icon={<Filter className="w-4 h-4" />}
                                     className="min-w-[180px]"
@@ -288,7 +340,7 @@ const RegistrationsManagement: React.FC = () => {
                                 
                                 <CustomDropdown
                                     options={eventOptions}
-                                    value={selectedEvent}
+                                        value={selectedEvent}
                                     onChange={setSelectedEvent}
                                     icon={<CalendarIcon className="w-4 h-4" />}
                                     className="min-w-[200px]"
@@ -484,6 +536,15 @@ const RegistrationsManagement: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Export Modal */}
+            <ExportModal
+                isOpen={showExportModal}
+                onClose={() => setShowExportModal(false)}
+                onExport={handleExport}
+                registrations={registrations}
+                events={events}
+            />
 
             {/* Notifications */}
             <div className="fixed top-4 right-4 z-50 space-y-2">
