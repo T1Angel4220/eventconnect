@@ -918,6 +918,10 @@ const EventsManagement: React.FC = () => {
         navigate('/login');
     };
 
+    const handleNavigateToConfiguration = () => {
+        navigate('/configuration');
+    };
+
     // Función para calcular el estado del evento basado en fecha, hora y duración
     const calculateEventStatus = (eventDate: string, duration: number): string => {
         const now = new Date();
@@ -1240,11 +1244,23 @@ const EventsManagement: React.FC = () => {
         setShowDetailsModal(true);
     };
 
+    const handleNavigateToDashboard = () => {
+        navigate('/dashboard');
+    };
+
+    const handleNavigateToEvents = () => {
+        navigate('/events-management');
+    };
+
+    const handleNavigateToRegistrations = () => {
+        navigate('/registrations-management');
+    };
+
     const menuItems = [
-        { icon: Home, label: 'Dashboard', active: false, path: '/dashboard' },
-        { icon: Calendar, label: 'Eventos', active: true, path: '/events-management' },
-        { icon: Users, label: 'Inscripciones', active: false, path: '/registrations-management' },
-        { icon: Settings, label: 'Configuración', active: false, path: '/settings' },
+        { icon: Home, label: 'Dashboard', active: false, onClick: handleNavigateToDashboard },
+        { icon: Calendar, label: 'Eventos', active: true, onClick: handleNavigateToEvents },
+        { icon: Users, label: 'Inscripciones', active: false, onClick: handleNavigateToRegistrations },
+        { icon: Settings, label: 'Configuración', active: false, onClick: handleNavigateToConfiguration },
     ];
 
     const uiEvents = React.useMemo(() => {
@@ -1347,7 +1363,7 @@ const EventsManagement: React.FC = () => {
             <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-black border-r border-gray-200 dark:border-white transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
                 <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-white">
                     <div className="flex items-center">
-                        <div className="w-6 h-6 bg-black dark:bg-white rounded-lg flex items-center justify-center">
+                        <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center">
                             <Calendar className="w-5 h-5 text-white dark:text-black" />
                         </div>
                         <span className="ml-3 text-xl font-bold text-black dark:text-white">EventConnect</span>
@@ -1365,8 +1381,8 @@ const EventsManagement: React.FC = () => {
                         {menuItems.map((item, index) => (
                             <li key={index}>
                                 <button
-                                    onClick={() => navigate(item.path)}
-                                    className={`w-full flex items-center px-4 py-2 text-left rounded-xl transition-all duration-200 ${
+                                    onClick={item.onClick}
+                                    className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all duration-200 ${
                                         item.active
                                             ? 'bg-black dark:bg-white text-white dark:text-black'
                                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white'
@@ -1392,7 +1408,7 @@ const EventsManagement: React.FC = () => {
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
+                        className="w-full flex items-center px-4 py-3 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
                     >
                         <LogOut className="w-5 h-5 mr-3" />
                         Cerrar Sesión

@@ -62,6 +62,10 @@ const RegistrationsManagement: React.FC = () => {
         navigate('/login');
     };
 
+    const handleNavigateToConfiguration = () => {
+        navigate('/configuration');
+    };
+
     // Cargar inscripciones desde el backend
     const loadRegistrations = React.useCallback(async () => {
         try {
@@ -84,11 +88,23 @@ const RegistrationsManagement: React.FC = () => {
         loadRegistrations();
     }, [loadRegistrations]);
 
+    const handleNavigateToDashboard = () => {
+        navigate('/dashboard');
+    };
+
+    const handleNavigateToEvents = () => {
+        navigate('/events-management');
+    };
+
+    const handleNavigateToRegistrations = () => {
+        navigate('/registrations-management');
+    };
+
     const menuItems = [
-        { icon: Home, label: 'Dashboard', active: false, path: '/dashboard' },
-        { icon: Calendar, label: 'Eventos', active: false, path: '/events' },
-        { icon: Users, label: 'Inscripciones', active: true, path: '/registrations' },
-        { icon: Settings, label: 'Configuración', active: false, path: '/settings' },
+        { icon: Home, label: 'Dashboard', active: false, onClick: handleNavigateToDashboard },
+        { icon: Calendar, label: 'Eventos', active: false, onClick: handleNavigateToEvents },
+        { icon: Users, label: 'Inscripciones', active: true, onClick: handleNavigateToRegistrations },
+        { icon: Settings, label: 'Configuración', active: false, onClick: handleNavigateToConfiguration },
     ];
 
     // Obtener lista única de eventos para el filtro
@@ -222,7 +238,7 @@ const RegistrationsManagement: React.FC = () => {
                         {menuItems.map((item, index) => (
                             <li key={index}>
                                 <button
-                                    onClick={() => navigate(item.path)}
+                                    onClick={item.onClick}
                                     className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all duration-200 ${
                                         item.active
                                             ? 'bg-black dark:bg-white text-white dark:text-black'

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,6 +10,7 @@ import {
 } from 'chart.js';
 import type { TooltipItem } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import { useTheme } from '../../hooks/useTheme';
 
 // Registrar los componentes de Chart.js
 ChartJS.register(
@@ -34,15 +35,18 @@ interface ParticipantsChartProps {
 }
 
 const ParticipantsChart: React.FC<ParticipantsChartProps> = ({ data, loading = false }) => {
+  // Usar el hook de tema para detectar cambios dinámicos
+  const { isDark } = useTheme();
+  
   // Preparar los datos para el gráfico
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: data.map(item => `${item.month.trim()} ${item.year}`),
     datasets: [
       {
         label: 'Participantes',
         data: data.map(item => item.participants),
-        backgroundColor: 'rgba(147, 51, 234, 0.8)',
-        borderColor: 'rgba(147, 51, 234, 1)',
+        backgroundColor: isDark ? 'rgba(139, 92, 246, 0.9)' : 'rgba(124, 58, 237, 0.8)',
+        borderColor: isDark ? 'rgba(139, 92, 246, 1)' : 'rgba(124, 58, 237, 1)',
         borderWidth: 2,
         borderRadius: 8,
         borderSkipped: false,
@@ -50,23 +54,23 @@ const ParticipantsChart: React.FC<ParticipantsChartProps> = ({ data, loading = f
       {
         label: 'Eventos',
         data: data.map(item => item.events),
-        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-        borderColor: 'rgba(59, 130, 246, 1)',
+        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.9)' : 'rgba(37, 99, 235, 0.8)',
+        borderColor: isDark ? 'rgba(59, 130, 246, 1)' : 'rgba(37, 99, 235, 1)',
         borderWidth: 2,
         borderRadius: 8,
         borderSkipped: false,
       }
     ],
-  };
+  }), [data, isDark]);
 
-  const options = {
+  const options = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top' as const,
         labels: {
-          color: '#374151',
+          color: isDark ? '#FFFFFF' : '#1F2937',
           font: {
             size: 12,
             weight: 500,
@@ -77,10 +81,10 @@ const ParticipantsChart: React.FC<ParticipantsChartProps> = ({ data, loading = f
         display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: isDark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(0, 0, 0, 0.9)',
         titleColor: '#fff',
         bodyColor: '#fff',
-        borderColor: 'rgba(147, 51, 234, 1)',
+        borderColor: isDark ? 'rgba(139, 92, 246, 1)' : 'rgba(124, 58, 237, 1)',
         borderWidth: 1,
         cornerRadius: 8,
         displayColors: true,
@@ -91,7 +95,7 @@ const ParticipantsChart: React.FC<ParticipantsChartProps> = ({ data, loading = f
           label: function(context: TooltipItem<'bar'>) {
             const label = context.dataset?.label || '';
             const value = context.parsed?.y || 0;
-            return `${label}: ${value}`;
+            return `${label}: ${Number(value).toLocaleString()}`;
           }
         }
       },
@@ -102,7 +106,7 @@ const ParticipantsChart: React.FC<ParticipantsChartProps> = ({ data, loading = f
           display: false,
         },
         ticks: {
-          color: '#6B7280',
+          color: isDark ? '#F9FAFB' : '#374151',
           font: {
             size: 11,
           },
@@ -111,10 +115,10 @@ const ParticipantsChart: React.FC<ParticipantsChartProps> = ({ data, loading = f
       y: {
         beginAtZero: true,
         grid: {
-          color: 'rgba(0, 0, 0, 0.05)',
+          color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
         },
         ticks: {
-          color: '#6B7280',
+          color: isDark ? '#F9FAFB' : '#374151',
           font: {
             size: 11,
           },
@@ -128,7 +132,7 @@ const ParticipantsChart: React.FC<ParticipantsChartProps> = ({ data, loading = f
       intersect: false,
       mode: 'index' as const,
     },
-  };
+  }), [isDark]);
 
   if (loading) {
     return (

@@ -165,9 +165,9 @@ class StatsRepositoryImpl implements StatsRepository {
       )
       SELECT 
         TO_CHAR(ms.month_start, 'Month') as month,
-        EXTRACT(YEAR FROM ms.month_start) as year,
-        COALESCE(md.participants, 0) as participants,
-        COALESCE(md.events, 0) as events
+        EXTRACT(YEAR FROM ms.month_start)::integer as year,
+        COALESCE(md.participants, 0)::integer as participants,
+        COALESCE(md.events, 0)::integer as events
       FROM month_series ms
       LEFT JOIN monthly_data md ON ms.month_start = md.month
       ORDER BY ms.month_start

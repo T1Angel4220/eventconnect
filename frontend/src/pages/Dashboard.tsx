@@ -37,6 +37,14 @@ const Dashboard: React.FC = () => {
     const { toggleTheme, isDark } = useTheme();
     const { checkAuth, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [showFilterModal, setShowFilterModal] = useState(false);
+    const [selectedChart, setSelectedChart] = useState<'participants' | 'categories' | null>(null);
+    const [filterOptions, setFilterOptions] = useState({
+        dateRange: 'all',
+        category: 'all',
+        status: 'all'
+    });
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
     
@@ -76,11 +84,50 @@ const Dashboard: React.FC = () => {
         navigate('/configuration');
     };
 
+    // Funciones para acciones rápidas
+    const handleCreateEvent = () => {
+        navigate('/events-management');
+    };
+
+    const handleInviteUsers = () => {
+        navigate('/registrations-management');
+    };
+
+    const handleViewReports = () => {
+        // Por ahora mostrar las estadísticas del dashboard (scroll hacia abajo)
+        const statsSection = document.getElementById('stats-section');
+        if (statsSection) {
+            statsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    // Funciones para modales
+    const handleViewDetails = (chartType: 'participants' | 'categories') => {
+        setSelectedChart(chartType);
+        setShowDetailsModal(true);
+    };
+
+    const handleOpenFilter = () => {
+        setShowFilterModal(true);
+    };
+
+    const handleCloseModals = () => {
+        setShowDetailsModal(false);
+        setShowFilterModal(false);
+        setSelectedChart(null);
+    };
+
+    const handleApplyFilter = () => {
+        // Aquí aplicarías los filtros a los datos
+        console.log('Aplicando filtros:', filterOptions);
+        setShowFilterModal(false);
+    };
+
+
     const menuItems = [
         { icon: Home, label: 'Dashboard', active: true, onClick: () => {} },
         { icon: Calendar, label: 'Eventos', active: false, onClick: handleNavigateToEvents },
         { icon: Users, label: 'Inscripciones', active: false, onClick: handleNavigateToRegistrations },
-        { icon: BarChart3, label: 'Estadísticas', active: false, onClick: () => {} },
         { icon: Settings, label: 'Configuración', active: false, onClick: handleNavigateToConfiguration },
     ];
 
@@ -313,21 +360,26 @@ const Dashboard: React.FC = () => {
                                 <h3 className="text-lg font-semibold text-black dark:text-white">Acciones Rápidas</h3>
                             </div>
                             <div className="flex flex-wrap items-center gap-3">
-                                <button className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg">
+                                <button 
+                                    onClick={handleCreateEvent}
+                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
+                                >
                                     <Calendar className="w-4 h-4 mr-2" />
                                     <span className="font-medium">Crear Evento</span>
                                 </button>
-                                <button className="flex items-center px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg">
+                                <button 
+                                    onClick={handleInviteUsers}
+                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg"
+                                >
                                     <Users className="w-4 h-4 mr-2" />
                                     <span className="font-medium">Invitar Usuarios</span>
                                 </button>
-                                <button className="flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-lg">
+                                <button 
+                                    onClick={handleViewReports}
+                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
+                                >
                                     <BarChart3 className="w-4 h-4 mr-2" />
                                     <span className="font-medium">Ver Reportes</span>
-                                </button>
-                                <button className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg">
-                                    <Download className="w-4 h-4 mr-2" />
-                                    <span className="font-medium">Exportar Datos</span>
                                 </button>
                                 <button 
                                     onClick={handleNavigateToConfiguration}
@@ -345,7 +397,7 @@ const Dashboard: React.FC = () => {
                         <h2 className="text-3xl font-bold text-black dark:text-white mb-2">
                             ¡Bienvenido de vuelta, {firstName}!
                         </h2>
-                        <p className="text-gray-600 dark:text-gray-400">
+                        <p className="text-gray-600 dark:text-gray-300">
                             Aquí tienes un resumen de tu actividad reciente en EventConnect.
                         </p>
                     </div>
@@ -356,14 +408,14 @@ const Dashboard: React.FC = () => {
                             <div key={index} className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all duration-300">
                                 <div className="flex items-center justify-between">
                                     <div className="flex-1">
-                                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{stat.title}</p>
-                                        <p className="text-2xl font-bold text-black dark:text-white mb-1">{stat.value}</p>
+                                        <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">{stat.title}</p>
+                                        <p className="text-2xl font-bold text-black dark:text-gray-100 mb-1">{stat.value}</p>
                                         <p className={`text-xs font-medium ${
                                             stat.changeType === 'positive' 
-                                                ? 'text-green-600 dark:text-green-400' 
+                                                ? 'text-green-600 dark:text-green-300' 
                                                 : stat.changeType === 'negative'
-                                                ? 'text-red-600 dark:text-red-400'
-                                                : 'text-gray-600 dark:text-gray-400'
+                                                ? 'text-red-600 dark:text-red-300'
+                                                : 'text-gray-600 dark:text-gray-300'
                                         }`}>
                                             {stat.change} desde el mes pasado
                                         </p>
@@ -396,7 +448,7 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 
                                 {/* Table Header */}
-                                <div className="grid grid-cols-8 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
+                                <div className="grid grid-cols-8 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-200">
                                     <div>Evento</div>
                                     <div>Fecha</div>
                                     <div>Participantes</div>
@@ -416,25 +468,25 @@ const Dashboard: React.FC = () => {
                                                 <div className="flex items-center">
                                                     <div>
                                                         <h4 className="font-semibold text-black dark:text-white text-sm">{event.title}</h4>
-                                                        <p className="text-xs text-gray-600 dark:text-gray-400">{getEventTypeLabel(event.event_type)}</p>
+                                                        <p className="text-xs text-gray-600 dark:text-gray-300">{getEventTypeLabel(event.event_type)}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
                                                     {formatDate(event.event_date)}
                                                 </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
                                                     {event.registered_count}
                                                 </div>
-                                                <div className="flex items-center text-sm font-semibold text-purple-600 dark:text-purple-400">
+                                                <div className="flex items-center text-sm font-semibold text-purple-600 dark:text-purple-300">
                                                     {event.capacity}
                                                 </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
                                                     {event.organizer_name}
                                                 </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
                                                     {formatTime(event.event_date)}
                                                 </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
                                                     {formatDuration(event.duration)}
                                                 </div>
                                                 <div className="flex items-center">
@@ -489,17 +541,14 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     {/* Additional Management Sections */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div id="stats-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                         {/* Participants Chart */}
                         <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xl font-bold text-black dark:text-white">Participantes por Mes</h3>
                                 <button 
                                     className="flex items-center px-3 py-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
-                                    onClick={() => {
-                                        // TODO: Implementar modal o página de detalles
-                                        console.log('Ver detalles del gráfico');
-                                    }}
+                                    onClick={() => handleViewDetails('participants')}
                                 >
                                     <BarChart3 className="w-4 h-4 mr-2" />
                                     Ver Detalles
@@ -517,7 +566,17 @@ const Dashboard: React.FC = () => {
                         <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xl font-bold text-black dark:text-white">Categorías de Eventos</h3>
-                                <button className="flex items-center px-3 py-1 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg text-sm hover:from-violet-600 hover:to-violet-700 transition-all duration-200">
+                                <button 
+                                    className="flex items-center px-3 py-1 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg text-sm hover:from-violet-600 hover:to-violet-700 transition-all duration-200"
+                                    onClick={() => handleViewDetails('categories')}
+                                >
+                                    <BarChart3 className="w-4 h-4 mr-2" />
+                                    Ver Detalles
+                                </button>
+                                <button 
+                                    className="flex items-center px-3 py-1 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg text-sm hover:from-violet-600 hover:to-violet-700 transition-all duration-200"
+                                    onClick={handleOpenFilter}
+                                >
                                     <Filter className="w-4 h-4 mr-2" />
                                     Filtrar
                                 </button>
@@ -556,6 +615,221 @@ const Dashboard: React.FC = () => {
                     </div>
                 </main>
             </div>
+
+            {/* Modal de Ver Detalles */}
+            {showDetailsModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-2xl mx-2 shadow-2xl transform transition-all duration-300 my-2 max-h-[90vh] overflow-y-auto">
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-10 h-10 bg-gray-600 dark:bg-gray-300 rounded-lg flex items-center justify-center shadow-md">
+                                        <BarChart3 className="w-5 h-5 text-white dark:text-gray-800" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                                            {selectedChart === 'participants' ? 'Detalles de Participantes' : 'Detalles de Categorías'}
+                                        </h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Información detallada de las estadísticas
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleCloseModals}
+                                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="p-4 space-y-4">
+                            {selectedChart === 'participants' ? (
+                                <div className="space-y-4">
+                                    <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-purple-50/80 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-lg">
+                                        <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Participantes por Mes</h4>
+                                        <div className="h-64">
+                                            <ParticipantsChart 
+                                                data={participantsData} 
+                                                loading={loading}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                                            <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Total Participantes</h5>
+                                            <p className="text-2xl font-bold text-purple-600 dark:text-purple-300">
+                                                {participantsData.reduce((sum, item) => sum + item.participants, 0).toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                                            <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Promedio Mensual</h5>
+                                            <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">
+                                                {participantsData.length > 0 ? Math.round(participantsData.reduce((sum, item) => sum + item.participants, 0) / participantsData.length).toLocaleString() : 0}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="bg-gradient-to-r from-green-50/80 via-emerald-50/80 to-teal-50/80 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 rounded-xl p-4 border border-green-200/50 dark:border-green-700/50 backdrop-blur-sm shadow-lg">
+                                        <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Distribución por Categorías</h4>
+                                        <div className="space-y-3">
+                                            {eventCategories.map((item, index) => {
+                                                const colors = [
+                                                    'from-purple-500 to-purple-600',
+                                                    'from-violet-500 to-violet-600',
+                                                    'from-indigo-500 to-indigo-600',
+                                                    'from-purple-600 to-purple-700',
+                                                    'from-violet-600 to-violet-700'
+                                                ];
+                                                const color = colors[index % colors.length];
+                                                
+                                                return (
+                                                    <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600">
+                                                        <div className="flex items-center">
+                                                            <div className={`w-4 h-4 bg-gradient-to-r ${color} rounded-full mr-3`}></div>
+                                                            <span className="font-medium text-gray-900 dark:text-gray-100">{item.category}</span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{item.count.toLocaleString()} eventos</div>
+                                                            <div className="text-sm text-gray-600 dark:text-gray-300">{item.percentage}%</div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                                            <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Total Eventos</h5>
+                                            <p className="text-2xl font-bold text-green-600 dark:text-green-300">
+                                                {eventCategories.reduce((sum, item) => sum + item.count, 0).toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                                            <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Categoría Principal</h5>
+                                            <p className="text-lg font-bold text-purple-600 dark:text-purple-300">
+                                                {eventCategories.length > 0 ? eventCategories[0].category : 'N/A'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end px-4 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
+                            <button
+                                onClick={handleCloseModals}
+                                className="px-6 py-2 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Filtrar */}
+            {showFilterModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-md mx-2 shadow-2xl transform transition-all duration-300 my-2">
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-10 h-10 bg-gray-600 dark:bg-gray-300 rounded-lg flex items-center justify-center shadow-md">
+                                        <Filter className="w-5 h-5 text-white dark:text-gray-800" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                                            Filtrar Estadísticas
+                                        </h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Configura las opciones de filtrado
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleCloseModals}
+                                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="p-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Rango de Fechas
+                                </label>
+                                <select
+                                    value={filterOptions.dateRange}
+                                    onChange={(e) => setFilterOptions(prev => ({ ...prev, dateRange: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                >
+                                    <option value="all">Todos los períodos</option>
+                                    <option value="last7days">Últimos 7 días</option>
+                                    <option value="last30days">Últimos 30 días</option>
+                                    <option value="last3months">Últimos 3 meses</option>
+                                    <option value="last6months">Últimos 6 meses</option>
+                                    <option value="thisYear">Este año</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Categoría de Evento
+                                </label>
+                                <select
+                                    value={filterOptions.category}
+                                    onChange={(e) => setFilterOptions(prev => ({ ...prev, category: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                >
+                                    <option value="all">Todas las categorías</option>
+                                    <option value="academic">Académico</option>
+                                    <option value="cultural">Cultural</option>
+                                    <option value="sports">Deportes</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Estado del Evento
+                                </label>
+                                <select
+                                    value={filterOptions.status}
+                                    onChange={(e) => setFilterOptions(prev => ({ ...prev, status: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                >
+                                    <option value="all">Todos los estados</option>
+                                    <option value="upcoming">Próximos</option>
+                                    <option value="in_progress">En Progreso</option>
+                                    <option value="completed">Finalizados</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-3 px-4 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
+                            <button
+                                onClick={handleCloseModals}
+                                className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleApplyFilter}
+                                className="px-6 py-2 text-sm font-medium text-white dark:text-gray-800 bg-gray-700 dark:bg-gray-300 hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg transition-colors"
+                            >
+                                Aplicar Filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -10,7 +10,6 @@ import {
   Users, 
   Settings, 
   LogOut, 
-  BarChart3,
   UserCheck,
   Sun,
   Moon,
@@ -130,7 +129,6 @@ const Configuration: React.FC = () => {
         { icon: Home, label: 'Dashboard', active: false, onClick: handleNavigateToDashboard },
         { icon: Calendar, label: 'Eventos', active: false, onClick: handleNavigateToEvents },
         { icon: Users, label: 'Inscripciones', active: false, onClick: handleNavigateToRegistrations },
-        { icon: BarChart3, label: 'Estadísticas', active: false, onClick: () => {} },
         { icon: Settings, label: 'Configuración', active: true, onClick: () => {} },
     ];
 
