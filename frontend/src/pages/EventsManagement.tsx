@@ -37,18 +37,67 @@ import ConfirmModal from '../components/ui/ConfirmModal';
 import jsPDF from 'jspdf';
 import '../components/ui/CustomSelect.css';
 
+// Interfaces para tipado fuerte
+interface EventData {
+    event_id: number;
+    title: string;
+    event_date: string;
+    duration: number;
+    location?: string;
+    event_type: 'academic' | 'cultural' | 'sports';
+    capacity: number;
+    attendees?: number;
+    event_image: string;
+    description?: string;
+    [key: string]: unknown;
+}
+
+interface UIEvent {
+    id: number;
+    name: string;
+    date: string;
+    time: string;
+    duration: number;
+    location: string;
+    attendees: number;
+    capacity: number;
+    status: string;
+    category: string;
+    organizer: string;
+    description: string;
+    event_image: string;
+    createdAt: string;
+    raw: EventData;
+}
+
 const EventsManagement: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
     const { notifications, removeNotification, showSuccess, showError, showWarning } = useNotifications();
-    const { showSessionExpiredModal, handleSessionExpired, goToLogin } = useSessionExpired();
+    const { showSessionExpiredModal, goToLogin } = useSessionExpired();
+    
+    // Función helper para construir URLs de imágenes
+    const getImageUrl = (imagePath: string): string => {
+        if (!imagePath) {
+            console.log("🖼️ No hay imagen, usando por defecto");
+            return 'http://localhost:3001/uploads/events/default-event.jpg';
+        }
+        if (imagePath.startsWith('http')) {
+            console.log("🖼️ URL completa:", imagePath);
+            return imagePath;
+        }
+        const fullUrl = `http://localhost:3001${imagePath}`;
+        console.log("🖼️ Construyendo URL:", imagePath, "->", fullUrl);
+        return fullUrl;
+    };
+    
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [editingEvent, setEditingEvent] = useState<any>(null);
+    const [editingEvent, setEditingEvent] = useState<{event_id: number; title: string; event_image: string} | null>(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [selectedEvent, setSelectedEvent] = useState<any>(null);
+    const [selectedEvent, setSelectedEvent] = useState<UIEvent | null>(null);
     const [newEvent, setNewEvent] = useState({
         name: '',
         date: '',
@@ -57,15 +106,18 @@ const EventsManagement: React.FC = () => {
         location: '',
         capacity: '',
         category: '',
-        description: ''
+        description: '',
+        image: null as File | null
     });
+    const [existingEventImage, setExistingEventImage] = useState<string>('');
+    const [newImagePreview, setNewImagePreview] = useState<string>('');
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
     const profileImage = localStorage.getItem('profileImage');
-    const [events, setEvents] = useState<any[]>([]);
+    const [events, setEvents] = useState<EventData[]>([]);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [eventToDelete, setEventToDelete] = useState<any>(null);
+    const [eventToDelete, setEventToDelete] = useState<{event_id: number; title: string} | null>(null);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -97,7 +149,7 @@ const EventsManagement: React.FC = () => {
 
 
     // Función auxiliar para verificar si hay espacio suficiente para una fila de tabla
-    const checkTableRowSpace = (doc: any, currentY: number, cellHeight: number = 12) => {
+    const checkTableRowSpace = (doc: jsPDF, currentY: number, cellHeight: number = 12) => {
         const pageHeight = doc.internal.pageSize.height;
         const footerSpace = 100; // Espacio aumentado para pie de página
         const availableSpace = pageHeight - currentY - footerSpace;
@@ -110,7 +162,7 @@ const EventsManagement: React.FC = () => {
     };
 
     // Función auxiliar para dibujar encabezados de tabla en nueva página
-    const drawTableHeaders = (doc: any, yPosition: number, margin: number, totalTableWidth: number, cellHeight: number, headers: string[], colPositions: number[], colWidths: number[]) => {
+    const drawTableHeaders = (doc: jsPDF, yPosition: number, margin: number, totalTableWidth: number, cellHeight: number, headers: string[], colPositions: number[], colWidths: number[]) => {
         // Encabezados de la tabla
         doc.setFillColor(30, 64, 175);
         doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
@@ -130,7 +182,7 @@ const EventsManagement: React.FC = () => {
     };
 
     // Función auxiliar para truncar texto que exceda el ancho de columna
-    const truncateText = (doc: any, text: string, maxWidth: number, fontSize: number = 9) => {
+    const truncateText = (doc: jsPDF, text: string, maxWidth: number, fontSize: number = 9) => {
         doc.setFontSize(fontSize);
         const textWidth = doc.getTextWidth(text);
         
@@ -148,7 +200,7 @@ const EventsManagement: React.FC = () => {
     };
 
     // Función auxiliar para verificar si el contenido se superpone con el pie de página
-    const ensureFooterSpace = (doc: any, currentY: number, contentHeight: number) => {
+    const ensureFooterSpace = (doc: jsPDF, currentY: number, contentHeight: number) => {
         const pageHeight = doc.internal.pageSize.height;
         const footerSpace = 100; // Espacio aumentado para pie de página
         const availableSpace = pageHeight - currentY - footerSpace;
@@ -952,11 +1004,12 @@ const EventsManagement: React.FC = () => {
             // Actualizar estados en la base de datos primero
             try {
                 await apiUpdateEventStatuses();
-            } catch (updateError: any) {
+            } catch (updateError: unknown) {
                 // Solo logear errores críticos, no errores de autenticación
-                if (!updateError.message?.includes('401') && 
-                    !updateError.message?.includes('403')) {
-                    console.warn('⚠️ Error actualizando estados:', updateError.message);
+                const errorMessage = updateError instanceof Error ? updateError.message : 'Unknown error';
+                if (!errorMessage.includes('401') && 
+                    !errorMessage.includes('403')) {
+                    console.warn('⚠️ Error actualizando estados:', errorMessage);
                 }
             }
             
@@ -964,14 +1017,26 @@ const EventsManagement: React.FC = () => {
             const response = await apiFetchEvents();
             
             // Extraer el array de datos del objeto de respuesta
-            let eventsData: any[] = response as any[];
+            let eventsData: EventData[] = response as unknown as EventData[];
             if (response && typeof response === 'object' && 'data' in response) {
-                eventsData = (response as any).data;
+                eventsData = (response as {data: EventData[]}).data;
             }
             
             // Validar que eventsData sea un array
             if (Array.isArray(eventsData)) {
-                setEvents(eventsData);
+                // Limpiar cualquier URL blob en las imágenes de eventos
+                const cleanedEvents = eventsData.map(event => {
+                    if (event.event_image && event.event_image.startsWith('blob:')) {
+                        console.log(`🧹 Evento ${event.event_id} tiene URL blob, limpiando...`);
+                        return {
+                            ...event,
+                            event_image: '/uploads/events/default-event.jpg' // URL por defecto
+                        };
+                    }
+                    return event;
+                });
+                
+                setEvents(cleanedEvents);
             } else {
                 console.error('❌ Los datos extraídos no son un array:', eventsData);
                 setEvents([]);
@@ -980,12 +1045,13 @@ const EventsManagement: React.FC = () => {
                     'Los datos recibidos del servidor no tienen el formato esperado'
                 );
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error('❌ Error cargando eventos:', e);
             setEvents([]);
+            const errorMessage = e instanceof Error ? e.message : 'Error cargando eventos';
             showError(
                 'Error cargando eventos',
-                e.message || 'Error cargando eventos'
+                errorMessage
             );
         }
     }, [showError]);
@@ -997,11 +1063,12 @@ const EventsManagement: React.FC = () => {
         const interval = setInterval(async () => {
             try {
                 await apiUpdateEventStatuses();
-            } catch (error: any) {
+            } catch (error: unknown) {
                 // Solo logear errores críticos
-                if (!error.message?.includes('401') && 
-                    !error.message?.includes('403')) {
-                    console.warn('⚠️ Error en actualización automática:', error.message);
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                if (!errorMessage.includes('401') && 
+                    !errorMessage.includes('403')) {
+                    console.warn('⚠️ Error en actualización automática:', errorMessage);
                 }
             }
         }, 2 * 60 * 1000); // 2 minutos para actualización más frecuente
@@ -1010,11 +1077,12 @@ const EventsManagement: React.FC = () => {
         const quickInterval = setInterval(async () => {
             try {
                 await apiUpdateEventStatuses();
-            } catch (error: any) {
+            } catch (error: unknown) {
                 // Solo logear errores críticos
-                if (!error.message?.includes('401') && 
-                    !error.message?.includes('403')) {
-                    console.warn('⚠️ Error en actualización rápida:', error.message);
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                if (!errorMessage.includes('401') && 
+                    !errorMessage.includes('403')) {
+                    console.warn('⚠️ Error en actualización rápida:', errorMessage);
                 }
             }
         }, 60 * 1000); // 1 minuto para verificación más frecuente
@@ -1024,6 +1092,28 @@ const EventsManagement: React.FC = () => {
             clearInterval(quickInterval);
         };
     }, [loadEvents]);
+
+    // Limpiar cualquier URL blob que pueda estar en localStorage o sessionStorage
+    React.useEffect(() => {
+        // Limpiar localStorage de URLs blob
+        Object.keys(localStorage).forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value && value.includes('blob:')) {
+                console.log(`🧹 Limpiando URL blob de localStorage: ${key}`);
+                localStorage.removeItem(key);
+            }
+        });
+
+        // Limpiar sessionStorage de URLs blob
+        Object.keys(sessionStorage).forEach(key => {
+            const value = sessionStorage.getItem(key);
+            if (value && value.includes('blob:')) {
+                console.log(`🧹 Limpiando URL blob de sessionStorage: ${key}`);
+                sessionStorage.removeItem(key);
+            }
+        });
+    }, []);
+
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
@@ -1067,6 +1157,11 @@ const EventsManagement: React.FC = () => {
             errors.category = 'La categoría es requerida';
         }
 
+        // Solo validar imagen si no hay imagen existente (al crear nuevo evento)
+        if (!editingEvent && !newEvent.image) {
+            errors.image = 'La imagen del evento es obligatoria';
+        }
+
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -1077,30 +1172,84 @@ const EventsManagement: React.FC = () => {
         }
 
         try {
+            // Validar que la fecha y hora sean válidas
+            if (!newEvent.date || !newEvent.time) {
+                showError(
+                    'Error de validación',
+                    'La fecha y hora son requeridas'
+                );
+                return;
+            }
+
             // Crear fecha correctamente combinando fecha y hora en zona horaria local
             const [year, month, day] = newEvent.date.split('-');
             const [hours, minutes] = newEvent.time.split(':');
             
+            // Validar que los componentes de fecha sean válidos
+            if (!year || !month || !day || !hours || !minutes) {
+                showError(
+                    'Error de validación',
+                    'La fecha y hora deben tener un formato válido'
+                );
+                return;
+            }
+
+            // Validar que la fecha sea válida
+            const testDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`);
+            if (isNaN(testDate.getTime())) {
+                showError(
+                    'Error de validación',
+                    'La fecha ingresada no es válida'
+                );
+                return;
+            }
+            
             // Crear string de fecha en formato ISO pero manteniendo la hora local
             const eventDateString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
             
-            const payload: any = {
-                title: newEvent.name,
-                description: newEvent.description || undefined,
-                event_date: eventDateString,
-                duration: Number(newEvent.duration || 0),
-                location: newEvent.location || undefined,
-                event_type: mapUiCategoryToEventType(newEvent.category),
-                capacity: Number(newEvent.capacity || 0),
-            };
+            console.log("📅 Fecha construida:", eventDateString);
+            console.log("📅 Fecha validada:", testDate.toISOString());
+            
+            // Crear FormData para enviar archivo
+            const formData = new FormData();
+            formData.append('title', newEvent.name);
+            formData.append('description', newEvent.description || '');
+            formData.append('event_date', eventDateString);
+            formData.append('duration', String(Number(newEvent.duration) || 60));
+            formData.append('location', newEvent.location || '');
+            formData.append('event_type', mapUiCategoryToEventType(newEvent.category));
+            formData.append('capacity', String(Number(newEvent.capacity || 0)));
+            
+            // Agregar imagen si se seleccionó una nueva
+            if (newEvent.image) {
+                formData.append('event_image', newEvent.image);
+            }
             if (editingEvent?.event_id) {
-                await apiUpdateEvent(editingEvent.event_id, payload);
+                // Para editar, usar FormData si hay nueva imagen, sino método tradicional
+                if (newEvent.image) {
+                    // Hay nueva imagen, usar FormData
+                    await apiUpdateEvent(editingEvent.event_id, formData);
+                } else {
+                    // No hay nueva imagen, usar método tradicional
+                    const updatePayload = {
+                        title: newEvent.name,
+                        description: newEvent.description || undefined,
+                        event_date: eventDateString,
+                        duration: Number(newEvent.duration) || 60,
+                        location: newEvent.location || undefined,
+                        event_type: mapUiCategoryToEventType(newEvent.category),
+                        capacity: Number(newEvent.capacity || 0),
+                        event_image: existingEventImage // Mantener imagen existente
+                    };
+                    await apiUpdateEvent(editingEvent.event_id, updatePayload);
+                }
                 showSuccess(
                     'Evento actualizado',
                     `El evento "${newEvent.name}" ha sido actualizado exitosamente.`
                 );
             } else {
-                await apiCreateEvent(payload);
+                // Para crear, usar FormData
+                await apiCreateEvent(formData);
                 showSuccess(
                     'Evento creado',
                     `El evento "${newEvent.name}" ha sido creado exitosamente.`
@@ -1113,26 +1262,28 @@ const EventsManagement: React.FC = () => {
             // Actualizar estados después de crear/editar evento
             try {
                 await apiUpdateEventStatuses();
-            } catch (error: any) {
+            } catch (error: unknown) {
                 // Solo logear errores críticos
-                if (!error.message?.includes('401') && 
-                    !error.message?.includes('403')) {
-                    console.warn('⚠️ Error actualizando estados después de crear/editar:', error.message);
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                if (!errorMessage.includes('401') && 
+                    !errorMessage.includes('403')) {
+                    console.warn('⚠️ Error actualizando estados después de crear/editar:', errorMessage);
                 }
             }
             setNewEvent({
                 name: '',
                 date: '',
                 time: '',
-            duration: '',
+                duration: '',
                 location: '',
                 capacity: '',
                 category: '',
-                description: ''
+                description: '',
+                image: null
             });
             setFormErrors({});
-        } catch (e: any) {
-            const errorMessage = e.message || 'Error guardando evento';
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : 'Error guardando evento';
             showError(
                 'Error al guardar evento',
                 errorMessage
@@ -1140,7 +1291,7 @@ const EventsManagement: React.FC = () => {
         }
     };
 
-    const handleEditEvent = (event: any) => {
+    const handleEditEvent = (event: {event_id: number; title: string; event_date: string; duration: number; location?: string; event_type: string; capacity: number; description?: string; event_image: string}) => {
         setEditingEvent(event);
         const dt = new Date(event.event_date);
         
@@ -1163,14 +1314,19 @@ const EventsManagement: React.FC = () => {
             // status se calcula automáticamente
             location: event.location || '',
             capacity: String(event.capacity ?? ''),
-            category: mapEventTypeToUiCategory(event.event_type),
-            description: event.description || ''
+            category: mapEventTypeToUiCategory(event.event_type as 'academic' | 'cultural' | 'sports'),
+            description: event.description || '',
+            image: null // No podemos mostrar la imagen existente en el input file
         });
+        
+        // Almacenar la imagen existente para mostrarla
+        console.log("🖼️ Imagen del evento a editar:", event.event_image);
+        setExistingEventImage(event.event_image || '');
         setFormErrors({}); // Limpiar errores al editar
         setShowCreateModal(true);
     };
 
-    const handleDeleteEvent = (event: any) => {
+    const handleDeleteEvent = (event: {event_id: number; title: string}) => {
         setEventToDelete(event);
         setShowDeleteModal(true);
     };
@@ -1178,7 +1334,7 @@ const EventsManagement: React.FC = () => {
     const handleCancelCreate = () => {
         // Verificar si hay datos en el formulario
         const hasData = newEvent.name || newEvent.date || newEvent.time || 
-                       newEvent.duration || newEvent.location || newEvent.capacity || newEvent.category || newEvent.description;
+                       newEvent.duration || newEvent.location || newEvent.capacity || newEvent.category || newEvent.description || newEvent.image;
         
         if (hasData) {
             setShowCancelModal(true);
@@ -1200,8 +1356,11 @@ const EventsManagement: React.FC = () => {
             location: '',
             capacity: '',
             category: '',
-            description: ''
+            description: '',
+            image: null
         });
+        setExistingEventImage('');
+        setNewImagePreview('');
         setFormErrors({});
         setShowCancelModal(false);
         
@@ -1233,15 +1392,16 @@ const EventsManagement: React.FC = () => {
             // Actualizar estados después de eliminar evento
             try {
                 await apiUpdateEventStatuses();
-            } catch (error: any) {
+            } catch (error: unknown) {
                 // Solo logear errores críticos
-                if (!error.message?.includes('401') && 
-                    !error.message?.includes('403')) {
-                    console.warn('⚠️ Error actualizando estados después de eliminar:', error.message);
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                if (!errorMessage.includes('401') && 
+                    !errorMessage.includes('403')) {
+                    console.warn('⚠️ Error actualizando estados después de eliminar:', errorMessage);
                 }
             }
-        } catch (e: any) {
-            const errorMessage = e.message || 'Error eliminando evento';
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : 'Error eliminando evento';
             showError(
                 'Error al eliminar evento',
                 errorMessage
@@ -1249,7 +1409,7 @@ const EventsManagement: React.FC = () => {
         }
     };
 
-    const handleViewDetails = (event: any) => {
+    const handleViewDetails = (event: UIEvent) => {
         setSelectedEvent(event);
         setShowDetailsModal(true);
     };
@@ -1278,7 +1438,7 @@ const EventsManagement: React.FC = () => {
             console.warn('⚠️ events no es un array:', events);
             return [];
         }
-        return events.map((e: any) => {
+        return events.map((e: EventData) => {
             const dt = new Date(e.event_date);
             // Calcular el estado automáticamente basado en fecha, hora y duración
             const calculatedStatus = calculateEventStatus(e.event_date, e.duration || 0);
@@ -1300,10 +1460,11 @@ const EventsManagement: React.FC = () => {
                 attendees: e.attendees ?? 0,
                 capacity: e.capacity,
                 status: statusText,
-                category: mapEventTypeToUiCategory(e.event_type),
+                category: mapEventTypeToUiCategory(e.event_type as 'academic' | 'cultural' | 'sports'),
                 organizer: '—',
                 description: e.description || '',
-                createdAt: e.created_at,
+                event_image: e.event_image || '',
+                createdAt: e.created_at as string,
                 raw: e,
             };
         });
@@ -1620,9 +1781,25 @@ const EventsManagement: React.FC = () => {
                             {filteredEvents.map((event) => (
                                 <div key={event.id} className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                                     <div className="flex items-center">
-                                        <div>
-                                            <h4 className="font-semibold text-black dark:text-white text-sm">{event.name}</h4>
-                                            <p className="text-xs text-gray-600 dark:text-gray-400">{event.organizer}</p>
+                                        <div className="flex items-center space-x-3">
+                                            {/* Mini imagen del evento */}
+                                            {event.event_image && (
+                                                <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-sm">
+                                                    <img
+                                                        src={getImageUrl(event.event_image)}
+                                                        alt={event.name}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            const target = e.target as HTMLImageElement;
+                                                            target.style.display = 'none';
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+                                            <div>
+                                                <h4 className="font-semibold text-black dark:text-white text-sm">{event.name}</h4>
+                                                <p className="text-xs text-gray-600 dark:text-gray-400">{event.organizer}</p>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
@@ -1690,7 +1867,7 @@ const EventsManagement: React.FC = () => {
             {/* Modal para crear/editar evento */}
             {showCreateModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-xl shadow-2xl my-1 transform transition-all duration-300">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-xl shadow-2xl my-4 transform transition-all duration-300 max-h-[95vh] flex flex-col">
                         {/* Header sobrio */}
                         <div className="px-6 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-2xl">
                             <div className="flex items-center space-x-4">
@@ -1708,7 +1885,7 @@ const EventsManagement: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="p-4 space-y-2">
+                        <div className="p-4 space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
                             <div className="group">
                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
                                     <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mr-3 animate-pulse"></div>
@@ -1916,6 +2093,108 @@ const EventsManagement: React.FC = () => {
                                 </div>
                             </div>
 
+                            {/* Campo de imagen del evento */}
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+                                    <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-violet-500 rounded-full mr-3 animate-pulse"></div>
+                                    Imagen del Evento *
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setNewEvent({...newEvent, image: file});
+                                                
+                                                // Crear preview en base64
+                                                const reader = new FileReader();
+                                                reader.onload = (event) => {
+                                                    setNewImagePreview(event.target?.result as string);
+                                                };
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                        className="w-full px-6 py-2 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl group-focus-within:scale-[1.02] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 dark:file:bg-purple-900/20 dark:file:text-purple-300"
+                                    />
+                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/5 to-violet-500/5 pointer-events-none"></div>
+                                </div>
+                                {formErrors.image && (
+                                    <div className="mt-3 flex items-center text-red-500 text-sm">
+                                        <div className="w-1 h-1 bg-red-500 rounded-full mr-2"></div>
+                                        {formErrors.image}
+                                    </div>
+                                )}
+                                {/* Mostrar imagen existente al editar */}
+                                {editingEvent && existingEventImage && !newEvent.image && (
+                                    <div className="mt-3 space-y-3">
+                                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                                            <div className="flex items-center text-blue-700 dark:text-blue-300 text-sm">
+                                                <div className="w-4 h-4 mr-2">📷</div>
+                                                Imagen actual del evento
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Preview de la imagen existente - Grande pero optimizada */}
+                                        <div className="relative">
+                                            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Imagen actual:</div>
+                                            <div className="relative w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600">
+                                                <img
+                                                    src={getImageUrl(existingEventImage)}
+                                                    alt="Imagen actual del evento"
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement;
+                                                        target.style.display = 'none';
+                                                    }}
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                                <div className="absolute bottom-2 left-2 right-2">
+                                                    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg px-2 py-1">
+                                                        <div className="text-xs font-medium text-gray-800 dark:text-gray-200">
+                                                            Imagen actual
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Mostrar nueva imagen seleccionada */}
+                                {newEvent.image && (
+                                    <div className="mt-3 space-y-3">
+                                        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                                            <div className="flex items-center text-green-700 dark:text-green-300 text-sm">
+                                                <Check className="w-4 h-4 mr-2" />
+                                                Nueva imagen seleccionada: {newEvent.image.name}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Preview de la nueva imagen - Grande pero optimizada */}
+                                        <div className="relative">
+                                            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Vista previa de la nueva imagen:</div>
+                                            <div className="relative w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600">
+                                                <img
+                                                    src={newImagePreview || '/uploads/events/default-event.jpg'}
+                                                    alt="Preview del evento"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                                <div className="absolute bottom-2 left-2 right-2">
+                                                    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg px-2 py-1">
+                                                        <div className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+                                                            {newEvent.image.name}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="group">
                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
                                     <div className="w-2 h-2 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full mr-3 animate-pulse"></div>
@@ -1931,7 +2210,7 @@ const EventsManagement: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex justify-end space-x-3 px-6 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl">
+                        <div className="flex justify-end space-x-3 px-6 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-2xl flex-shrink-0">
                             <button
                                 onClick={handleCancelCreate}
                                 className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
@@ -1991,6 +2270,35 @@ const EventsManagement: React.FC = () => {
                                     </span>
                                 </div>
                             </div>
+
+                            {/* Imagen del evento */}
+                            {selectedEvent.event_image && (
+                                <div className="relative">
+                                    <div className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                                        <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-violet-500 rounded-full mr-2 animate-pulse"></div>
+                                        Imagen del Evento
+                                    </div>
+                                    <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-lg">
+                                        <img
+                                            src={getImageUrl(selectedEvent.event_image)}
+                                            alt={`Imagen de ${selectedEvent.name}`}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.src = getImageUrl('/uploads/events/default-event.jpg'); // Imagen de respaldo
+                                            }}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+                                        <div className="absolute bottom-3 left-3 right-3">
+                                            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2">
+                                                <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                                    {selectedEvent.name}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Información detallada - Grid más compacto */}
                             <div className="grid grid-cols-2 gap-3">

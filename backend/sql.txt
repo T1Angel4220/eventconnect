@@ -26,6 +26,7 @@ location VARCHAR(200),
 event_type VARCHAR(50) CHECK (event_type IN ('academic', 'cultural', 'sports')) NOT NULL,
 capacity INT CHECK (capacity > 0),
 organizer_id INT NOT NULL,
+event_image TEXT NOT NULL, -- URL o path de la imagen del evento (OBLIGATORIA) - TEXT para soportar base64
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (organizer_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -66,9 +67,30 @@ FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 
 
 
-PARA LAS IMAGNES
+PARA LAS IMAGENES
 ALTER TABLE users
 ADD COLUMN profile_image VARCHAR(500);
+
+-- Agregar campo de imagen a eventos (OBLIGATORIO)
+ALTER TABLE events
+ADD COLUMN event_image VARCHAR(500) NOT NULL DEFAULT '/uploads/events/default-event.jpg';
+
+-- Cambiar el tipo de campo event_image a TEXT para soportar base64
+ALTER TABLE events
+ALTER COLUMN event_image TYPE TEXT;
+
+-- ==============================
+-- LIMPIAR URLs BLOB DE LA BASE DE DATOS
+-- ==============================
+-- Actualizar todos los eventos que tengan URLs blob con imagen por defecto
+UPDATE events 
+SET event_image = '/uploads/events/default-event.jpg' 
+WHERE event_image LIKE 'blob:%';
+
+-- Verificar cuántos eventos se actualizaron
+SELECT COUNT(*) as eventos_actualizados 
+FROM events 
+WHERE event_image = '/uploads/events/default-event.jpg';
 
 -- ==============================
 -- Insert sample users

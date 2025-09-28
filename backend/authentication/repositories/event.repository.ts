@@ -20,8 +20,8 @@ class EventRepositoryImpl implements EventRepository {
       console.log("📝 Creando evento en repositorio con datos:", JSON.stringify(event, null, 2));
       
       const query = `
-        INSERT INTO events (title, description, event_date, duration, location, event_type, capacity, organizer_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO events (title, description, event_date, duration, location, event_type, capacity, organizer_id, event_image)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *
       `;
       const values = [
@@ -32,7 +32,8 @@ class EventRepositoryImpl implements EventRepository {
         event.location || null,
         event.event_type,
         event.capacity,
-        event.organizer_id
+        event.organizer_id,
+        event.event_image
       ];
       
       console.log("🔍 Query SQL:", query);
@@ -57,13 +58,51 @@ class EventRepositoryImpl implements EventRepository {
   async findAll(): Promise<EventRow[]> {
     const query = 'SELECT * FROM events ORDER BY created_at DESC';
     const result = await pool.query(query);
-    return result.rows;
+    
+    // Limpiar URLs blob automáticamente
+    const cleanedRows = result.rows.map(row => {
+      if (row.event_image && row.event_image.startsWith('blob:')) {
+        console.log(`🧹 Limpiando URL blob del evento ${row.event_id} en base de datos`);
+        // Actualizar en la base de datos
+        pool.query(
+          'UPDATE events SET event_image = $1 WHERE event_id = $2',
+          ['/uploads/events/default-event.jpg', row.event_id]
+        ).catch(err => console.error('Error actualizando evento:', err));
+        
+        return {
+          ...row,
+          event_image: '/uploads/events/default-event.jpg'
+        };
+      }
+      return row;
+    });
+    
+    return cleanedRows;
   }
 
   async findByOrganizer(organizerId: number): Promise<EventRow[]> {
     const query = 'SELECT * FROM events WHERE organizer_id = $1 ORDER BY created_at DESC';
     const result = await pool.query(query, [organizerId]);
-    return result.rows;
+    
+    // Limpiar URLs blob automáticamente
+    const cleanedRows = result.rows.map(row => {
+      if (row.event_image && row.event_image.startsWith('blob:')) {
+        console.log(`🧹 Limpiando URL blob del evento ${row.event_id} en base de datos`);
+        // Actualizar en la base de datos
+        pool.query(
+          'UPDATE events SET event_image = $1 WHERE event_id = $2',
+          ['/uploads/events/default-event.jpg', row.event_id]
+        ).catch(err => console.error('Error actualizando evento:', err));
+        
+        return {
+          ...row,
+          event_image: '/uploads/events/default-event.jpg'
+        };
+      }
+      return row;
+    });
+    
+    return cleanedRows;
   }
 
   async update(eventId: number, event: Partial<EventData>): Promise<EventRow | null> {

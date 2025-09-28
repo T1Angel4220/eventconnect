@@ -9,6 +9,7 @@ export interface EventData {
   event_type: 'academic' | 'cultural' | 'sports';
   capacity: number;
   organizer_id: number;
+  event_image: string; // URL o path de la imagen del evento (OBLIGATORIA)
   created_at?: Date;
   updated_at?: Date;
 }
@@ -24,6 +25,7 @@ export interface EventRow {
   event_type: 'academic' | 'cultural' | 'sports';
   capacity: number;
   organizer_id: number;
+  event_image: string; // URL o path de la imagen del evento
   created_at: Date;
   updated_at: Date;
 }

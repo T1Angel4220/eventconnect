@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { eventService } from "authentication/services/event.service";
+import upload from "../../middleware/upload";
 
 export class EventController {
   async createEvent(req: Request, res: Response) {
@@ -21,16 +22,36 @@ export class EventController {
       console.log("🔍 Organizer ID:", organizerId);
       
       // Validar datos requeridos (sin organizer_id ya que se obtiene del token)
-      if (!eventData.title || !eventData.event_date || !eventData.event_type || !eventData.capacity) {
+      if (!eventData.title || !eventData.event_date || !eventData.event_type || !eventData.capacity || !eventData.duration || eventData.duration <= 0) {
         console.log("❌ Faltan campos requeridos:", {
           title: !!eventData.title,
           event_date: !!eventData.event_date,
           event_type: !!eventData.event_type,
-          capacity: !!eventData.capacity
+          capacity: !!eventData.capacity,
+          duration: eventData.duration
         });
         return res.status(400).json({
           success: false,
-          message: 'Missing required fields: title, event_date, event_type, capacity'
+          message: 'Missing required fields: title, event_date, event_type, capacity, duration'
+        });
+      }
+
+      // Manejar la imagen subida
+      let eventImageUrl = '/uploads/events/default-event.jpg'; // Imagen por defecto
+      if (req.file) {
+        eventImageUrl = `/uploads/events/${req.file.filename}`;
+        console.log("📷 Imagen subida:", eventImageUrl);
+      } else {
+        console.log("⚠️ No se subió imagen, usando imagen por defecto");
+      }
+
+      // Validar y convertir event_date a Date
+      const eventDate = new Date(eventData.event_date);
+      if (isNaN(eventDate.getTime())) {
+        console.log("❌ Fecha inválida recibida:", eventData.event_date);
+        return res.status(400).json({
+          success: false,
+          message: 'Fecha inválida. Por favor, verifica la fecha del evento.'
         });
       }
 
@@ -38,7 +59,8 @@ export class EventController {
       const eventDataWithOrganizer = {
         ...eventData,
         organizer_id: organizerId,
-        event_date: new Date(eventData.event_date) // Convertir string a Date
+        event_date: eventDate, // Usar la fecha validada
+        event_image: eventImageUrl
       };
 
       console.log("📊 Datos finales para crear evento:", JSON.stringify(eventDataWithOrganizer, null, 2));
@@ -146,6 +168,13 @@ export class EventController {
       }
 
       const eventData = req.body;
+      
+      // Manejar la imagen subida si se proporciona una nueva
+      if (req.file) {
+        eventData.event_image = `/uploads/events/${req.file.filename}`;
+        console.log("📷 Nueva imagen subida para evento:", eventData.event_image);
+      }
+      
       const event = await eventService.updateEvent(eventId, eventData);
       
       if (!event) {

@@ -9,6 +9,7 @@ export interface EventResponse {
   event_type: "academic" | "cultural" | "sports";
   capacity: number;
   organizer_id: number;
+  event_image: string; // URL o path de la imagen del evento
   created_at: string;
   updated_at: string;
   attendees?: number;
@@ -23,6 +24,7 @@ export interface CreateEventPayload {
   location?: string;
   event_type: "academic" | "cultural" | "sports";
   capacity: number;
+  event_image: string; // URL o path de la imagen del evento (OBLIGATORIA)
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
@@ -41,21 +43,25 @@ export async function fetchEvents(): Promise<EventResponse[]> {
   return res.json();
 }
 
-export async function createEvent(payload: CreateEventPayload): Promise<EventResponse> {
+export async function createEvent(payload: CreateEventPayload | FormData): Promise<EventResponse> {
+  const isFormData = payload instanceof FormData;
+  
   const res = await fetch(`${API_URL}/events`, {
     method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
+    headers: isFormData ? { Authorization: authHeaders().Authorization } : authHeaders(),
+    body: isFormData ? payload : JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Error creando evento");
   return res.json();
 }
 
-export async function updateEvent(eventId: number, payload: Partial<CreateEventPayload>): Promise<EventResponse> {
+export async function updateEvent(eventId: number, payload: Partial<CreateEventPayload> | FormData): Promise<EventResponse> {
+  const isFormData = payload instanceof FormData;
+  
   const res = await fetch(`${API_URL}/events/${eventId}`, {
     method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
+    headers: isFormData ? { Authorization: authHeaders().Authorization } : authHeaders(),
+    body: isFormData ? payload : JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Error actualizando evento");
   return res.json();
