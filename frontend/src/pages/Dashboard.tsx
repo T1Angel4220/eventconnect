@@ -28,6 +28,8 @@ import {
 import { useTheme } from '../hooks/useTheme';
 import { useDashboard } from '../hooks/useDashboard';
 import { useAuth } from '../hooks/useAuth';
+import { useSessionExpired } from '../hooks/useSessionExpired';
+import SessionExpiredModal from '../components/modals/SessionExpiredModal';
 import { getEventTypeLabel } from '../types/event.types';
 import ParticipantsChart from '../components/charts/ParticipantsChart';
 import { formatDate, formatTime, formatDuration, getEventStatusText, getEventStatusColor } from '../utils/dateUtils';
@@ -36,6 +38,7 @@ const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
     const { checkAuth, logout } = useAuth();
+    const { showSessionExpiredModal, handleSessionExpired, goToLogin } = useSessionExpired();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showFilterModal, setShowFilterModal] = useState(false);
@@ -60,7 +63,7 @@ const Dashboard: React.FC = () => {
         loading,
         error,
         refreshData
-    } = useDashboard();
+    } = useDashboard(handleSessionExpired);
 
     // Verificar autenticación al cargar
     useEffect(() => {
@@ -887,6 +890,12 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Modal de Sesión Expirada */}
+            <SessionExpiredModal 
+                isOpen={showSessionExpiredModal}
+                onClose={goToLogin}
+            />
         </div>
     );
 };

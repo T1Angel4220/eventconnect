@@ -47,7 +47,7 @@ export const useAuth = () => {
     if (theme) {
       localStorage.setItem('theme', theme);
     }
-    alert('Tu sesión ha expirado. Serás redirigido al login.');
+    // El modal se manejará en cada componente individual
     navigate('/login');
   };
 

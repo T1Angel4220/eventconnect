@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';
+import { useSessionExpired } from '../hooks/useSessionExpired';
+import SessionExpiredModal from '../components/modals/SessionExpiredModal';
 import { 
   getAllRegistrations, 
   mapRegistrationStatusToSpanish,
@@ -43,6 +45,7 @@ const RegistrationsManagement: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
     const { notifications, removeNotification, showSuccess, showError } = useNotifications();
+    const { showSessionExpiredModal, handleSessionExpired, goToLogin } = useSessionExpired();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('all');
@@ -81,6 +84,13 @@ const RegistrationsManagement: React.FC = () => {
             setRegistrations(data);
         } catch (error: unknown) {
             console.error('Error cargando inscripciones:', error);
+            
+            // Si es un error de sesión expirada, mostrar modal
+            if (error instanceof Error && error.message.includes('Sesión expirada')) {
+                handleSessionExpired();
+                return;
+            }
+            
             showError(
                 'Error cargando inscripciones',
                 error instanceof Error ? error.message : 'Error cargando inscripciones'
@@ -88,7 +98,7 @@ const RegistrationsManagement: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [showError]);
+    }, [showError, handleSessionExpired]);
 
     // Cargar datos al montar el componente
     React.useEffect(() => {
@@ -633,6 +643,12 @@ const RegistrationsManagement: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Modal de Sesión Expirada */}
+            <SessionExpiredModal 
+                isOpen={showSessionExpiredModal}
+                onClose={goToLogin}
+            />
         </div>
     );
 };

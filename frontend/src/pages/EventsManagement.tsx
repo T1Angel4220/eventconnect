@@ -29,6 +29,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';
+import { useSessionExpired } from '../hooks/useSessionExpired';
+import SessionExpiredModal from '../components/modals/SessionExpiredModal';
 import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEvents as apiFetchEvents, updateEvent as apiUpdateEvent, updateEventStatuses as apiUpdateEventStatuses } from '../services/eventsService';
 import Notification from '../components/ui/Notification';
 import ConfirmModal from '../components/ui/ConfirmModal';
@@ -39,6 +41,7 @@ const EventsManagement: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
     const { notifications, removeNotification, showSuccess, showError, showWarning } = useNotifications();
+    const { showSessionExpiredModal, handleSessionExpired, goToLogin } = useSessionExpired();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -2181,6 +2184,12 @@ const EventsManagement: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Modal de Sesión Expirada */}
+            <SessionExpiredModal 
+                isOpen={showSessionExpiredModal}
+                onClose={goToLogin}
+            />
         </div>
     );
 };

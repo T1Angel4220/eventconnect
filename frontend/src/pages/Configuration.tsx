@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../hooks/useAuth';
+import { useSessionExpired } from '../hooks/useSessionExpired';
+import SessionExpiredModal from '../components/modals/SessionExpiredModal';
 import { validatePassword, validateConfirmPassword } from '../utils/validations';
 import PasswordStrength from '../components/forms/PasswordStrength';
 
@@ -33,6 +35,7 @@ const Configuration: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
     const { checkAuth, logout } = useAuth();
+    const { showSessionExpiredModal, handleSessionExpired, goToLogin } = useSessionExpired();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -194,6 +197,10 @@ const Configuration: React.FC = () => {
                 setSelectedFile(null);
                 setImagePreview(null);
             } else {
+                if (response.status === 401) {
+                    handleSessionExpired();
+                    return;
+                }
                 setError(data.message || 'Error al actualizar imagen');
             }
         } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -227,6 +234,10 @@ const Configuration: React.FC = () => {
                 // Actualizar localStorage
                 localStorage.removeItem('profileImage');
             } else {
+                if (response.status === 401) {
+                    handleSessionExpired();
+                    return;
+                }
                 setError(data.message || 'Error al eliminar imagen');
             }
         } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -281,6 +292,10 @@ const Configuration: React.FC = () => {
                 localStorage.setItem('lastName', profileData.last_name);
                 localStorage.setItem('email', profileData.email);
             } else {
+                if (response.status === 401) {
+                    handleSessionExpired();
+                    return;
+                }
                 setError(data.message || 'Error al actualizar perfil');
             }
         } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -336,6 +351,10 @@ const Configuration: React.FC = () => {
                     });
                 }, 1000);
             } else {
+                if (response.status === 401) {
+                    handleSessionExpired();
+                    return;
+                }
                 setError(data.message || 'Error al cambiar contraseña');
             }
         } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -860,6 +879,12 @@ const Configuration: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Modal de Sesión Expirada */}
+            <SessionExpiredModal 
+                isOpen={showSessionExpiredModal}
+                onClose={goToLogin}
+            />
         </div>
     );
 };

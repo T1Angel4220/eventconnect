@@ -15,7 +15,7 @@ export interface MonthlyParticipantsData {
   events: number;
 }
 
-export const useDashboard = () => {
+export const useDashboard = (onSessionExpired?: () => void) => {
   const { handleTokenExpired } = useAuth();
   const [stats, setStats] = useState<DashboardStatsWithGrowth | null>(null);
   const [recentEvents, setRecentEvents] = useState<EventWithOrganizer[]>([]);
@@ -64,7 +64,11 @@ export const useDashboard = () => {
       
       // Si es un error de token expirado, manejar la redirección
       if (err instanceof Error && err.message.includes('Sesión expirada')) {
-        handleTokenExpired();
+        if (onSessionExpired) {
+          onSessionExpired();
+        } else {
+          handleTokenExpired();
+        }
         return;
       }
       
