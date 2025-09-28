@@ -23,7 +23,7 @@ import {
   UserCheck,
   Clock,
   MapPin,
-  Tag,
+  Tag,  
   ChevronDown,
   Check
 } from 'lucide-react';
