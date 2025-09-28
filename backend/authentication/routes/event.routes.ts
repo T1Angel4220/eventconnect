@@ -18,5 +18,6 @@ router.get('/organizer/:organizerId', eventController.getEventsByOrganizer.bind(
 router.get('/:id', eventController.getEventById.bind(eventController));
 router.put('/:id', eventController.updateEvent.bind(eventController));
 router.delete('/:id', eventController.deleteEvent.bind(eventController));
+router.put('/status/update', eventController.updateEventStatuses.bind(eventController));
 
 export default router;

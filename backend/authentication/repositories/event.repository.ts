@@ -16,23 +16,36 @@ export interface EventRepository {
 
 class EventRepositoryImpl implements EventRepository {
   async create(event: EventData): Promise<EventRow> {
-    const query = `
-      INSERT INTO events (title, description, event_date, location, event_type, capacity, organizer_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-    `;
-    const values = [
-      event.title,
-      event.description || null,
-      event.event_date,
-      event.location || null,
-      event.event_type,
-      event.capacity,
-      event.organizer_id
-    ];
-    
-    const result = await pool.query(query, values);
-    return result.rows[0];
+    try {
+      console.log("📝 Creando evento en repositorio con datos:", JSON.stringify(event, null, 2));
+      
+      const query = `
+        INSERT INTO events (title, description, event_date, duration, location, event_type, capacity, organizer_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *
+      `;
+      const values = [
+        event.title,
+        event.description || null,
+        event.event_date,
+        event.duration,
+        event.location || null,
+        event.event_type,
+        event.capacity,
+        event.organizer_id
+      ];
+      
+      console.log("🔍 Query SQL:", query);
+      console.log("📊 Valores:", values);
+      
+      const result = await pool.query(query, values);
+      console.log("✅ Evento creado en base de datos:", result.rows[0]);
+      return result.rows[0];
+    } catch (error) {
+      console.error("❌ Error en repositorio al crear evento:", error);
+      console.error("📊 Stack trace:", error instanceof Error ? error.stack : 'No stack trace');
+      throw error;
+    }
   }
 
   async findById(eventId: number): Promise<EventRow | null> {
@@ -177,6 +190,46 @@ class EventRepositoryImpl implements EventRepository {
     
     const result = await pool.query(query);
     return result.rows;
+  }
+
+  async updateAllEventStatuses(): Promise<number> {
+    console.log("🔄 Iniciando actualización de estados de eventos...");
+    
+    // Obtener todos los eventos
+    const events = await this.findAll();
+    console.log(`📊 Total de eventos encontrados: ${events.length}`);
+    
+    const now = new Date();
+    let updatedCount = 0;
+    
+    for (const event of events) {
+      const eventDateTime = new Date(event.event_date);
+      const endDateTime = new Date(eventDateTime.getTime() + event.duration * 60000);
+      
+      let newStatus = 'upcoming';
+      if (now >= eventDateTime && now <= endDateTime) {
+        newStatus = 'in_progress';
+      } else if (now > endDateTime) {
+        newStatus = 'completed';
+      }
+      
+      // Solo actualizar si el estado ha cambiado
+      if (event.status !== newStatus) {
+        console.log(`🔄 Actualizando evento ${event.event_id}: ${event.status} -> ${newStatus}`);
+        await this.updateStatus(event.event_id, newStatus);
+        updatedCount++;
+      }
+    }
+    
+    console.log(`✅ Actualización completada. ${updatedCount} eventos actualizados.`);
+    return updatedCount;
+  }
+
+  async updateStatus(eventId: number, status: string): Promise<void> {
+    await pool.query(
+      "UPDATE events SET status = $1, updated_at = NOW() WHERE event_id = $2",
+      [status, eventId]
+    );
   }
 }
 

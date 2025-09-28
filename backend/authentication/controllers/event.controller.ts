@@ -5,23 +5,54 @@ export class EventController {
   async createEvent(req: Request, res: Response) {
     try {
       const eventData = req.body;
+      console.log("📝 Datos recibidos del frontend:", JSON.stringify(eventData, null, 2));
+      console.log("👤 Usuario autenticado:", req.user);
       
-      // Validar datos requeridos
-      if (!eventData.title || !eventData.event_date || !eventData.event_type || !eventData.capacity || !eventData.organizer_id) {
+      // Obtener el organizer_id del usuario autenticado
+      const organizerId = req.user?.userId;
+      if (!organizerId) {
+        console.log("❌ No hay userId en req.user");
+        return res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+      }
+      
+      console.log("🔍 Organizer ID:", organizerId);
+      
+      // Validar datos requeridos (sin organizer_id ya que se obtiene del token)
+      if (!eventData.title || !eventData.event_date || !eventData.event_type || !eventData.capacity) {
+        console.log("❌ Faltan campos requeridos:", {
+          title: !!eventData.title,
+          event_date: !!eventData.event_date,
+          event_type: !!eventData.event_type,
+          capacity: !!eventData.capacity
+        });
         return res.status(400).json({
           success: false,
-          message: 'Missing required fields: title, event_date, event_type, capacity, organizer_id'
+          message: 'Missing required fields: title, event_date, event_type, capacity'
         });
       }
 
-      const event = await eventService.createEvent(eventData);
+      // Agregar el organizer_id al eventData y convertir event_date a Date
+      const eventDataWithOrganizer = {
+        ...eventData,
+        organizer_id: organizerId,
+        event_date: new Date(eventData.event_date) // Convertir string a Date
+      };
+
+      console.log("📊 Datos finales para crear evento:", JSON.stringify(eventDataWithOrganizer, null, 2));
+
+      const event = await eventService.createEvent(eventDataWithOrganizer);
+      console.log("✅ Evento creado exitosamente:", event.event_id);
       res.status(201).json({
         success: true,
         data: event,
         message: 'Event created successfully'
       });
     } catch (error) {
-      console.error('Error in createEvent:', error);
+      console.error('❌ Error in createEvent:', error);
+      console.error('📊 Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       res.status(500).json({
         success: false,
         message: 'Error creating event',
@@ -236,6 +267,23 @@ export class EventController {
         success: false,
         message: 'Error getting event statistics',
         error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  async updateEventStatuses(req: Request, res: Response) {
+    try {
+      console.log("🔄 Actualizando estados de eventos...");
+      const updatedCount = await eventService.updateAllEventStatuses();
+      console.log(`✅ Se actualizaron ${updatedCount} eventos`);
+      res.json({ 
+        message: `Estados actualizados exitosamente`, 
+        updatedCount 
+      });
+    } catch (error) {
+      console.error("❌ Error actualizando estados:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Error actualizando estados" 
       });
     }
   }

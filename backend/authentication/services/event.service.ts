@@ -4,9 +4,13 @@ import { EventData, EventRow, EventWithOrganizer } from "authentication/models/e
 export class EventService {
   async createEvent(eventData: EventData): Promise<EventRow> {
     try {
-      return await eventRepository.create(eventData);
+      console.log("📝 Servicio: Creando evento con datos:", JSON.stringify(eventData, null, 2));
+      const result = await eventRepository.create(eventData);
+      console.log("✅ Servicio: Evento creado exitosamente:", result.event_id);
+      return result;
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('❌ Servicio: Error creating event:', error);
+      console.error('📊 Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       throw new Error('Failed to create event');
     }
   }
@@ -89,6 +93,15 @@ export class EventService {
     } catch (error) {
       console.error('Error getting event stats:', error);
       throw new Error('Failed to get event statistics');
+    }
+  }
+
+  async updateAllEventStatuses(): Promise<number> {
+    try {
+      return await eventRepository.updateAllEventStatuses();
+    } catch (error) {
+      console.error('Error updating event statuses:', error);
+      throw new Error('Failed to update event statuses');
     }
   }
 }
