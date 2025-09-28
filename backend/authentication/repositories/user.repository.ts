@@ -53,6 +53,19 @@ class UserRepository {
       return undefined;
     }
   }
+
+  async updateProfile(userId: number, profileData: { first_name: string; last_name: string; email: string }): Promise<UserRow | undefined> {
+    try {
+      const res = await pool.query(
+        "UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE user_id = $4 RETURNING user_id, first_name, last_name, email, role, created_at",
+        [profileData.first_name, profileData.last_name, profileData.email, userId]
+      );
+      return res.rows[0] as UserRow;
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      return undefined;
+    }
+  }
 }
 
 export const userRepository = new UserRepository();

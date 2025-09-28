@@ -26,6 +26,10 @@ class UserService {
   async getUserByEmail(email: string) {
     return this.userModel.findByEmail(email);
   }
+
+  async updateUserProfile(userId: number, profileData: { first_name: string; last_name: string; email: string }) {
+    return this.userModel.updateProfile(userId, profileData);
+  }
 }
 
 export const userService = new UserService(userRepository);

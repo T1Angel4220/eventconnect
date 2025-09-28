@@ -7,6 +7,7 @@ import passwordRouter from "authentication/routes/password.routes";
 import dashboardRouter from "authentication/routes/dashboard.routes";
 import eventRouter from "authentication/routes/event.routes";
 import registrationRouter from "authentication/routes/registration.routes";
+import organizerRouter from "authentication/routes/organizer.routes";
 
 const app: Application = express();
 app.use(cors());
@@ -24,6 +25,9 @@ app.use("/api/events", eventRouter);
 
 // Rutas de inscripciones
 app.use("/api/registrations", registrationRouter);
+
+// Rutas de organizador (configuración)
+app.use("/api/organizer", organizerRouter);
 
 // Endpoint de prueba sin autenticación (temporal)
 app.get("/api/test/stats", async (req, res) => {
