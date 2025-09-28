@@ -29,6 +29,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useDashboard } from '../hooks/useDashboard';
 import { useAuth } from '../hooks/useAuth';
 import { getEventTypeLabel } from '../types/event.types';
+import ParticipantsChart from '../components/charts/ParticipantsChart';
 import { formatDate, formatTime, formatDuration, getEventStatusText, getEventStatusColor } from '../utils/dateUtils';
 
 const Dashboard: React.FC = () => {
@@ -45,6 +46,7 @@ const Dashboard: React.FC = () => {
         recentEvents,
         topUsers,
         eventCategories,
+        participantsData,
         loading,
         error,
         refreshData
@@ -481,21 +483,26 @@ const Dashboard: React.FC = () => {
 
                     {/* Additional Management Sections */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                        {/* Participants Chart Placeholder */}
+                        {/* Participants Chart */}
                         <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xl font-bold text-black dark:text-white">Participantes por Mes</h3>
-                                <button className="flex items-center px-3 py-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm hover:from-purple-600 hover:to-purple-700 transition-all duration-200">
+                                <button 
+                                    className="flex items-center px-3 py-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
+                                    onClick={() => {
+                                        // TODO: Implementar modal o página de detalles
+                                        console.log('Ver detalles del gráfico');
+                                    }}
+                                >
                                     <BarChart3 className="w-4 h-4 mr-2" />
                                     Ver Detalles
                                 </button>
                             </div>
-                            <div className="h-64 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl flex items-center justify-center">
-                                <div className="text-center">
-                                    <BarChart3 className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                                    <p className="text-gray-600 dark:text-gray-400 font-medium">Gráfico de Participantes</p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-500">2,450 participantes este mes</p>
-                                </div>
+                            <div className="h-64">
+                                <ParticipantsChart 
+                                    data={participantsData} 
+                                    loading={loading}
+                                />
                             </div>
                         </div>
 

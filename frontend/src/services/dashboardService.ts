@@ -100,6 +100,12 @@ class DashboardService {
     return response.data;
   }
 
+  // Participants Chart
+  async getParticipantsByMonth(months: number = 6): Promise<Array<{ month: string; year: number; participants: number; events: number }>> {
+    const response = await this.request<Array<{ month: string; year: number; participants: number; events: number }>>(`/dashboard/participants-by-month?months=${months}`);
+    return response.data;
+  }
+
   // Notifications
   async getUserNotifications(userId: number): Promise<Notification[]> {
     const response = await this.request<Notification[]>(`/dashboard/notifications/${userId}`);

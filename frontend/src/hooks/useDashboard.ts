@@ -8,12 +8,20 @@ import type {
   EventCategory 
 } from '../types/dashboard.types';
 
+export interface MonthlyParticipantsData {
+  month: string;
+  year: number;
+  participants: number;
+  events: number;
+}
+
 export const useDashboard = () => {
   const { handleTokenExpired } = useAuth();
   const [stats, setStats] = useState<DashboardStatsWithGrowth | null>(null);
   const [recentEvents, setRecentEvents] = useState<EventWithOrganizer[]>([]);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [eventCategories, setEventCategories] = useState<EventCategory[]>([]);
+  const [participantsData, setParticipantsData] = useState<MonthlyParticipantsData[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,18 +44,21 @@ export const useDashboard = () => {
         statsData,
         recentEventsData,
         topUsersData,
-        eventCategoriesData
+        eventCategoriesData,
+        participantsData
       ] = await Promise.all([
         dashboardService.getDashboardStatsWithGrowth(),
         dashboardService.getRecentEvents(10),
         dashboardService.getTopUsers(10),
-        dashboardService.getEventCategories()
+        dashboardService.getEventCategories(),
+        dashboardService.getParticipantsByMonth(6)
       ]);
 
       setStats(statsData);
       setRecentEvents(recentEventsData);
       setTopUsers(topUsersData);
       setEventCategories(eventCategoriesData);
+      setParticipantsData(participantsData);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       
@@ -78,6 +89,7 @@ export const useDashboard = () => {
     recentEvents,
     topUsers,
     eventCategories,
+    participantsData,
     loading,
     error,
     refreshData
