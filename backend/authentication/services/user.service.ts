@@ -27,7 +27,7 @@ class UserService {
     return this.userModel.findByEmail(email);
   }
 
-  async updateUserProfile(userId: number, profileData: { first_name: string; last_name: string; email: string }) {
+  async updateUserProfile(userId: number, profileData: { first_name: string; last_name: string; email: string; profile_image?: string }) {
     return this.userModel.updateProfile(userId, profileData);
   }
 }

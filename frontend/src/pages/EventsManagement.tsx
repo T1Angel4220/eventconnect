@@ -58,6 +58,7 @@ const EventsManagement: React.FC = () => {
     });
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
+    const profileImage = localStorage.getItem('profileImage');
     const [events, setEvents] = useState<any[]>([]);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -1404,8 +1405,18 @@ const EventsManagement: React.FC = () => {
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-white">
                     <div className="flex items-center mb-4">
-                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <UserCheck className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-600">
+                            {profileImage ? (
+                                <img 
+                                    src={`http://localhost:3001${profileImage}`}
+                                    alt="Imagen de perfil"
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                    <UserCheck className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                                </div>
+                            )}
                         </div>
                         <div className="ml-3">
                             <p className="text-sm font-semibold text-black dark:text-white">{firstName}</p>

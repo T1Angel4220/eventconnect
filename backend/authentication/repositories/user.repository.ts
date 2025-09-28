@@ -54,11 +54,11 @@ class UserRepository {
     }
   }
 
-  async updateProfile(userId: number, profileData: { first_name: string; last_name: string; email: string }): Promise<UserRow | undefined> {
+  async updateProfile(userId: number, profileData: { first_name: string; last_name: string; email: string; profile_image?: string }): Promise<UserRow | undefined> {
     try {
       const res = await pool.query(
-        "UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE user_id = $4 RETURNING user_id, first_name, last_name, email, role, created_at",
-        [profileData.first_name, profileData.last_name, profileData.email, userId]
+        "UPDATE users SET first_name = $1, last_name = $2, email = $3, profile_image = $4 WHERE user_id = $5 RETURNING user_id, first_name, last_name, email, role, profile_image, created_at",
+        [profileData.first_name, profileData.last_name, profileData.email, profileData.profile_image || null, userId]
       );
       return res.rows[0] as UserRow;
     } catch (error) {

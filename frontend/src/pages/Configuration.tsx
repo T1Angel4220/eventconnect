@@ -40,12 +40,14 @@ const Configuration: React.FC = () => {
     
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
+    const profileImage = localStorage.getItem('profileImage');
 
     // Estados para gestión de perfil
     const [profileData, setProfileData] = useState({
         first_name: '',
         last_name: '',
-        email: ''
+        email: '',
+        profile_image: ''
     });
 
     // Estados para cambio de contraseña
@@ -73,6 +75,10 @@ const Configuration: React.FC = () => {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [countdown, setCountdown] = useState(5);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    
+    // Estados para imagen de perfil
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
 
     // Verificar autenticación al cargar
@@ -99,8 +105,15 @@ const Configuration: React.FC = () => {
                 setProfileData({
                     first_name: data.data.first_name || '',
                     last_name: data.data.last_name || '',
-                    email: data.data.email || ''
+                    email: data.data.email || '',
+                    profile_image: data.data.profile_image || ''
                 });
+                // Actualizar localStorage con la imagen
+                if (data.data.profile_image) {
+                    localStorage.setItem('profileImage', data.data.profile_image);
+                } else {
+                    localStorage.removeItem('profileImage');
+                }
             }
         } catch (error) {
             console.error('Error loading profile:', error);
@@ -117,6 +130,110 @@ const Configuration: React.FC = () => {
     const confirmLogout = () => {
         logout();
         setShowLogoutModal(false);
+    };
+
+    // Funciones para manejar imagen de perfil
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Validar tipo de archivo
+            if (!file.type.startsWith('image/')) {
+                setError('Solo se permiten archivos de imagen');
+                return;
+            }
+            
+            // Validar tamaño (5MB máximo)
+            if (file.size > 5 * 1024 * 1024) {
+                setError('La imagen debe ser menor a 5MB');
+                return;
+            }
+            
+            setSelectedFile(file);
+            
+            // Crear preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setImagePreview(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleImageUpload = async () => {
+        if (!selectedFile) {
+            setError('Selecciona una imagen primero');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const formData = new FormData();
+            formData.append('profileImage', selectedFile);
+            
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:3001/api/organizer/profile-image', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setSuccess('Imagen de perfil actualizada exitosamente');
+                setProfileData(prev => ({
+                    ...prev,
+                    profile_image: data.data.profile_image
+                }));
+                // Actualizar localStorage
+                localStorage.setItem('profileImage', data.data.profile_image);
+                setSelectedFile(null);
+                setImagePreview(null);
+            } else {
+                setError(data.message || 'Error al actualizar imagen');
+            }
+        } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+            setError('Error de conexión');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleImageDelete = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:3001/api/organizer/profile-image', {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setSuccess('Imagen de perfil eliminada exitosamente');
+                setProfileData(prev => ({
+                    ...prev,
+                    profile_image: ''
+                }));
+                // Actualizar localStorage
+                localStorage.removeItem('profileImage');
+            } else {
+                setError(data.message || 'Error al eliminar imagen');
+            }
+        } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+            setError('Error de conexión');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleNavigateToEvents = () => {
@@ -294,8 +411,18 @@ const Configuration: React.FC = () => {
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-white">
                     <div className="flex items-center mb-4">
-                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <UserCheck className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-600">
+                            {profileImage ? (
+                                <img 
+                                    src={`http://localhost:3001${profileImage}`}
+                                    alt="Imagen de perfil"
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                    <UserCheck className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                                </div>
+                            )}
                         </div>
                         <div className="ml-3">
                             <p className="text-sm font-semibold text-black dark:text-white">{firstName}</p>
@@ -379,8 +506,8 @@ const Configuration: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Two Column Layout */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Three Column Layout */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Left Column - Información del Usuario */}
                         <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-xl p-4 shadow-lg">
                             <div className="flex items-center mb-4">
@@ -439,6 +566,91 @@ const Configuration: React.FC = () => {
                                     {loading ? 'Guardando...' : 'Guardar Cambios'}
                                 </button>
                             </form>
+                        </div>
+
+                        {/* Middle Column - Imagen de Perfil */}
+                        <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-xl p-4 shadow-lg">
+                            <div className="flex items-center mb-4">
+                                <User className="w-5 h-5 text-purple-600 dark:text-purple-400 mr-2" />
+                                <h3 className="text-lg font-bold text-black dark:text-white">Imagen de Perfil</h3>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                {/* Imagen actual */}
+                                <div className="flex flex-col items-center">
+                                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-200 dark:border-gray-600 mb-3">
+                                        {profileData.profile_image ? (
+                                            <img 
+                                                src={`http://localhost:3001${profileData.profile_image}`}
+                                                alt="Imagen de perfil"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                                <User className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                                        {profileData.profile_image ? 'Imagen actual' : 'Sin imagen de perfil'}
+                                    </p>
+                                </div>
+
+                                {/* Preview de nueva imagen */}
+                                {imagePreview && (
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-purple-300 dark:border-purple-600 mb-2">
+                                            <img 
+                                                src={imagePreview}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-purple-600 dark:text-purple-400">Nueva imagen</p>
+                                    </div>
+                                )}
+
+                                {/* Input de archivo */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Seleccionar Imagen
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileSelect}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-white rounded-lg bg-gray-50 dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    />
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Formatos: JPG, PNG, GIF. Máximo 5MB
+                                    </p>
+                                </div>
+
+                                {/* Botones */}
+                                <div className="flex space-x-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleImageUpload}
+                                        disabled={loading || !selectedFile}
+                                        className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg disabled:opacity-50 text-sm"
+                                    >
+                                        {loading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                                        {loading ? 'Subiendo...' : 'Subir Imagen'}
+                                    </button>
+                                    
+                                    {profileData.profile_image && (
+                                        <button
+                                            type="button"
+                                            onClick={handleImageDelete}
+                                            disabled={loading}
+                                            className="flex-1 flex items-center justify-center px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 shadow-lg disabled:opacity-50 text-sm"
+                                        >
+                                            <X className="w-4 h-4 mr-1" />
+                                            Eliminar
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Right Column - Seguridad */}

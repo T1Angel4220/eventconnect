@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { userService } from "authentication/services/user.service";
 import { encryptPassword } from "@utils/helpers";
 import bcrypt from "bcryptjs";
+import path from "path";
+import fs from "fs";
 
 export class OrganizerController {
   // Obtener perfil del organizador autenticado
@@ -301,6 +303,120 @@ export class OrganizerController {
         success: false,
         message: 'Error al actualizar preferencias',
         error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  // Actualizar imagen de perfil
+  async updateProfileImage(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+      }
+
+      // Verificar si se subió un archivo
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se proporcionó ninguna imagen'
+        });
+      }
+
+      // Obtener información del usuario actual
+      const user = await userService.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado'
+        });
+      }
+
+      // Eliminar imagen anterior si existe
+      if (user.profile_image) {
+        const oldImagePath = path.join(__dirname, '../../uploads/profiles', path.basename(user.profile_image));
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+
+      // Generar URL de la nueva imagen
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
+
+      // Actualizar imagen en la base de datos
+      await userService.updateUserProfile(userId, { 
+        first_name: user.first_name, 
+        last_name: user.last_name, 
+        email: user.email, 
+        profile_image: imageUrl 
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Imagen de perfil actualizada exitosamente',
+        data: {
+          profile_image: imageUrl
+        }
+      });
+
+    } catch (error) {
+      console.error('Error updating profile image:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+      });
+    }
+  }
+
+  // Eliminar imagen de perfil
+  async deleteProfileImage(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+      }
+
+      // Obtener información del usuario actual
+      const user = await userService.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado'
+        });
+      }
+
+      // Eliminar imagen del servidor si existe
+      if (user.profile_image) {
+        const imagePath = path.join(__dirname, '../../uploads/profiles', path.basename(user.profile_image));
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      }
+
+      // Actualizar base de datos para eliminar referencia
+      await userService.updateUserProfile(userId, { 
+        first_name: user.first_name, 
+        last_name: user.last_name, 
+        email: user.email, 
+        profile_image: undefined 
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Imagen de perfil eliminada exitosamente'
+      });
+
+    } catch (error) {
+      console.error('Error deleting profile image:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
       });
     }
   }

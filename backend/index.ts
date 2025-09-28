@@ -1,5 +1,6 @@
 import cors from "cors";
 import express, { Application } from "express";
+import path from "path";
 import env from "./config/env";
 import pool from "./config/db";
 import authRouter from "authentication/routes/auth.routes";
@@ -12,6 +13,9 @@ import organizerRouter from "authentication/routes/organizer.routes";
 const app: Application = express();
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos estáticos (imágenes de perfil)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rutas de autenticación
 app.use("/api/auth", authRouter);

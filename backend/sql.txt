@@ -10,6 +10,7 @@ last_name VARCHAR(100) NOT NULL,
 email VARCHAR(150) UNIQUE NOT NULL,
 password VARCHAR(200) NOT NULL,
 role VARCHAR(50) CHECK (role IN ('participant', 'organizer', 'admin')) NOT NULL,
+profile_image VARCHAR(500), -- URL o path de la imagen de perfil
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

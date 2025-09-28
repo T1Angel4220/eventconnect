@@ -6,4 +6,5 @@ export interface UserRow {
   role: string;
   created_at: Date;
   password?: string;
+  profile_image?: string;
 }
