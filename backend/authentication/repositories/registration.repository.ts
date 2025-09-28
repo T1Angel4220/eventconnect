@@ -1,49 +1,80 @@
 import pool from "config/db";
-import { RegistrationData, RegistrationRow, RegistrationStats, RegistrationWithDetails } from "authentication/models/registration.interface";
+import { 
+  RegistrationData, 
+  RegistrationRow, 
+  RegistrationWithDetails, 
+  RegistrationStats,
+  UpdateRegistrationStatusPayload 
+} from "authentication/models/registration.interface";
 
 export interface RegistrationRepository {
   create(registration: RegistrationData): Promise<RegistrationRow>;
   findById(registrationId: number): Promise<RegistrationRow | null>;
+  findByUserAndEvent(userId: number, eventId: number): Promise<RegistrationRow | null>;
   findByUser(userId: number): Promise<RegistrationWithDetails[]>;
   findByEvent(eventId: number): Promise<RegistrationWithDetails[]>;
-  findByUserAndEvent(userId: number, eventId: number): Promise<RegistrationRow | null>;
-  update(registrationId: number, registration: Partial<RegistrationData>): Promise<RegistrationRow | null>;
+  updateStatus(registrationId: number, status: UpdateRegistrationStatusPayload): Promise<RegistrationRow | null>;
   delete(registrationId: number): Promise<boolean>;
   getStats(): Promise<RegistrationStats>;
-  getTopUsers(limit?: number): Promise<Array<{ user_id: number; user_name: string; events_attended: number; favorite_category: string; join_date: string }>>;
-  getRecentRegistrations(limit?: number): Promise<RegistrationWithDetails[]>;
+  getAllWithDetails(): Promise<RegistrationWithDetails[]>;
+  getRegistrationsByEvent(eventId: number): Promise<RegistrationWithDetails[]>;
+  getRegistrationsByUser(userId: number): Promise<RegistrationWithDetails[]>;
+  checkEventCapacity(eventId: number): Promise<{ current: number; capacity: number }>;
 }
 
 class RegistrationRepositoryImpl implements RegistrationRepository {
+  
+  // Crear una nueva inscripción
   async create(registration: RegistrationData): Promise<RegistrationRow> {
     const query = `
       INSERT INTO registrations (user_id, event_id, status)
       VALUES ($1, $2, $3)
       RETURNING *
     `;
-    const values = [registration.user_id, registration.event_id, registration.status];
+    const values = [
+      registration.user_id,
+      registration.event_id,
+      registration.status || 'registered'
+    ];
     
     const result = await pool.query(query, values);
     return result.rows[0];
   }
 
+  // Buscar inscripción por ID
   async findById(registrationId: number): Promise<RegistrationRow | null> {
     const query = 'SELECT * FROM registrations WHERE registration_id = $1';
     const result = await pool.query(query, [registrationId]);
     return result.rows[0] || null;
   }
 
+  // Buscar inscripción por usuario y evento (para evitar duplicados)
+  async findByUserAndEvent(userId: number, eventId: number): Promise<RegistrationRow | null> {
+    const query = 'SELECT * FROM registrations WHERE user_id = $1 AND event_id = $2';
+    const result = await pool.query(query, [userId, eventId]);
+    return result.rows[0] || null;
+  }
+
+  // Obtener todas las inscripciones de un usuario con detalles
   async findByUser(userId: number): Promise<RegistrationWithDetails[]> {
     const query = `
       SELECT 
         r.*,
-        CONCAT(u.first_name, ' ', u.last_name) as user_name,
+        u.first_name as user_first_name,
+        u.last_name as user_last_name,
         u.email as user_email,
+        u.role as user_role,
         e.title as event_title,
-        e.event_date
+        e.event_date,
+        e.location as event_location,
+        e.event_type,
+        e.capacity as event_capacity,
+        e.organizer_id,
+        CONCAT(org.first_name, ' ', org.last_name) as organizer_name
       FROM registrations r
       JOIN users u ON r.user_id = u.user_id
       JOIN events e ON r.event_id = e.event_id
+      JOIN users org ON e.organizer_id = org.user_id
       WHERE r.user_id = $1
       ORDER BY r.registered_at DESC
     `;
@@ -52,17 +83,26 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
     return result.rows;
   }
 
+  // Obtener todas las inscripciones de un evento con detalles
   async findByEvent(eventId: number): Promise<RegistrationWithDetails[]> {
     const query = `
       SELECT 
         r.*,
-        CONCAT(u.first_name, ' ', u.last_name) as user_name,
+        u.first_name as user_first_name,
+        u.last_name as user_last_name,
         u.email as user_email,
+        u.role as user_role,
         e.title as event_title,
-        e.event_date
+        e.event_date,
+        e.location as event_location,
+        e.event_type,
+        e.capacity as event_capacity,
+        e.organizer_id,
+        CONCAT(org.first_name, ' ', org.last_name) as organizer_name
       FROM registrations r
       JOIN users u ON r.user_id = u.user_id
       JOIN events e ON r.event_id = e.event_id
+      JOIN users org ON e.organizer_id = org.user_id
       WHERE r.event_id = $1
       ORDER BY r.registered_at DESC
     `;
@@ -71,50 +111,30 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
     return result.rows;
   }
 
-  async findByUserAndEvent(userId: number, eventId: number): Promise<RegistrationRow | null> {
-    const query = 'SELECT * FROM registrations WHERE user_id = $1 AND event_id = $2';
-    const result = await pool.query(query, [userId, eventId]);
-    return result.rows[0] || null;
-  }
-
-  async update(registrationId: number, registration: Partial<RegistrationData>): Promise<RegistrationRow | null> {
-    const fields = [];
-    const values = [];
-    let paramCount = 1;
-
-    Object.entries(registration).forEach(([key, value]) => {
-      if (value !== undefined && key !== 'registration_id') {
-        fields.push(`${key} = $${paramCount}`);
-        values.push(value);
-        paramCount++;
-      }
-    });
-
-    if (fields.length === 0) {
-      return this.findById(registrationId);
-    }
-
-    values.push(registrationId);
-
+  // Actualizar estado de inscripción
+  async updateStatus(registrationId: number, status: UpdateRegistrationStatusPayload): Promise<RegistrationRow | null> {
     const query = `
       UPDATE registrations 
-      SET ${fields.join(', ')}
-      WHERE registration_id = $${paramCount}
+      SET status = $1
+      WHERE registration_id = $2
       RETURNING *
     `;
-
-    const result = await pool.query(query, values);
+    
+    const result = await pool.query(query, [status.status, registrationId]);
     return result.rows[0] || null;
   }
 
+  // Eliminar inscripción
   async delete(registrationId: number): Promise<boolean> {
     const query = 'DELETE FROM registrations WHERE registration_id = $1';
     const result = await pool.query(query, [registrationId]);
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
+  // Obtener estadísticas de inscripciones
   async getStats(): Promise<RegistrationStats> {
-    const query = `
+    // Estadísticas generales
+    const generalStatsQuery = `
       SELECT 
         COUNT(*) as total_registrations,
         COUNT(CASE WHEN status = 'registered' THEN 1 END) as active_registrations,
@@ -122,56 +142,102 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
       FROM registrations
     `;
     
-    const result = await pool.query(query);
-    return result.rows[0];
-  }
-
-  async getTopUsers(limit: number = 10): Promise<Array<{ user_id: number; user_name: string; events_attended: number; favorite_category: string; join_date: string }>> {
-    const query = `
+    // Estadísticas por evento
+    const eventStatsQuery = `
+      SELECT 
+        e.event_id,
+        e.title as event_title,
+        COUNT(r.registration_id) as registration_count
+      FROM events e
+      LEFT JOIN registrations r ON e.event_id = r.event_id AND r.status = 'registered'
+      GROUP BY e.event_id, e.title
+      ORDER BY registration_count DESC
+    `;
+    
+    // Estadísticas por usuario
+    const userStatsQuery = `
       SELECT 
         u.user_id,
         CONCAT(u.first_name, ' ', u.last_name) as user_name,
-        COUNT(r.registration_id) as events_attended,
-        (
-          SELECT e.event_type
-          FROM registrations r2
-          JOIN events e ON r2.event_id = e.event_id
-          WHERE r2.user_id = u.user_id AND r2.status = 'registered'
-          GROUP BY e.event_type
-          ORDER BY COUNT(*) DESC
-          LIMIT 1
-        ) as favorite_category,
-        TO_CHAR(u.created_at, 'Mon YYYY') as join_date
+        COUNT(r.registration_id) as registration_count
       FROM users u
       LEFT JOIN registrations r ON u.user_id = r.user_id AND r.status = 'registered'
-      WHERE u.role = 'participant'
-      GROUP BY u.user_id, u.first_name, u.last_name, u.created_at
-      ORDER BY events_attended DESC
-      LIMIT $1
+      GROUP BY u.user_id, u.first_name, u.last_name
+      ORDER BY registration_count DESC
+      LIMIT 10
     `;
-    
-    const result = await pool.query(query, [limit]);
-    return result.rows;
+
+    const [generalResult, eventResult, userResult] = await Promise.all([
+      pool.query(generalStatsQuery),
+      pool.query(eventStatsQuery),
+      pool.query(userStatsQuery)
+    ]);
+
+    return {
+      total_registrations: parseInt(generalResult.rows[0].total_registrations),
+      active_registrations: parseInt(generalResult.rows[0].active_registrations),
+      canceled_registrations: parseInt(generalResult.rows[0].canceled_registrations),
+      registrations_by_event: eventResult.rows,
+      registrations_by_user: userResult.rows
+    };
   }
 
-  async getRecentRegistrations(limit: number = 10): Promise<RegistrationWithDetails[]> {
+  // Obtener todas las inscripciones con detalles
+  async getAllWithDetails(): Promise<RegistrationWithDetails[]> {
     const query = `
       SELECT 
         r.*,
-        CONCAT(u.first_name, ' ', u.last_name) as user_name,
+        u.first_name as user_first_name,
+        u.last_name as user_last_name,
         u.email as user_email,
+        u.role as user_role,
         e.title as event_title,
-        e.event_date
+        e.event_date,
+        e.location as event_location,
+        e.event_type,
+        e.capacity as event_capacity,
+        e.organizer_id,
+        CONCAT(org.first_name, ' ', org.last_name) as organizer_name
       FROM registrations r
       JOIN users u ON r.user_id = u.user_id
       JOIN events e ON r.event_id = e.event_id
-      WHERE r.status = 'registered'
+      JOIN users org ON e.organizer_id = org.user_id
       ORDER BY r.registered_at DESC
-      LIMIT $1
     `;
     
-    const result = await pool.query(query, [limit]);
+    const result = await pool.query(query);
     return result.rows;
+  }
+
+  // Obtener inscripciones por evento (alias para findByEvent)
+  async getRegistrationsByEvent(eventId: number): Promise<RegistrationWithDetails[]> {
+    return this.findByEvent(eventId);
+  }
+
+  // Obtener inscripciones por usuario (alias para findByUser)
+  async getRegistrationsByUser(userId: number): Promise<RegistrationWithDetails[]> {
+    return this.findByUser(userId);
+  }
+
+  // Verificar capacidad del evento
+  async checkEventCapacity(eventId: number): Promise<{ current: number; capacity: number }> {
+    const query = `
+      SELECT 
+        e.capacity,
+        COUNT(r.registration_id) as current_registrations
+      FROM events e
+      LEFT JOIN registrations r ON e.event_id = r.event_id AND r.status = 'registered'
+      WHERE e.event_id = $1
+      GROUP BY e.capacity
+    `;
+    
+    const result = await pool.query(query, [eventId]);
+    const row = result.rows[0];
+    
+    return {
+      current: parseInt(row.current_registrations) || 0,
+      capacity: parseInt(row.capacity)
+    };
   }
 }
 
