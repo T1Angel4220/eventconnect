@@ -10,8 +10,12 @@ export const useAuth = () => {
     const firstName = localStorage.getItem('firstName');
 
     if (!token || !role || !firstName) {
-      // Si no hay datos de autenticación, redirigir al login
+      // Si no hay datos de autenticación, limpiar solo datos de auth pero preservar el tema
+      const theme = localStorage.getItem('theme');
       localStorage.clear();
+      if (theme) {
+        localStorage.setItem('theme', theme);
+      }
       navigate('/login');
       return false;
     }
@@ -20,15 +24,29 @@ export const useAuth = () => {
   }, [navigate]);
 
   const logout = () => {
+    // Preservar el tema antes de limpiar
+    const theme = localStorage.getItem('theme');
+    
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('firstName');
     localStorage.removeItem('userId');
+    
+    // Restaurar el tema si existía
+    if (theme) {
+      localStorage.setItem('theme', theme);
+    }
+    
     navigate('/login');
   };
 
   const handleTokenExpired = () => {
+    // Preservar el tema antes de limpiar
+    const theme = localStorage.getItem('theme');
     localStorage.clear();
+    if (theme) {
+      localStorage.setItem('theme', theme);
+    }
     alert('Tu sesión ha expirado. Serás redirigido al login.');
     navigate('/login');
   };

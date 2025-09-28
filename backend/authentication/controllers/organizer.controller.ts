@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { userService } from "authentication/services/user.service";
-import bcrypt from "bcrypt";
+import { encryptPassword } from "@utils/helpers";
+import bcrypt from "bcryptjs";
 
 export class OrganizerController {
   // Obtener perfil del organizador autenticado
@@ -131,11 +132,44 @@ export class OrganizerController {
         });
       }
 
-      // Validar longitud de nueva contraseña
-      if (newPassword.length < 6) {
+      // Validar nueva contraseña con criterios robustos
+      if (newPassword.length < 8) {
         return res.status(400).json({
           success: false,
-          message: 'La nueva contraseña debe tener al menos 6 caracteres'
+          message: 'La nueva contraseña debe tener al menos 8 caracteres'
+        });
+      }
+
+      if (newPassword.length > 128) {
+        return res.status(400).json({
+          success: false,
+          message: 'La nueva contraseña no puede exceder 128 caracteres'
+        });
+      }
+
+      // Validar que contenga al menos una letra mayúscula, una minúscula y un número
+      const hasUpperCase = /[A-Z]/.test(newPassword);
+      const hasLowerCase = /[a-z]/.test(newPassword);
+      const hasNumber = /\d/.test(newPassword);
+
+      if (!hasUpperCase) {
+        return res.status(400).json({
+          success: false,
+          message: 'La nueva contraseña debe contener al menos una letra mayúscula'
+        });
+      }
+
+      if (!hasLowerCase) {
+        return res.status(400).json({
+          success: false,
+          message: 'La nueva contraseña debe contener al menos una letra minúscula'
+        });
+      }
+
+      if (!hasNumber) {
+        return res.status(400).json({
+          success: false,
+          message: 'La nueva contraseña debe contener al menos un número'
         });
       }
 
@@ -157,8 +191,11 @@ export class OrganizerController {
         });
       }
 
+      // Hashear la nueva contraseña antes de guardarla
+      const hashedNewPassword = await encryptPassword(newPassword);
+      
       // Actualizar contraseña
-      const success = await userService.updateUserPassword(userId, newPassword);
+      const success = await userService.updateUserPassword(userId, hashedNewPassword);
       if (!success) {
         return res.status(500).json({
           success: false,

@@ -72,12 +72,16 @@ const Dashboard: React.FC = () => {
         navigate('/registrations-management');
     };
 
+    const handleNavigateToConfiguration = () => {
+        navigate('/configuration');
+    };
+
     const menuItems = [
         { icon: Home, label: 'Dashboard', active: true, onClick: () => {} },
         { icon: Calendar, label: 'Eventos', active: false, onClick: handleNavigateToEvents },
         { icon: Users, label: 'Inscripciones', active: false, onClick: handleNavigateToRegistrations },
         { icon: BarChart3, label: 'Estadísticas', active: false, onClick: () => {} },
-        { icon: Settings, label: 'Configuración', active: false, onClick: () => {} },
+        { icon: Settings, label: 'Configuración', active: false, onClick: handleNavigateToConfiguration },
     ];
 
     // Función para formatear el cambio
@@ -325,7 +329,10 @@ const Dashboard: React.FC = () => {
                                     <Download className="w-4 h-4 mr-2" />
                                     <span className="font-medium">Exportar Datos</span>
                                 </button>
-                                <button className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200">
+                                <button 
+                                    onClick={handleNavigateToConfiguration}
+                                    className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+                                >
                                     <Settings className="w-4 h-4 mr-2" />
                                     <span className="font-medium">Configuración</span>
                                 </button>

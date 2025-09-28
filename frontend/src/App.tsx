@@ -10,6 +10,7 @@ import PasswordResetSuccess from './pages/PasswordResetSuccess';
 import Dashboard from './pages/Dashboard';
 import EventsManagement from './pages/EventsManagement';
 import RegistrationsManagement from './pages/RegistrationsManagement';
+import Configuration from './pages/Configuration';
 import PrivateRoute from './components/login-Web/PrivateRoute';
 import PublicRoute from './components/login-Web/PublicRoute';
 
@@ -70,6 +71,11 @@ const App: React.FC = () => {
                 <Route path="/registrations-management" element={
                     <PrivateRoute allowedRoles={['admin', 'organizer']}>
                         <RegistrationsManagement />
+                    </PrivateRoute>
+                } />
+                <Route path="/configuration" element={
+                    <PrivateRoute allowedRoles={['admin', 'organizer']}>
+                        <Configuration />
                     </PrivateRoute>
                 } />
                  {/* Ruta catch-all */}
