@@ -139,7 +139,7 @@ class EventRepositoryImpl implements EventRepository {
   async delete(eventId: number): Promise<boolean> {
     const query = 'DELETE FROM events WHERE event_id = $1';
     const result = await pool.query(query, [eventId]);
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getStats(): Promise<EventStats> {
@@ -232,11 +232,8 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   async updateAllEventStatuses(): Promise<number> {
-    console.log("🔄 Iniciando actualización de estados de eventos...");
-    
     // Obtener todos los eventos
     const events = await this.findAll();
-    console.log(`📊 Total de eventos encontrados: ${events.length}`);
     
     const now = new Date();
     let updatedCount = 0;
@@ -254,13 +251,11 @@ class EventRepositoryImpl implements EventRepository {
       
       // Solo actualizar si el estado ha cambiado
       if (event.status !== newStatus) {
-        console.log(`🔄 Actualizando evento ${event.event_id}: ${event.status} -> ${newStatus}`);
         await this.updateStatus(event.event_id, newStatus);
         updatedCount++;
       }
     }
     
-    console.log(`✅ Actualización completada. ${updatedCount} eventos actualizados.`);
     return updatedCount;
   }
 

@@ -1059,7 +1059,7 @@ const EventsManagement: React.FC = () => {
     React.useEffect(() => {
         loadEvents();
         
-        // Actualizar estados automáticamente cada 2 minutos para sincronización más frecuente
+        // Actualizar estados automáticamente cada 5 minutos (reducido de 1-2 minutos)
         const interval = setInterval(async () => {
             try {
                 await apiUpdateEventStatuses();
@@ -1071,25 +1071,10 @@ const EventsManagement: React.FC = () => {
                     console.warn('⚠️ Error en actualización automática:', errorMessage);
                 }
             }
-        }, 2 * 60 * 1000); // 2 minutos para actualización más frecuente
-        
-        // Actualizar estados cada minuto para verificar cambios de estado más frecuentemente
-        const quickInterval = setInterval(async () => {
-            try {
-                await apiUpdateEventStatuses();
-            } catch (error: unknown) {
-                // Solo logear errores críticos
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                if (!errorMessage.includes('401') && 
-                    !errorMessage.includes('403')) {
-                    console.warn('⚠️ Error en actualización rápida:', errorMessage);
-                }
-            }
-        }, 60 * 1000); // 1 minuto para verificación más frecuente
+        }, 5 * 60 * 1000); // 5 minutos para reducir llamadas
         
         return () => {
             clearInterval(interval);
-            clearInterval(quickInterval);
         };
     }, [loadEvents]);
 

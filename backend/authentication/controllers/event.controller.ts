@@ -302,9 +302,7 @@ export class EventController {
 
   async updateEventStatuses(req: Request, res: Response) {
     try {
-      console.log("🔄 Actualizando estados de eventos...");
       const updatedCount = await eventService.updateAllEventStatuses();
-      console.log(`✅ Se actualizaron ${updatedCount} eventos`);
       res.json({ 
         message: `Estados actualizados exitosamente`, 
         updatedCount 
