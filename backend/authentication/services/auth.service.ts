@@ -37,7 +37,7 @@ class AuthService {
       lastName,
       email,
       password: hashedPassword,
-      role: role || "participant", // Por defecto es participant
+      role: role || "organizer", // Por defecto es organizer
     };
 
     const newUser = await this.userService.createUser(userDataToCreate);

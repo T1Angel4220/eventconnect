@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { organizerController } from "authentication/controllers/organizer.controller";
 import authMiddleware from "authentication/middlewares/auth.middleware";
-import upload from "../../middleware/upload";
+import upload, { profileUpload } from "../../middleware/upload";
 
 const router = Router();
 
@@ -18,7 +18,7 @@ router.get("/event-preferences", organizerController.getEventPreferences.bind(or
 router.put("/event-preferences", organizerController.updateEventPreferences.bind(organizerController));
 
 // Rutas de imagen de perfil
-router.post("/profile-image", upload.single('profileImage'), organizerController.updateProfileImage.bind(organizerController));
+router.post("/profile-image", profileUpload.single('profileImage'), organizerController.updateProfileImage.bind(organizerController));
 router.delete("/profile-image", organizerController.deleteProfileImage.bind(organizerController));
 
 export default router;

@@ -1,8 +1,9 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export const useAuth = () => {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const checkAuth = useCallback(() => {
     const token = localStorage.getItem('token');
@@ -16,10 +17,12 @@ export const useAuth = () => {
       if (theme) {
         localStorage.setItem('theme', theme);
       }
+      setIsAuthenticated(false);
       navigate('/login');
       return false;
     }
 
+    setIsAuthenticated(true);
     return true;
   }, [navigate]);
 
@@ -37,6 +40,7 @@ export const useAuth = () => {
       localStorage.setItem('theme', theme);
     }
     
+    setIsAuthenticated(false);
     navigate('/login');
   };
 
@@ -47,20 +51,28 @@ export const useAuth = () => {
     if (theme) {
       localStorage.setItem('theme', theme);
     }
+    setIsAuthenticated(false);
     // El modal se manejará en cada componente individual
     navigate('/login');
   };
 
   useEffect(() => {
     // Verificar autenticación al montar el componente
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    const firstName = localStorage.getItem('firstName');
+    
+    if (token && role && firstName) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
   }, []); // Solo ejecutar una vez al montar
 
   return {
     checkAuth,
     logout,
     handleTokenExpired,
-    isAuthenticated: checkAuth()
+    isAuthenticated
   };
 };
