@@ -143,34 +143,19 @@ class StatsRepositoryImpl implements StatsRepository {
   }
 
   async getParticipantsByMonth(months: number = 6): Promise<MonthlyParticipantsData[]> {
+    // Consulta simplificada para mejor rendimiento
     const query = `
-      WITH month_series AS (
-        SELECT 
-          generate_series(
-            DATE_TRUNC('month', CURRENT_DATE - INTERVAL '${months - 1} months'),
-            DATE_TRUNC('month', CURRENT_DATE),
-            '1 month'::interval
-          ) as month_start
-      ),
-      monthly_data AS (
-        SELECT 
-          DATE_TRUNC('month', r.registered_at) as month,
-          COUNT(DISTINCT r.user_id) as participants,
-          COUNT(DISTINCT e.event_id) as events
-        FROM registrations r
-        JOIN events e ON r.event_id = e.event_id
-        WHERE r.status = 'registered'
-          AND r.registered_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '${months - 1} months')
-        GROUP BY DATE_TRUNC('month', r.registered_at)
-      )
       SELECT 
-        TO_CHAR(ms.month_start, 'Month') as month,
-        EXTRACT(YEAR FROM ms.month_start)::integer as year,
-        COALESCE(md.participants, 0)::integer as participants,
-        COALESCE(md.events, 0)::integer as events
-      FROM month_series ms
-      LEFT JOIN monthly_data md ON ms.month_start = md.month
-      ORDER BY ms.month_start
+        TO_CHAR(DATE_TRUNC('month', r.registered_at), 'Month') as month,
+        EXTRACT(YEAR FROM DATE_TRUNC('month', r.registered_at))::integer as year,
+        COUNT(DISTINCT r.user_id)::integer as participants,
+        COUNT(DISTINCT e.event_id)::integer as events
+      FROM registrations r
+      JOIN events e ON r.event_id = e.event_id
+      WHERE r.status = 'registered'
+        AND r.registered_at >= CURRENT_DATE - INTERVAL '${months} months'
+      GROUP BY DATE_TRUNC('month', r.registered_at)
+      ORDER BY DATE_TRUNC('month', r.registered_at)
     `;
     
     const result = await pool.query(query);

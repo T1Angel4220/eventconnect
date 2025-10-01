@@ -13,6 +13,7 @@ import RegistrationsManagement from './pages/RegistrationsManagement';
 import Configuration from './pages/Configuration';
 import PrivateRoute from './components/login-Web/PrivateRoute';
 import PublicRoute from './components/login-Web/PublicRoute';
+import { DashboardProvider } from './contexts/DashboardContext';
 
 const App: React.FC = () => {
     return (
@@ -59,23 +60,31 @@ const App: React.FC = () => {
                     </PublicRoute>
                 } />
                 <Route path="/dashboard" element={
-                    <PrivateRoute allowedRoles={['admin', 'organizer']}>
-                        <Dashboard />
+                    <PrivateRoute allowedRoles={['admin', 'organizer', 'participant']}>
+                        <DashboardProvider>
+                            <Dashboard />
+                        </DashboardProvider>
                     </PrivateRoute>
                 } />
                 <Route path="/events-management" element={
                     <PrivateRoute allowedRoles={['admin', 'organizer']}>
-                        <EventsManagement />
+                        <DashboardProvider>
+                            <EventsManagement />
+                        </DashboardProvider>
                     </PrivateRoute>
                 } />
                 <Route path="/registrations-management" element={
                     <PrivateRoute allowedRoles={['admin', 'organizer']}>
-                        <RegistrationsManagement />
+                        <DashboardProvider>
+                            <RegistrationsManagement />
+                        </DashboardProvider>
                     </PrivateRoute>
                 } />
                 <Route path="/configuration" element={
                     <PrivateRoute allowedRoles={['admin', 'organizer']}>
-                        <Configuration />
+                        <DashboardProvider>
+                            <Configuration />
+                        </DashboardProvider>
                     </PrivateRoute>
                 } />
                  {/* Ruta catch-all */}
