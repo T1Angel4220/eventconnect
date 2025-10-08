@@ -67,17 +67,31 @@ FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 
 
 
-PARA LAS IMAGENES
-ALTER TABLE users
-ADD COLUMN profile_image VARCHAR(500);
+-- ==============================
+-- MIGRACIÓN SEGURA PARA USUARIOS EXISTENTES
+-- ==============================
 
--- Agregar campo de imagen a eventos (OBLIGATORIO)
-ALTER TABLE events
-ADD COLUMN event_image VARCHAR(500) NOT NULL DEFAULT '/uploads/events/default-event.jpg';
+-- 1. Agregar campo de imagen de perfil a usuarios (OPCIONAL)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'users' AND column_name = 'profile_image') THEN
+        ALTER TABLE users ADD COLUMN profile_image VARCHAR(500);
+    END IF;
+END $$;
 
--- Cambiar el tipo de campo event_image a TEXT para soportar base64
-ALTER TABLE events
-ALTER COLUMN event_image TYPE TEXT;
+-- 2. Agregar campo de imagen de eventos (OBLIGATORIO)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'events' AND column_name = 'event_image') THEN
+        -- Primero agregar como VARCHAR con valor por defecto
+        ALTER TABLE events ADD COLUMN event_image VARCHAR(500) NOT NULL DEFAULT '/uploads/events/default-event.jpg';
+        
+        -- Luego cambiar a TEXT para soportar URLs más largas
+        ALTER TABLE events ALTER COLUMN event_image TYPE TEXT;
+    END IF;
+END $$;
 
 -- ==============================
 -- LIMPIAR URLs BLOB DE LA BASE DE DATOS

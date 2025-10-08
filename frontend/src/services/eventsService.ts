@@ -13,6 +13,9 @@ export interface EventResponse {
   created_at: string;
   updated_at: string;
   attendees?: number;
+  organizer_name?: string; // Nombre del organizador
+  organizer_email?: string; // Email del organizador
+  registered_count?: number; // Número de registrados
 }
 
 export interface CreateEventPayload {
@@ -38,9 +41,10 @@ function authHeaders() {
 }
 
 export async function fetchEvents(): Promise<EventResponse[]> {
-  const res = await fetch(`${API_URL}/events`, { headers: authHeaders() });
+  const res = await fetch(`${API_URL}/events/with-organizer`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Error cargando eventos");
-  return res.json();
+  const response = await res.json();
+  return response.data; // El backend devuelve { success: true, data: events }
 }
 
 export async function createEvent(payload: CreateEventPayload | FormData): Promise<EventResponse> {
