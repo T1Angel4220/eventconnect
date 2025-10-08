@@ -49,6 +49,9 @@ interface EventData {
     attendees?: number;
     event_image: string;
     description?: string;
+    organizer_name?: string;
+    organizer_email?: string;
+    registered_count?: number;
     [key: string]: unknown;
 }
 
@@ -1442,11 +1445,11 @@ const EventsManagement: React.FC = () => {
                 time: dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                 duration: e.duration || 0,
                 location: e.location || '',
-                attendees: e.attendees ?? 0,
+                attendees: e.registered_count ?? e.attendees ?? 0,
                 capacity: e.capacity,
                 status: statusText,
                 category: mapEventTypeToUiCategory(e.event_type as 'academic' | 'cultural' | 'sports'),
-                organizer: '—',
+                organizer: e.organizer_name || 'Organizador no disponible',
                 description: e.description || '',
                 event_image: e.event_image || '',
                 createdAt: e.created_at as string,
@@ -1749,27 +1752,186 @@ const EventsManagement: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Table Header */}
-                        <div className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
-                            <div>Evento</div>
-                            <div>Fecha</div>
-                            <div>Hora</div>
-                            <div>Duración</div>
-                            <div>Ubicación</div>
-                            <div>Participantes</div>
-                            <div>Categoría</div>
-                            <div>Estado</div>
-                            <div>Acciones</div>
+                        {/* Desktop Table View */}
+                        <div className="hidden lg:block">
+                            {/* Table Header */}
+                            <div className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
+                                <div>Evento</div>
+                                <div>Fecha</div>
+                                <div>Hora</div>
+                                <div>Duración</div>
+                                <div>Ubicación</div>
+                                <div>Participantes</div>
+                                <div>Categoría</div>
+                                <div>Estado</div>
+                                <div>Acciones</div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {filteredEvents.map((event) => (
+                                    <div key={event.id} className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                        <div className="flex items-center">
+                                            <div className="flex items-center space-x-3">
+                                                {/* Mini imagen del evento */}
+                                                {event.event_image && (
+                                                    <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-sm">
+                                                        <img
+                                                            src={getImageUrl(event.event_image)}
+                                                            alt={event.name}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.style.display = 'none';
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <h4 className="font-semibold text-black dark:text-white text-sm">{event.name}</h4>
+                                                    <p className="text-xs text-gray-600 dark:text-gray-400">{event.organizer}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                            {event.date}
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                            {event.time}
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                            <Clock className="w-3 h-3 mr-1" />
+                                            {event.duration} min
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                            <MapPin className="w-3 h-3 mr-1" />
+                                            {event.location}
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                            {event.attendees}/{event.capacity}
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(event.category)} text-white`}>
+                                                {event.category}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status)}`}>
+                                                {event.status}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <button 
+                                                onClick={() => handleViewDetails(event)}
+                                                className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleEditEvent(event.raw)}
+                                                className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDeleteEvent(event.raw)}
+                                                className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
-                        <div className="space-y-3">
-                            {filteredEvents.map((event) => (
-                                <div key={event.id} className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
-                                    <div className="flex items-center">
-                                        <div className="flex items-center space-x-3">
-                                            {/* Mini imagen del evento */}
+                        {/* Tablet View */}
+                        <div className="hidden md:block lg:hidden">
+                            {/* Table Header */}
+                            <div className="grid grid-cols-6 gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
+                                <div>Evento</div>
+                                <div>Fecha</div>
+                                <div>Duración</div>
+                                <div>Participantes</div>
+                                <div>Categoría</div>
+                                <div>Acciones</div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {filteredEvents.map((event) => (
+                                    <div key={event.id} className="grid grid-cols-6 gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                        <div className="flex items-center">
+                                            <div className="flex items-center space-x-3">
+                                                {event.event_image && (
+                                                    <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-sm">
+                                                        <img
+                                                            src={getImageUrl(event.event_image)}
+                                                            alt={event.name}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.style.display = 'none';
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <h4 className="font-semibold text-black dark:text-white text-sm">{event.name}</h4>
+                                                    <p className="text-xs text-gray-600 dark:text-gray-400">{event.organizer}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                            <div>
+                                                <div>{event.date}</div>
+                                                <div className="text-xs text-gray-500">{event.time}</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                            <Clock className="w-3 h-3 mr-1" />
+                                            {event.duration} min
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                            {event.attendees}/{event.capacity}
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(event.category)} text-white`}>
+                                                {event.category}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <button 
+                                                onClick={() => handleViewDetails(event)}
+                                                className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleEditEvent(event.raw)}
+                                                className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDeleteEvent(event.raw)}
+                                                className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className="block md:hidden">
+                            <div className="space-y-4">
+                                {filteredEvents.map((event) => (
+                                    <div key={event.id} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                        {/* Header with image and basic info */}
+                                        <div className="flex items-start space-x-3 mb-3">
                                             {event.event_image && (
-                                                <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-sm">
+                                                <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
                                                     <img
                                                         src={getImageUrl(event.event_image)}
                                                         alt={event.name}
@@ -1781,61 +1943,82 @@ const EventsManagement: React.FC = () => {
                                                     />
                                                 </div>
                                             )}
-                                            <div>
-                                                <h4 className="font-semibold text-black dark:text-white text-sm">{event.name}</h4>
-                                                <p className="text-xs text-gray-600 dark:text-gray-400">{event.organizer}</p>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-semibold text-black dark:text-white text-base mb-1 line-clamp-2 break-words">{event.name}</h4>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-1 break-words">{event.organizer}</p>
+                                                
+                                                {/* Date and time */}
+                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                                    <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                    <span className="truncate">{event.date} - {event.time}</span>
+                                                </div>
+                                                
+                                                {/* Duration and location */}
+                                                <div className="flex items-start text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                                    <div className="flex items-center">
+                                                        <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                        <span className="whitespace-nowrap">{event.duration} min</span>
+                                                    </div>
+                                                    {event.location && (
+                                                        <div className="flex items-center ml-3 min-w-0">
+                                                            <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                            <span className="truncate">{event.location}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Bottom section with participants, category, status and actions */}
+                                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                                            {/* Participants info */}
+                                            <div className="mb-3">
+                                                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                                                    {event.attendees}/{event.capacity} participantes
+                                                </span>
+                                            </div>
+                                            
+                                            {/* Tags and actions row */}
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                                {/* Tags container */}
+                                                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(event.category)} text-white whitespace-nowrap max-w-[120px] truncate`} title={event.category}>
+                                                        {event.category}
+                                                    </span>
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status)} whitespace-nowrap`}>
+                                                        {event.status}
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Actions */}
+                                                <div className="flex items-center justify-end space-x-2 flex-shrink-0">
+                                                    <button 
+                                                        onClick={() => handleViewDetails(event)}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                                                        title="Ver detalles"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleEditEvent(event.raw)}
+                                                        className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                                                        title="Editar evento"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteEvent(event.raw)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                                                        title="Eliminar evento"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {event.date}
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {event.time}
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        <Clock className="w-3 h-3 mr-1" />
-                                        {event.duration} min
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        <MapPin className="w-3 h-3 mr-1" />
-                                        {event.location}
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                        {event.attendees}/{event.capacity}
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(event.category)} text-white`}>
-                                            {event.category}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status)}`}>
-                                            {event.status}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center space-x-3">
-                                        <button 
-                                            onClick={() => handleViewDetails(event)}
-                                            className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
-                                        >
-                                            <Eye className="w-4 h-4" />
-                                        </button>
-                                        <button 
-                                            onClick={() => handleEditEvent(event.raw)}
-                                            className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDeleteEvent(event.raw)}
-                                            className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
 
                         {filteredEvents.length === 0 && (
