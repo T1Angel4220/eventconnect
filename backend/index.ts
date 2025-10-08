@@ -9,6 +9,7 @@ import dashboardRouter from "authentication/routes/dashboard.routes";
 import eventRouter from "authentication/routes/event.routes";
 import registrationRouter from "authentication/routes/registration.routes";
 import organizerRouter from "authentication/routes/organizer.routes";
+import adminRouter from "authentication/routes/admin.routes";
 
 const app: Application = express();
 app.use(cors());
@@ -32,6 +33,9 @@ app.use("/api/registrations", registrationRouter);
 
 // Rutas de organizador (configuración)
 app.use("/api/organizer", organizerRouter);
+
+// Rutas de administrador
+app.use("/api/admin", adminRouter);
 
 // Endpoint de prueba sin autenticación (temporal)
 app.get("/api/test/stats", async (req, res) => {

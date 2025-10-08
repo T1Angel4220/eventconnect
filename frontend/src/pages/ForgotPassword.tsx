@@ -30,7 +30,10 @@ const ForgotPassword: React.FC = () => {
     // Romper el historial hacia adelante para que el botón "Adelante" no vuelva a verify-code
     try {
       window.history.pushState({}, '', window.location.href)
-    } catch {}
+    } catch (error) {
+      // Ignorar errores de historial
+      console.warn('Error updating history:', error)
+    }
   }, [])
 
   // Validación en tiempo real del email
@@ -84,7 +87,7 @@ const ForgotPassword: React.FC = () => {
       if (err instanceof Error) {
         errorMessage = err.message
       } else if (typeof err === "object" && err !== null && "message" in err) {
-        errorMessage = (err as any).message
+        errorMessage = (err as Error).message
       }
 
       setError(errorMessage)

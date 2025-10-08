@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Menu, 
@@ -23,7 +23,8 @@ import {
   Activity,
   Loader2,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Shield
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useDashboard } from '../hooks/useDashboard';
@@ -40,6 +41,7 @@ const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
     const { checkAuth, logout } = useAuth();
+    const role = localStorage.getItem('role');
     const { showSessionExpiredModal, goToLogin } = useSessionExpired();
     const { showSuccess, showError } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -52,7 +54,6 @@ const Dashboard: React.FC = () => {
         status: 'all'
     });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
-    const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
     const profileImage = localStorage.getItem('profileImage');
     
@@ -67,6 +68,13 @@ const Dashboard: React.FC = () => {
         error,
         refreshData
     } = useDashboard();
+
+    // Redirigir a los administradores al panel de administración
+    useEffect(() => {
+        if (role === 'admin') {
+            navigate('/admin-panel', { replace: true });
+        }
+    }, [role, navigate]);
 
     // Verificar autenticación al cargar
     useEffect(() => {
@@ -85,17 +93,6 @@ const Dashboard: React.FC = () => {
         setShowLogoutModal(false);
     };
 
-    const handleNavigateToEvents = () => {
-        navigate('/events-management');
-    };
-
-    const handleNavigateToRegistrations = () => {
-        navigate('/registrations-management');
-    };
-
-    const handleNavigateToConfiguration = () => {
-        navigate('/configuration');
-    };
 
     // Funciones para acciones rápidas
     const handleCreateEvent = () => {
@@ -347,12 +344,27 @@ const Dashboard: React.FC = () => {
     };
 
 
-    const menuItems = [
-        { icon: Home, label: 'Dashboard', active: true, onClick: () => {} },
-        { icon: Calendar, label: 'Eventos', active: false, onClick: handleNavigateToEvents },
-        { icon: Users, label: 'Inscripciones', active: false, onClick: handleNavigateToRegistrations },
-        { icon: Settings, label: 'Configuración', active: false, onClick: handleNavigateToConfiguration },
-    ];
+    // Navigation handlers
+    const handleNavigateToEvents = useCallback(() => navigate('/events-management'), [navigate]);
+    const handleNavigateToRegistrations = useCallback(() => navigate('/registrations-management'), [navigate]);
+    const handleNavigateToConfiguration = useCallback(() => navigate('/configuration'), [navigate]);
+    const handleNavigateToAdminPanel = useCallback(() => navigate('/admin-panel'), [navigate]);
+
+    // Conditional menu items based on role
+    const menuItems = useMemo(() => {
+        if (role === 'admin') {
+            return [
+                { icon: Shield, label: 'Admin Panel', active: true, onClick: handleNavigateToAdminPanel },
+            ];
+        } else {
+            return [
+                { icon: Home, label: 'Dashboard', active: true, onClick: () => {} },
+                { icon: Calendar, label: 'Eventos', active: false, onClick: handleNavigateToEvents },
+                { icon: Users, label: 'Inscripciones', active: false, onClick: handleNavigateToRegistrations },
+                { icon: Settings, label: 'Configuración', active: false, onClick: handleNavigateToConfiguration },
+            ];
+        }
+    }, [role, handleNavigateToAdminPanel, handleNavigateToEvents, handleNavigateToRegistrations, handleNavigateToConfiguration]);
 
     // Función para formatear el cambio
     const formatChange = (growth: number) => {

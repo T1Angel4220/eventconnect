@@ -111,5 +111,5 @@ WHERE event_image = '/uploads/events/default-event.jpg';
 -- ==============================
 INSERT INTO users (first_name, last_name, email, password, role)
 VALUES
-('Admin', 'Johnson', 'admin@eventconnect.com', '$2b$10$LR4X0.IhJFhY1v4YGsW1GO58aYLHdm5MsQzD9kxPWVvHt40Wuhhu2', 'admin'), "Contraseña : Admin123"
-('Organizador', 'Smith', 'organizer@eventconnect.com', '$2b$10$Ev..m0X4g8bqgJ2wyFDDDOVH0tDiX5PZ0RrDb7RV8k/8.SudESFCi', 'organizer'), "Contraseña: organizer123"
+('Admin', 'Johnson', 'admin@eventconnect.com', '$2b$10$LR4X0.IhJFhY1v4YGsW1GO58aYLHdm5MsQzD9kxPWVvHt40Wuhhu2', 'admin'), -- Contraseña: Admin123
+('Organizador', 'Smith', 'organizer@eventconnect.com', '$2b$10$Ev..m0X4g8bqgJ2wyFDDDOVH0tDiX5PZ0RrDb7RV8k/8.SudESFCi', 'organizer'); -- Contraseña: organizer123

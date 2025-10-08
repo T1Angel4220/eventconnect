@@ -66,6 +66,71 @@ class UserRepository {
       return undefined;
     }
   }
+
+  // === MÉTODOS PARA ADMIN ===
+
+  async findAll(): Promise<UserRow[]> {
+    try {
+      const res = await pool.query("SELECT * FROM users ORDER BY created_at DESC");
+      return res.rows;
+    } catch (error) {
+      console.error("Error finding all users:", error);
+      return [];
+    }
+  }
+
+  async delete(userId: number): Promise<boolean> {
+    try {
+      const res = await pool.query("DELETE FROM users WHERE user_id = $1", [userId]);
+      return res.rowCount ? res.rowCount > 0 : false;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
+  }
+
+  async updateRole(userId: number, newRole: string): Promise<boolean> {
+    try {
+      const res = await pool.query(
+        "UPDATE users SET role = $1 WHERE user_id = $2",
+        [newRole, userId]
+      );
+      return res.rowCount ? res.rowCount > 0 : false;
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      return false;
+    }
+  }
+
+  async countAll(): Promise<number> {
+    try {
+      const res = await pool.query("SELECT COUNT(*) as count FROM users");
+      return parseInt(res.rows[0].count);
+    } catch (error) {
+      console.error("Error counting users:", error);
+      return 0;
+    }
+  }
+
+  async countByRole(): Promise<Record<string, number>> {
+    try {
+      const res = await pool.query(`
+        SELECT role, COUNT(*) as count 
+        FROM users 
+        GROUP BY role
+      `);
+      
+      const result: Record<string, number> = {};
+      res.rows.forEach(row => {
+        result[row.role] = parseInt(row.count);
+      });
+      
+      return result;
+    } catch (error) {
+      console.error("Error counting users by role:", error);
+      return {};
+    }
+  }
 }
 
 export const userRepository = new UserRepository();

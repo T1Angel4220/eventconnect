@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import EventsManagement from './pages/EventsManagement';
 import RegistrationsManagement from './pages/RegistrationsManagement';
 import Configuration from './pages/Configuration';
+import AdminPanel from './pages/AdminPanel';
 import PrivateRoute from './components/login-Web/PrivateRoute';
 import PublicRoute from './components/login-Web/PublicRoute';
 import { DashboardProvider } from './contexts/DashboardContext';
@@ -85,6 +86,11 @@ const App: React.FC = () => {
                         <DashboardProvider>
                             <Configuration />
                         </DashboardProvider>
+                    </PrivateRoute>
+                } />
+                <Route path="/admin-panel" element={
+                    <PrivateRoute allowedRoles={['admin']}>
+                        <AdminPanel />
                     </PrivateRoute>
                 } />
                  {/* Ruta catch-all */}

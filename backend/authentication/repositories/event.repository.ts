@@ -136,11 +136,6 @@ class EventRepositoryImpl implements EventRepository {
     return result.rows[0] || null;
   }
 
-  async delete(eventId: number): Promise<boolean> {
-    const query = 'DELETE FROM events WHERE event_id = $1';
-    const result = await pool.query(query, [eventId]);
-    return (result.rowCount ?? 0) > 0;
-  }
 
   async getStats(): Promise<EventStats> {
     const query = `
@@ -264,6 +259,74 @@ class EventRepositoryImpl implements EventRepository {
       "UPDATE events SET status = $1, updated_at = NOW() WHERE event_id = $2",
       [status, eventId]
     );
+  }
+
+  // === MÉTODOS PARA ADMIN ===
+
+  async findAllWithOrganizer(): Promise<any[]> {
+    try {
+      const res = await pool.query(`
+        SELECT 
+          e.*,
+          u.first_name as organizer_first_name,
+          u.last_name as organizer_last_name,
+          u.email as organizer_email,
+          COALESCE(r.registered_count, 0) as registered_count
+        FROM events e
+        JOIN users u ON e.organizer_id = u.user_id
+        LEFT JOIN (
+          SELECT event_id, COUNT(*) as registered_count
+          FROM registrations 
+          WHERE status = 'registered'
+          GROUP BY event_id
+        ) r ON e.event_id = r.event_id
+        ORDER BY e.created_at DESC
+      `);
+      return res.rows;
+    } catch (error) {
+      console.error("Error finding all events with organizer:", error);
+      return [];
+    }
+  }
+
+  async delete(eventId: number): Promise<boolean> {
+    try {
+      const res = await pool.query("DELETE FROM events WHERE event_id = $1", [eventId]);
+      return res.rowCount ? res.rowCount > 0 : false;
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      return false;
+    }
+  }
+
+  async countAll(): Promise<number> {
+    try {
+      const res = await pool.query("SELECT COUNT(*) as count FROM events");
+      return parseInt(res.rows[0].count);
+    } catch (error) {
+      console.error("Error counting events:", error);
+      return 0;
+    }
+  }
+
+  async countByType(): Promise<Record<string, number>> {
+    try {
+      const res = await pool.query(`
+        SELECT event_type, COUNT(*) as count 
+        FROM events 
+        GROUP BY event_type
+      `);
+      
+      const result: Record<string, number> = {};
+      res.rows.forEach(row => {
+        result[row.event_type] = parseInt(row.count);
+      });
+      
+      return result;
+    } catch (error) {
+      console.error("Error counting events by type:", error);
+      return {};
+    }
   }
 }
 

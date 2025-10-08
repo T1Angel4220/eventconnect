@@ -326,6 +326,18 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
       organizer_id: row.organizer_id
     }));
   }
+
+  // === MÉTODOS PARA ADMIN ===
+
+  async countAll(): Promise<number> {
+    try {
+      const res = await pool.query("SELECT COUNT(*) as count FROM registrations WHERE status = 'registered'");
+      return parseInt(res.rows[0].count);
+    } catch (error) {
+      console.error("Error counting registrations:", error);
+      return 0;
+    }
+  }
 }
 
 export const registrationRepository = new RegistrationRepositoryImpl();
