@@ -33,12 +33,15 @@ import SessionExpiredModal from '../components/modals/SessionExpiredModal';
 import { getEventTypeLabel } from '../types/event.types';
 import ParticipantsChart from '../components/charts/ParticipantsChart';
 import { formatDate, formatTime, formatDuration, getEventStatusText, getEventStatusColor } from '../utils/dateUtils';
+import jsPDF from 'jspdf';
+import { useNotifications } from '../hooks/useNotifications';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { toggleTheme, isDark } = useTheme();
     const { checkAuth, logout } = useAuth();
-    const { showSessionExpiredModal, handleSessionExpired, goToLogin } = useSessionExpired();
+    const { showSessionExpiredModal, goToLogin } = useSessionExpired();
+    const { showSuccess, showError } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showFilterModal, setShowFilterModal] = useState(false);
@@ -63,7 +66,7 @@ const Dashboard: React.FC = () => {
         loading,
         error,
         refreshData
-    } = useDashboard(handleSessionExpired);
+    } = useDashboard();
 
     // Verificar autenticación al cargar
     useEffect(() => {
@@ -131,6 +134,216 @@ const Dashboard: React.FC = () => {
         // Aquí aplicarías los filtros a los datos
         console.log('Aplicando filtros:', filterOptions);
         setShowFilterModal(false);
+    };
+
+    // Función para exportar eventos a PDF desde el Dashboard
+    const exportEventsToPDF = () => {
+        try {
+            const doc = new jsPDF('landscape');
+            
+            // === ENCABEZADO PRINCIPAL ===
+            doc.setFillColor(30, 64, 175);
+            doc.rect(0, 0, doc.internal.pageSize.width, 60, 'F');
+            
+            // Logo/Ícono
+            doc.setFillColor(255, 255, 255);
+            doc.circle(35, 30, 18, 'F');
+            doc.setDrawColor(30, 64, 175);
+            doc.setLineWidth(2);
+            doc.circle(35, 30, 18, 'S');
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text('EC', 28, 35);
+            
+            // Título principal
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(28);
+            doc.setFont('helvetica', 'bold');
+            doc.text('REPORTE DE EVENTOS - DASHBOARD', 70, 25);
+            
+            // Subtítulo
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'normal');
+            doc.text('EventConnect - Resumen Ejecutivo', 70, 35);
+            
+            // Fecha y hora
+            doc.setFontSize(12);
+            const now = new Date();
+            doc.text(`Generado el: ${now.toLocaleDateString('es-ES', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            })} a las ${now.toLocaleTimeString('es-ES')}`, 70, 45);
+            
+            // === RESUMEN ESTADÍSTICO ===
+            let yPosition = 80;
+            
+            // Fondo para resumen
+            doc.setFillColor(249, 250, 251);
+            doc.rect(25, yPosition, doc.internal.pageSize.width - 50, 35, 'F');
+            doc.setDrawColor(209, 213, 219);
+            doc.setLineWidth(1);
+            doc.rect(25, yPosition, doc.internal.pageSize.width - 50, 35, 'S');
+            
+            // Título del resumen
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RESUMEN ESTADISTICO', 35, yPosition + 12);
+            
+            // Estadísticas usando los datos del dashboard
+            const totalEvents = recentEvents.length;
+            const upcomingEvents = recentEvents.filter(e => getEventStatusText(e.event_date, e.duration) === 'Próximo').length;
+            const inProgressEvents = recentEvents.filter(e => getEventStatusText(e.event_date, e.duration) === 'En Progreso').length;
+            const completedEvents = recentEvents.filter(e => getEventStatusText(e.event_date, e.duration) === 'Finalizado').length;
+            
+            // Crear tarjetas de estadísticas
+            const statsCards = [
+                { label: 'Total Eventos', value: totalEvents, color: [30, 64, 175] },
+                { label: 'Próximos', value: upcomingEvents, color: [34, 197, 94] },
+                { label: 'En Progreso', value: inProgressEvents, color: [251, 146, 60] },
+                { label: 'Finalizados', value: completedEvents, color: [107, 114, 128] }
+            ];
+            
+            const cardWidth = (doc.internal.pageSize.width - 100) / 4;
+            statsCards.forEach((card, index) => {
+                const cardX = 35 + (index * cardWidth);
+                const cardY = yPosition + 18;
+                
+                // Fondo de la tarjeta
+                doc.setFillColor(card.color[0], card.color[1], card.color[2]);
+                doc.rect(cardX, cardY, cardWidth - 10, 12, 'F');
+                
+                // Texto de la tarjeta
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text(card.value.toString(), cardX + 5, cardY + 7);
+                
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text(card.label, cardX + 5, cardY + 10);
+            });
+            
+            yPosition += 50;
+            
+            // === TABLA DE EVENTOS RECIENTES ===
+            if (recentEvents.length > 0) {
+                doc.addPage('landscape');
+                yPosition = 30;
+                
+                const tableStartY = yPosition;
+                const pageWidth = doc.internal.pageSize.width;
+                const margin = 20;
+                const cellHeight = 12;
+                const totalTableWidth = pageWidth - (margin * 2);
+                
+                // Anchos de columna
+                const colWidths = [
+                    totalTableWidth * 0.25, // Evento
+                    totalTableWidth * 0.12, // Fecha
+                    totalTableWidth * 0.10, // Hora
+                    totalTableWidth * 0.10, // Duración
+                    totalTableWidth * 0.15, // Organizador
+                    totalTableWidth * 0.10, // Participantes
+                    totalTableWidth * 0.10, // Estado
+                    totalTableWidth * 0.08  // Categoría
+                ];
+                
+                const colPositions = [margin];
+                for (let i = 1; i < colWidths.length; i++) {
+                    colPositions.push(colPositions[i-1] + colWidths[i-1]);
+                }
+                
+                // Encabezados de la tabla
+                doc.setFillColor(30, 64, 175);
+                doc.rect(margin, tableStartY, totalTableWidth, cellHeight, 'F');
+                
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                
+                const headers = ['EVENTO', 'FECHA', 'HORA', 'DURACION', 'ORGANIZADOR', 'PARTICIPANTES', 'ESTADO', 'CATEGORIA'];
+                headers.forEach((header, index) => {
+                    const textWidth = doc.getTextWidth(header);
+                    const centerX = colPositions[index] + (colWidths[index] / 2) - (textWidth / 2);
+                    doc.text(header, centerX, tableStartY + 8);
+                });
+                
+                yPosition = tableStartY + cellHeight;
+                
+                // Datos de la tabla
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                
+                recentEvents.forEach((event, index) => {
+                    // Alternar colores de fila
+                    if (index % 2 === 0) {
+                        doc.setFillColor(248, 250, 252);
+                        doc.rect(margin, yPosition, totalTableWidth, cellHeight, 'F');
+                    }
+                    
+                    const eventData = [
+                        event.title,
+                        formatDate(event.event_date),
+                        formatTime(event.event_date),
+                        formatDuration(event.duration),
+                        event.organizer_name || 'N/A',
+                        `${event.registered_count}/${event.capacity}`,
+                        getEventStatusText(event.event_date, event.duration),
+                        getEventTypeLabel(event.event_type)
+                    ];
+                    
+                    eventData.forEach((data, colIndex) => {
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(9);
+                        
+                        const displayText = data.toString();
+                        const maxWidth = colWidths[colIndex] - 8;
+                        
+                        // Truncar texto si es muy largo
+                        let truncatedText = displayText;
+                        if (doc.getTextWidth(displayText) > maxWidth) {
+                            truncatedText = displayText.substring(0, Math.floor(maxWidth / 3)) + '...';
+                        }
+                        
+                        doc.text(truncatedText, colPositions[colIndex] + 4, yPosition + 8);
+                    });
+                    
+                    yPosition += cellHeight;
+                });
+            }
+            
+            // === PIE DE PÁGINA ===
+            const pageHeight = doc.internal.pageSize.height;
+            doc.setFillColor(30, 64, 175);
+            doc.rect(0, pageHeight - 30, doc.internal.pageSize.width, 30, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('EventConnect - Sistema de Gestión de Eventos Universitarios', 20, pageHeight - 15);
+            doc.text(`Página ${doc.getCurrentPageInfo().pageNumber}`, doc.internal.pageSize.width - 40, pageHeight - 15);
+            
+            // Guardar el PDF
+            const fileName = `reporte-eventos-dashboard-${now.toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+            
+            showSuccess(
+                'Exportación exitosa',
+                `Se ha generado el PDF con ${recentEvents.length} eventos del dashboard.`
+            );
+            
+        } catch (error) {
+            console.error('Error generando PDF:', error);
+            showError(
+                'Error generando PDF',
+                'No se pudo generar el reporte. Inténtalo nuevamente.'
+            );
+        }
     };
 
 
@@ -456,11 +669,17 @@ const Dashboard: React.FC = () => {
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-bold text-black dark:text-white">Gestión de Eventos</h3>
                                     <div className="flex space-x-3">
-                                        <button className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg">
+                                        <button 
+                                            onClick={handleNavigateToEvents}
+                                            className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
+                                        >
                                             <Plus className="w-4 h-4 mr-2" />
                                             Nuevo Evento
                                         </button>
-                                        <button className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200">
+                                        <button 
+                                            onClick={exportEventsToPDF}
+                                            className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+                                        >
                                             <Download className="w-4 h-4 mr-2" />
                                             Exportar
                                         </button>
