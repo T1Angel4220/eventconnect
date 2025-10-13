@@ -21,7 +21,13 @@ export class DashboardController {
 
   async getDashboardStatsWithGrowth(req: Request, res: Response) {
     try {
-      const stats = await dashboardService.getDashboardStatsWithGrowth();
+      const userId = req.user?.userId;
+      const userRole = req.user?.role;
+      
+      // Para organizadores, filtrar estadísticas por organizador
+      const organizerId = userRole === 'organizer' && userId ? userId : undefined;
+      const stats = await dashboardService.getDashboardStatsWithGrowth(organizerId);
+      
       res.json({
         success: true,
         data: stats
@@ -39,7 +45,14 @@ export class DashboardController {
   async getRecentEvents(req: Request, res: Response) {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
-      const events = await dashboardService.getRecentEvents(limit);
+      const userId = req.user?.userId;
+      const userRole = req.user?.role;
+      
+      // Para organizadores, filtrar solo sus eventos
+      const events = userRole === 'organizer' && userId
+        ? await dashboardService.getRecentEventsByOrganizer(userId, limit)
+        : await dashboardService.getRecentEvents(limit);
+        
       res.json({
         success: true,
         data: events

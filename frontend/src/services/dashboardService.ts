@@ -72,6 +72,11 @@ class DashboardService {
     return response.data;
   }
 
+  async getRecentEventsByOrganizer(organizerId: number, limit: number = 10): Promise<EventWithOrganizer[]> {
+    const response = await this.request<EventWithOrganizer[]>(`/dashboard/events/recent?limit=${limit}&organizer=${organizerId}`);
+    return response.data;
+  }
+
   async getUpcomingEvents(limit: number = 10): Promise<EventWithOrganizer[]> {
     const response = await this.request<EventWithOrganizer[]>(`/dashboard/events/upcoming?limit=${limit}`);
     return response.data;

@@ -9,6 +9,7 @@ export interface EventRepository {
   update(eventId: number, event: Partial<EventData>): Promise<EventRow | null>;
   delete(eventId: number): Promise<boolean>;
   getStats(): Promise<EventStats>;
+  getStatsByOrganizer(organizerId: number): Promise<EventStats>;
   getEventsWithOrganizer(): Promise<EventWithOrganizer[]>;
   getUpcomingEvents(limit?: number): Promise<EventWithOrganizer[]>;
   getActiveEvents(): Promise<EventWithOrganizer[]>;
@@ -171,6 +172,27 @@ class EventRepositoryImpl implements EventRepository {
     `;
     
     const result = await pool.query(query);
+    return result.rows[0];
+  }
+
+  async getStatsByOrganizer(organizerId: number): Promise<EventStats> {
+    const query = `
+      SELECT 
+        COUNT(*) as total_events,
+        COUNT(CASE WHEN event_date > CURRENT_TIMESTAMP THEN 1 END) as upcoming_events,
+        COUNT(CASE WHEN event_date <= CURRENT_TIMESTAMP AND event_date >= CURRENT_TIMESTAMP - INTERVAL '1 day' THEN 1 END) as active_events,
+        COALESCE(SUM(r.registered_count), 0) as total_participants
+      FROM events e
+      LEFT JOIN (
+        SELECT event_id, COUNT(*) as registered_count
+        FROM registrations 
+        WHERE status = 'registered'
+        GROUP BY event_id
+      ) r ON e.event_id = r.event_id
+      WHERE e.organizer_id = $1
+    `;
+    
+    const result = await pool.query(query, [organizerId]);
     return result.rows[0];
   }
 

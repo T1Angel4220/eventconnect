@@ -79,6 +79,16 @@ export class RegistrationService {
     }
   }
 
+  // Obtener inscripciones por organizador
+  async getRegistrationsByOrganizer(organizerId: number): Promise<RegistrationWithDetails[]> {
+    try {
+      return await registrationRepository.getRegistrationsByOrganizer(organizerId);
+    } catch (error) {
+      console.error('Error getting registrations by organizer:', error);
+      throw new Error('Failed to get registrations by organizer');
+    }
+  }
+
   // En eventos universitarios, los participantes se auto-inscriben directamente
   // No hay necesidad de métodos de aprobación/rechazo por parte de organizadores
 

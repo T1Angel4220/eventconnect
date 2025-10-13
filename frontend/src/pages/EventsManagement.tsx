@@ -32,6 +32,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useSessionExpired } from '../hooks/useSessionExpired';
 import SessionExpiredModal from '../components/modals/SessionExpiredModal';
 import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEvents as apiFetchEvents, fetchEventsByOrganizer as apiFetchEventsByOrganizer, updateEvent as apiUpdateEvent, updateEventStatuses as apiUpdateEventStatuses } from '../services/eventsService';
+import type { EventResponse } from '../services/eventsService';
 import Notification from '../components/ui/Notification';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import jsPDF from 'jspdf';
@@ -1027,6 +1028,52 @@ const EventsManagement: React.FC = () => {
         }
     };
 
+    // Función para convertir EventResponse a EventData
+    const convertEventResponseToEventData = (eventResponse: EventResponse): EventData => {
+        return {
+            event_id: eventResponse.event_id,
+            title: eventResponse.title,
+            event_date: eventResponse.event_date,
+            duration: eventResponse.duration,
+            location: eventResponse.location || undefined,
+            event_type: eventResponse.event_type,
+            capacity: eventResponse.capacity,
+            attendees: eventResponse.attendees,
+            event_image: eventResponse.event_image,
+            description: eventResponse.description || undefined,
+            organizer_name: eventResponse.organizer_name,
+            organizer_email: eventResponse.organizer_email,
+            registered_count: eventResponse.registered_count
+        };
+    };
+
+    // Función para actualizar un evento específico en el estado local
+    const updateEventInLocalState = (eventId: number, updatedEventData: EventResponse) => {
+        const convertedData = convertEventResponseToEventData(updatedEventData);
+        setEvents(prevEvents => {
+            return prevEvents.map(event => {
+                if (event.event_id === eventId) {
+                    // Mantener todos los campos existentes y actualizar solo los nuevos
+                    return {
+                        ...event,
+                        title: convertedData.title || event.title,
+                        description: convertedData.description || event.description,
+                        event_date: convertedData.event_date || event.event_date,
+                        duration: convertedData.duration || event.duration,
+                        location: convertedData.location || event.location,
+                        event_type: convertedData.event_type || event.event_type,
+                        capacity: convertedData.capacity || event.capacity,
+                        event_image: convertedData.event_image || event.event_image,
+                        organizer_name: convertedData.organizer_name || event.organizer_name,
+                        organizer_email: convertedData.organizer_email || event.organizer_email,
+                        registered_count: convertedData.registered_count || event.registered_count
+                    };
+                }
+                return event;
+            });
+        });
+    };
+
     const loadEvents = React.useCallback(async () => {
         try {
             // Actualizar estados en la base de datos primero
@@ -1247,7 +1294,9 @@ const EventsManagement: React.FC = () => {
                 // Para editar, usar FormData si hay nueva imagen, sino método tradicional
                 if (newEvent.image) {
                     // Hay nueva imagen, usar FormData
-                    await apiUpdateEvent(editingEvent.event_id, formData);
+                    const updatedEvent = await apiUpdateEvent(editingEvent.event_id, formData);
+                    // Actualizar inmediatamente en el estado local
+                    updateEventInLocalState(editingEvent.event_id, updatedEvent);
                 } else {
                     // No hay nueva imagen, usar método tradicional
                     const updatePayload = {
@@ -1260,12 +1309,14 @@ const EventsManagement: React.FC = () => {
                         capacity: Number(newEvent.capacity || 0),
                         event_image: existingEventImage // Mantener imagen existente
                     };
-                    await apiUpdateEvent(editingEvent.event_id, updatePayload);
-                }
-                showSuccess(
-                    'Evento actualizado',
-                    `El evento "${newEvent.name}" ha sido actualizado exitosamente.`
-                );
+                const updatedEvent = await apiUpdateEvent(editingEvent.event_id, updatePayload);
+                // Actualizar inmediatamente en el estado local
+                updateEventInLocalState(editingEvent.event_id, updatedEvent);
+            }
+            showSuccess(
+                'Evento actualizado',
+                `El evento "${newEvent.name}" ha sido actualizado exitosamente.`
+            );
             } else {
                 // Para crear, usar FormData
                 await apiCreateEvent(formData);
@@ -1274,7 +1325,7 @@ const EventsManagement: React.FC = () => {
                     `El evento "${newEvent.name}" ha sido creado exitosamente.`
                 );
             }
-            await loadEvents();
+            // Ya no necesitamos llamar loadEvents() porque actualizamos el estado local directamente
             setShowCreateModal(false);
             setEditingEvent(null);
             
@@ -1300,6 +1351,8 @@ const EventsManagement: React.FC = () => {
                 description: '',
                 image: null
             });
+            setExistingEventImage('');
+            setNewImagePreview('');
             setFormErrors({});
         } catch (e: unknown) {
             const errorMessage = e instanceof Error ? e.message : 'Error guardando evento';

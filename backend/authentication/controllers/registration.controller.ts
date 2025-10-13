@@ -138,6 +138,8 @@ export class RegistrationController {
   async getAllRegistrations(req: Request, res: Response) {
     try {
       const userRole = (req as any).user?.role;
+      const userId = (req as any).user?.userId;
+      
       if (userRole !== 'admin' && userRole !== 'organizer') {
         return res.status(403).json({
           success: false,
@@ -145,7 +147,11 @@ export class RegistrationController {
         });
       }
 
-      const registrations = await registrationService.getAllRegistrations();
+      // Para organizadores, filtrar solo las inscripciones de sus eventos
+      const registrations = userRole === 'organizer' && userId
+        ? await registrationService.getRegistrationsByOrganizer(userId)
+        : await registrationService.getAllRegistrations();
+        
       res.json({
         success: true,
         data: registrations

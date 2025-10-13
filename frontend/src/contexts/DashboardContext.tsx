@@ -44,10 +44,17 @@ const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
       setLoading(true);
       setError(null);
 
+      // Obtener información del usuario actual
+      const role = localStorage.getItem('role');
+      const userId = localStorage.getItem('userId');
+
       // Cargar datos críticos primero (más rápidos)
       const criticalData = await Promise.all([
         dashboardService.getDashboardStatsWithGrowth(),
-        dashboardService.getRecentEvents(10),
+        // Para organizadores, filtrar solo sus eventos
+        role === 'organizer' && userId 
+          ? dashboardService.getRecentEventsByOrganizer(parseInt(userId), 10)
+          : dashboardService.getRecentEvents(10),
         dashboardService.getEventCategories()
       ]);
 

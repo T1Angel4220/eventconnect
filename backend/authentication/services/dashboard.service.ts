@@ -8,21 +8,21 @@ import { RegistrationWithDetails } from "authentication/models/registration.inte
 import pool from "config/db";
 
 export class DashboardService {
-  async getDashboardStats(): Promise<DashboardStats> {
+  async getDashboardStats(organizerId?: number): Promise<DashboardStats> {
     try {
       const [eventStats, registrationStats, userStats] = await Promise.all([
-        eventRepository.getStats(),
-        registrationRepository.getStats(),
+        organizerId ? eventRepository.getStatsByOrganizer(organizerId) : eventRepository.getStats(),
+        organizerId ? registrationRepository.getStatsByOrganizer(organizerId) : registrationRepository.getStats(),
         this.getUserStats()
       ]);
 
       return {
-        total_events: parseInt(eventStats.total_events),
-        total_participants: parseInt(eventStats.total_participants),
-        active_events: parseInt(eventStats.active_events),
-        upcoming_events: parseInt(eventStats.upcoming_events),
+        total_events: parseInt(eventStats.total_events.toString()),
+        total_participants: parseInt(eventStats.total_participants.toString()),
+        active_events: parseInt(eventStats.active_events.toString()),
+        upcoming_events: parseInt(eventStats.upcoming_events.toString()),
         total_users: userStats,
-        recent_registrations: parseInt(registrationStats.active_registrations)
+        recent_registrations: parseInt(registrationStats.active_registrations.toString())
       };
     } catch (error) {
       console.error('Error getting dashboard stats:', error);
@@ -30,10 +30,10 @@ export class DashboardService {
     }
   }
 
-  async getDashboardStatsWithGrowth(): Promise<DashboardStats & { growth: any }> {
+  async getDashboardStatsWithGrowth(organizerId?: number): Promise<DashboardStats & { growth: any }> {
     try {
       const [stats, growth] = await Promise.all([
-        this.getDashboardStats(),
+        this.getDashboardStats(organizerId),
         statsRepository.getMonthlyGrowth()
       ]);
 
@@ -53,6 +53,15 @@ export class DashboardService {
     } catch (error) {
       console.error('Error getting recent events:', error);
       throw new Error('Failed to get recent events');
+    }
+  }
+
+  async getRecentEventsByOrganizer(organizerId: number, limit: number = 10): Promise<EventWithOrganizer[]> {
+    try {
+      return await eventRepository.findByOrganizer(organizerId);
+    } catch (error) {
+      console.error('Error getting recent events by organizer:', error);
+      throw new Error('Failed to get recent events by organizer');
     }
   }
 
