@@ -558,8 +558,18 @@ const AdminPanel: React.FC = () => {
                           <tr key={user.user_id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800">
                             <td className="py-3 px-4">
                               <div className="flex items-center">
-                                <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mr-3">
-                                  <UserCheck className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-600 mr-3">
+                                  {user.profile_image ? (
+                                    <img 
+                                      src={`http://localhost:3001${user.profile_image}`}
+                                      alt={`${user.first_name} ${user.last_name}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                      <UserCheck className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                    </div>
+                                  )}
                                 </div>
                                 <span className="font-medium text-gray-900 dark:text-white">
                                   {user.first_name} {user.last_name}
