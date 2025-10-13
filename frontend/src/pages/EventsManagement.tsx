@@ -866,11 +866,9 @@ const EventsManagement: React.FC = () => {
             doc.setFont('helvetica', 'normal');
             
             const insights = [
-                `• Utilización promedio de capacidad: ${averageUtilization.toFixed(1)}%`,
                 `• Categoría más popular: ${mostPopularCategory} (${categoryStats[mostPopularCategory]} eventos)`,
                 `• Eventos próximos: ${upcomingEventsCount}`,
                 `• Total de capacidad disponible: ${totalCapacity} personas`,
-                `• Total de asistentes registrados: ${totalAttendees} personas`
             ];
             
             console.log('Generando insights:', insights);
@@ -935,7 +933,6 @@ const EventsManagement: React.FC = () => {
             const executiveSummary = [
                 `Este reporte analiza ${totalEvents} eventos gestionados a través del sistema EventConnect.`,
                 `La categoría "${mostPopularCategory}" representa el mayor éxito con ${categoryStats[mostPopularCategory]} eventos.`,
-                `La utilización promedio de ${averageUtilization.toFixed(1)}% indica ${averageUtilization > 70 ? 'excelente' : averageUtilization > 50 ? 'buena' : 'necesita mejora'} gestión de capacidad.`,
                 `Se recomienda continuar enfocándose en eventos de tipo "${mostPopularCategory}" y optimizar la capacidad basada en datos históricos.`
             ];
             

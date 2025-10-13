@@ -85,7 +85,7 @@ const AdminPanel: React.FC = () => {
   const firstName = localStorage.getItem('firstName');
   const profileImage = localStorage.getItem('profileImage');
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (loadAll = false) => {
     // Verificar si es un logout manual antes de hacer llamadas a la API
     const isManualLogout = localStorage.getItem('manual_logout');
     if (isManualLogout === 'true') {
@@ -105,32 +105,64 @@ const AdminPanel: React.FC = () => {
         'Content-Type': 'application/json'
       };
 
-      // Cargar datos según la pestaña activa
-      if (activeTab === 'users') {
-        const response = await fetch('http://localhost:3001/api/admin/users', { headers });
-        const data = await response.json();
-        if (data.success) {
-          setUsers(data.data);
+      if (loadAll) {
+        // Cargar todos los datos al inicio
+        const [usersResponse, eventsResponse, statsResponse] = await Promise.all([
+          fetch('http://localhost:3001/api/admin/users', { headers }),
+          fetch('http://localhost:3001/api/admin/events', { headers }),
+          fetch('http://localhost:3001/api/admin/stats/system', { headers })
+        ]);
+
+        const [usersData, eventsData, statsData] = await Promise.all([
+          usersResponse.json(),
+          eventsResponse.json(),
+          statsResponse.json()
+        ]);
+
+        if (usersData.success) {
+          setUsers(usersData.data);
         }
-      } else if (activeTab === 'events') {
-        const response = await fetch('http://localhost:3001/api/admin/events', { headers });
-        const data = await response.json();
-        if (data.success) {
-          setEvents(data.data);
+        if (eventsData.success) {
+          setEvents(eventsData.data);
         }
-      } else if (activeTab === 'stats') {
-        const response = await fetch('http://localhost:3001/api/admin/stats/system', { headers });
-        const data = await response.json();
-        if (data.success) {
-          // Convertir camelCase a snake_case para compatibilidad
+        if (statsData.success) {
           setStats({
-            total_users: data.data.totalUsers,
-            total_events: data.data.totalEvents,
-            total_registrations: data.data.totalRegistrations,
-            users_by_role: data.data.usersByRole,
-            events_by_type: data.data.eventsByType,
-            registrations_by_month: data.data.registrationsByMonth,
+            total_users: statsData.data.totalUsers,
+            total_events: statsData.data.totalEvents,
+            total_registrations: statsData.data.totalRegistrations,
+            users_by_role: statsData.data.usersByRole,
+            events_by_type: statsData.data.eventsByType,
+            registrations_by_month: statsData.data.registrationsByMonth,
           });
+        }
+      } else {
+        // Cargar datos según la pestaña activa
+        if (activeTab === 'users') {
+          const response = await fetch('http://localhost:3001/api/admin/users', { headers });
+          const data = await response.json();
+          if (data.success) {
+            setUsers(data.data);
+          }
+        } else if (activeTab === 'events') {
+          const response = await fetch('http://localhost:3001/api/admin/events', { headers });
+          const data = await response.json();
+          if (data.success) {
+            setEvents(data.data);
+          }
+        } else if (activeTab === 'stats') {
+          const response = await fetch('http://localhost:3001/api/admin/stats/system', { headers });
+          const data = await response.json();
+          if (data.success) {
+            // Convertir camelCase a snake_case para compatibilidad
+            setStats({
+              total_users: data.data.totalUsers,
+              total_events: data.data.totalEvents,
+              total_registrations: data.data.totalRegistrations,
+              users_by_role: data.data.usersByRole,
+              events_by_type: data.data.eventsByType,
+              registrations_by_month: data.data.registrationsByMonth,
+            });
+          }
         }
       }
     } catch (error) {
@@ -141,17 +173,21 @@ const AdminPanel: React.FC = () => {
     }
   }, [activeTab, showError]);
 
-  // Verificar que el usuario sea admin
+  // Verificar que el usuario sea admin y cargar todos los datos al inicio
   useEffect(() => {
     if (!checkAuth() || role !== 'admin') {
       navigate('/dashboard');
       return;
     }
-    loadData();
+    loadData(true); // Cargar todos los datos al inicio
   }, [role, navigate, checkAuth, loadData]);
 
   useEffect(() => {
-    loadData();
+    // Solo recargar datos específicos cuando cambia de pestaña (opcional)
+    // Los datos ya se cargaron todos al inicio, pero podemos mantener esto para actualizaciones
+    if (activeTab !== 'users') { // 'users' es la pestaña por defecto, ya se cargó
+      loadData(false);
+    }
   }, [activeTab, loadData]);
 
   const handleDeleteUser = (userId: number, userName: string) => {
@@ -218,6 +254,14 @@ const AdminPanel: React.FC = () => {
   const confirmLogout = () => {
     logout();
     setShowLogoutModal(false);
+  };
+
+  const handleRefreshUsers = () => {
+    loadData(false);
+  };
+
+  const handleRefreshEvents = () => {
+    loadData(false);
   };
 
   const sendGlobalNotification = async () => {
@@ -481,7 +525,7 @@ const AdminPanel: React.FC = () => {
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold text-black dark:text-white">Gestión de Usuarios</h3>
                     <button
-                      onClick={loadData}
+                      onClick={handleRefreshUsers}
                       className="flex items-center px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
@@ -545,7 +589,7 @@ const AdminPanel: React.FC = () => {
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold text-black dark:text-white">Gestión de Eventos</h3>
                     <button
-                      onClick={loadData}
+                      onClick={handleRefreshEvents}
                       className="flex items-center px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
