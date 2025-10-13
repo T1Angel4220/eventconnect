@@ -39,10 +39,10 @@ const LetterOnlyInput: React.FC<LetterOnlyInputProps> = ({
     setLocalValue(value)
   }, [value])
 
-  // Función para filtrar solo letras, acentos, ñ y espacios
+  // Función para filtrar solo letras, acentos, ñ, ü y espacios
   const filterLettersOnly = (input: string): string => {
     return input
-      .replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '') // Solo letras, acentos, ñ y espacios
+      .replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '') // Solo letras, acentos, ñ, ü y espacios
       .replace(/\s+/g, ' ') // Reemplaza múltiples espacios con uno solo
       .trim() // Elimina espacios al inicio y final
   }
@@ -66,10 +66,6 @@ const LetterOnlyInput: React.FC<LetterOnlyInputProps> = ({
       .trim() // Eliminar espacios extra al inicio y final
   }
 
-  // Función para validar si el input contiene caracteres no permitidos
-  const hasInvalidCharacters = (input: string): boolean => {
-    return /[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/.test(input)
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value
@@ -167,9 +163,9 @@ const LetterOnlyInput: React.FC<LetterOnlyInputProps> = ({
       return
     }
     
-    // ✅ PERMITIR TODAS las letras (mayúsculas y minúsculas), acentos y ñ
+    // ✅ PERMITIR TODAS las letras (mayúsculas y minúsculas), acentos, ñ y ü
     // La conversión a formato correcto se hará automáticamente en handleInputChange
-    if (/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]$/.test(e.key)) {
+    if (/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]$/.test(e.key)) {
       return
     }
     
@@ -230,7 +226,7 @@ const LetterOnlyInput: React.FC<LetterOnlyInputProps> = ({
       {showWarning && (
         <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <p className="text-xs text-yellow-700 dark:text-yellow-400">
-            ⚠️ Solo se permiten letras, acentos y ñ. Los caracteres no válidos han sido removidos.
+            ⚠️ Solo se permiten letras, acentos, ñ y ü. Los caracteres no válidos han sido removidos.
           </p>
         </div>
       )}

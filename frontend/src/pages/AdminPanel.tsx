@@ -335,6 +335,15 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'admin': return 'Administrador';
+      case 'organizer': return 'Organizador';
+      case 'participant': return 'Participante';
+      default: return role;
+    }
+  };
+
   const getEventTypeColor = (type: string) => {
     switch (type) {
       case 'academico': return 'bg-blue-500 text-white';
@@ -560,7 +569,7 @@ const AdminPanel: React.FC = () => {
                             <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{user.email}</td>
                             <td className="py-3 px-4">
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
-                                {user.role}
+                                {getRoleLabel(user.role)}
                               </span>
                             </td>
                             <td className="py-3 px-4 text-gray-600 dark:text-gray-400">

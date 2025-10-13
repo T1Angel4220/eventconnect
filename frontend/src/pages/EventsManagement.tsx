@@ -856,8 +856,6 @@ const EventsManagement: React.FC = () => {
             
             // Calcular insights
             const totalCapacity = filteredEvents.reduce((sum, event) => sum + event.capacity, 0);
-            const totalAttendees = filteredEvents.reduce((sum, event) => sum + event.attendees, 0);
-            const averageUtilization = (totalAttendees / totalCapacity) * 100;
             const mostPopularCategory = Object.keys(categoryStats).reduce((a, b) => categoryStats[a] > categoryStats[b] ? a : b);
             const upcomingEventsCount = filteredEvents.filter(e => e.status === 'Próximo').length;
             

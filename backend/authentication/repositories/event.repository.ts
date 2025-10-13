@@ -37,15 +37,15 @@ class EventRepositoryImpl implements EventRepository {
         event.event_image
       ];
       
-      console.log("🔍 Query SQL:", query);
-      console.log("📊 Valores:", values);
+      console.log("Query SQL:", query);
+      console.log("Valores:", values);
       
       const result = await pool.query(query, values);
-      console.log("✅ Evento creado en base de datos:", result.rows[0]);
+      console.log("Evento creado en base de datos:", result.rows[0]);
       return result.rows[0];
     } catch (error) {
-      console.error("❌ Error en repositorio al crear evento:", error);
-      console.error("📊 Stack trace:", error instanceof Error ? error.stack : 'No stack trace');
+      console.error("Error en repositorio al crear evento:", error);
+      console.error("Stack trace:", error instanceof Error ? error.stack : 'No stack trace');
       throw error;
     }
   }
@@ -105,7 +105,7 @@ class EventRepositoryImpl implements EventRepository {
     // Limpiar URLs blob automáticamente
     const cleanedRows = result.rows.map(row => {
       if (row.event_image && row.event_image.startsWith('blob:')) {
-        console.log(`🧹 Limpiando URL blob del evento ${row.event_id} en base de datos`);
+        console.log(`Limpiando URL blob del evento ${row.event_id} en base de datos`);
         // Actualizar en la base de datos
         pool.query(
           'UPDATE events SET event_image = $1 WHERE event_id = $2',
