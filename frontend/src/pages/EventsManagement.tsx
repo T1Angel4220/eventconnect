@@ -1046,26 +1046,34 @@ const EventsManagement: React.FC = () => {
     const updateEventInLocalState = (eventId: number, updatedEventData: EventResponse) => {
         const convertedData = convertEventResponseToEventData(updatedEventData);
         setEvents(prevEvents => {
-            return prevEvents.map(event => {
-                if (event.event_id === eventId) {
-                    // Mantener todos los campos existentes y actualizar solo los nuevos
-                    return {
-                        ...event,
-                        title: convertedData.title || event.title,
-                        description: convertedData.description || event.description,
-                        event_date: convertedData.event_date || event.event_date,
-                        duration: convertedData.duration || event.duration,
-                        location: convertedData.location || event.location,
-                        event_type: convertedData.event_type || event.event_type,
-                        capacity: convertedData.capacity || event.capacity,
-                        event_image: convertedData.event_image || event.event_image,
-                        organizer_name: convertedData.organizer_name || event.organizer_name,
-                        organizer_email: convertedData.organizer_email || event.organizer_email,
-                        registered_count: convertedData.registered_count || event.registered_count
-                    };
-                }
-                return event;
-            });
+            const eventExists = prevEvents.some(event => event.event_id === eventId);
+            
+            if (eventExists) {
+                // Si el evento existe, actualizarlo
+                return prevEvents.map(event => {
+                    if (event.event_id === eventId) {
+                        // Mantener todos los campos existentes y actualizar solo los nuevos
+                        return {
+                            ...event,
+                            title: convertedData.title || event.title,
+                            description: convertedData.description || event.description,
+                            event_date: convertedData.event_date || event.event_date,
+                            duration: convertedData.duration || event.duration,
+                            location: convertedData.location || event.location,
+                            event_type: convertedData.event_type || event.event_type,
+                            capacity: convertedData.capacity || event.capacity,
+                            event_image: convertedData.event_image || event.event_image,
+                            organizer_name: convertedData.organizer_name || event.organizer_name,
+                            organizer_email: convertedData.organizer_email || event.organizer_email,
+                            registered_count: convertedData.registered_count || event.registered_count
+                        };
+                    }
+                    return event;
+                });
+            } else {
+                // Si el evento no existe (por ejemplo, al crear), agregarlo al final
+                return [...prevEvents, convertedData];
+            }
         });
     };
 
@@ -1304,9 +1312,9 @@ const EventsManagement: React.FC = () => {
                         capacity: Number(newEvent.capacity || 0),
                         event_image: existingEventImage // Mantener imagen existente
                     };
-                const updatedEvent = await apiUpdateEvent(editingEvent.event_id, updatePayload);
-                // Actualizar inmediatamente en el estado local
-                updateEventInLocalState(editingEvent.event_id, updatedEvent);
+                    const updatedEvent = await apiUpdateEvent(editingEvent.event_id, updatePayload);
+                    // Actualizar inmediatamente en el estado local
+                    updateEventInLocalState(editingEvent.event_id, updatedEvent);
                 }
                 showSuccess(
                     'Evento actualizado',
@@ -1314,13 +1322,19 @@ const EventsManagement: React.FC = () => {
                 );
             } else {
                 // Para crear, usar FormData
-                await apiCreateEvent(formData);
+                const newEventResponse = await apiCreateEvent(formData);
+                // Actualizar el estado local con el nuevo evento
+                if (newEventResponse && newEventResponse.event_id) {
+                    updateEventInLocalState(newEventResponse.event_id, newEventResponse);
+                } else {
+                    // Si no se puede actualizar localmente, recargar todos los eventos
+                    await loadEvents();
+                }
                 showSuccess(
                     'Evento creado',
                     `El evento "${newEvent.name}" ha sido creado exitosamente.`
                 );
             }
-            // Ya no necesitamos llamar loadEvents() porque actualizamos el estado local directamente
             setShowCreateModal(false);
             setEditingEvent(null);
             
