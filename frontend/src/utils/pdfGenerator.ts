@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { RegistrationWithDetails } from '../services/registrationService';
+import { getEventTypeLabel } from '../types/event.types';
 
 // Tipos para autoTable
 
@@ -135,7 +136,7 @@ export const generateRegistrationsPDF = (
       yPosition += 7;
       addText(`• Ubicación: ${event.event_location || 'No especificada'}`, 20, yPosition);
       yPosition += 7;
-      addText(`• Tipo: ${event.event_type}`, 20, yPosition);
+      addText(`• Tipo: ${getEventTypeLabel(event.event_type)}`, 20, yPosition);
       yPosition += 7;
       addText(`• Capacidad: ${event.event_capacity} personas`, 20, yPosition);
       yPosition += 7;

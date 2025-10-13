@@ -26,7 +26,7 @@ export interface EventWithOrganizer {
   duration: number; // Duration in minutes
   status: 'upcoming' | 'in_progress' | 'completed';
   location: string | null;
-  event_type: 'academic' | 'cultural' | 'sports';
+  event_type: 'academico' | 'cultural' | 'deportivo';
   capacity: number;
   organizer_id: number;
   created_at: string;

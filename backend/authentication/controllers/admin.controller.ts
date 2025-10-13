@@ -222,13 +222,15 @@ export class AdminController {
         totalEvents,
         totalRegistrations,
         usersByRole,
-        eventsByType
+        eventsByType,
+        registrationsByMonth
       ] = await Promise.all([
         userRepository.countAll(),
         eventRepository.countAll(),
         registrationRepository.countAll(),
         userRepository.countByRole(),
-        eventRepository.countByType()
+        eventRepository.countByType(),
+        registrationRepository.getRegistrationsByMonth(6)
       ]);
 
       res.json({
@@ -238,7 +240,8 @@ export class AdminController {
           totalEvents,
           totalRegistrations,
           usersByRole,
-          eventsByType
+          eventsByType,
+          registrationsByMonth
         },
         message: 'Estadísticas del sistema obtenidas exitosamente'
       });

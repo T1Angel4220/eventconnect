@@ -338,6 +338,32 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
       return 0;
     }
   }
+
+  async getRegistrationsByMonth(months: number = 6): Promise<Array<{ month: string; year: number; registrations: number }>> {
+    try {
+      const query = `
+        SELECT 
+          TO_CHAR(registered_at, 'Mon') as month,
+          EXTRACT(YEAR FROM registered_at) as year,
+          COUNT(*) as registrations
+        FROM registrations 
+        WHERE status = 'registered'
+          AND registered_at >= NOW() - INTERVAL '${months} months'
+        GROUP BY TO_CHAR(registered_at, 'Mon'), EXTRACT(YEAR FROM registered_at), EXTRACT(MONTH FROM registered_at)
+        ORDER BY EXTRACT(YEAR FROM registered_at), EXTRACT(MONTH FROM registered_at)
+      `;
+      
+      const res = await pool.query(query);
+      return res.rows.map(row => ({
+        month: row.month,
+        year: parseInt(row.year),
+        registrations: parseInt(row.registrations)
+      }));
+    } catch (error) {
+      console.error("Error getting registrations by month:", error);
+      return [];
+    }
+  }
 }
 
 export const registrationRepository = new RegistrationRepositoryImpl();

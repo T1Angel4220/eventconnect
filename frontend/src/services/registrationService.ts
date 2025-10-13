@@ -22,7 +22,7 @@ export interface RegistrationWithDetails {
   event_title: string;
   event_date: string;
   event_location: string | null;
-  event_type: 'academic' | 'cultural' | 'sports';
+  event_type: 'academico' | 'cultural' | 'deportivo';
   event_capacity: number;
   organizer_id: number;
   organizer_name: string;
@@ -234,14 +234,14 @@ export function mapRegistrationStatusToSpanish(status: 'registered' | 'canceled'
 }
 
 // Función auxiliar para mapear tipos de evento a español
-export function mapEventTypeToSpanish(eventType: 'academic' | 'cultural' | 'sports'): string {
+export function mapEventTypeToSpanish(eventType: 'academico' | 'cultural' | 'deportivo'): string {
   switch (eventType) {
-    case 'academic':
+    case 'academico':
       return 'Académico';
     case 'cultural':
       return 'Cultural';
-    case 'sports':
-      return 'Deportes';
+    case 'deportivo':
+      return 'Deportivo';
     default:
       return 'Desconocido';
   }

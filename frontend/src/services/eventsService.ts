@@ -6,7 +6,7 @@ export interface EventResponse {
   duration: number; // Duration in minutes
   status: "upcoming" | "in_progress" | "completed";
   location: string | null;
-  event_type: "academic" | "cultural" | "sports";
+  event_type: "academico" | "cultural" | "deportivo";
   capacity: number;
   organizer_id: number;
   event_image: string; // URL o path de la imagen del evento
@@ -25,7 +25,7 @@ export interface CreateEventPayload {
   duration: number; // Duration in minutes
   status?: "upcoming" | "in_progress" | "completed"; // Optional, defaults to 'upcoming'
   location?: string;
-  event_type: "academic" | "cultural" | "sports";
+  event_type: "academico" | "cultural" | "deportivo";
   capacity: number;
   event_image: string; // URL o path de la imagen del evento (OBLIGATORIA)
 }
@@ -52,7 +52,7 @@ export async function createEvent(payload: CreateEventPayload | FormData): Promi
   
   const res = await fetch(`${API_URL}/events`, {
     method: "POST",
-    headers: isFormData ? { Authorization: authHeaders().Authorization } : authHeaders(),
+    headers: isFormData ? { Authorization: (authHeaders() as any).Authorization } : authHeaders(),
     body: isFormData ? payload : JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Error creando evento");
@@ -64,7 +64,7 @@ export async function updateEvent(eventId: number, payload: Partial<CreateEventP
   
   const res = await fetch(`${API_URL}/events/${eventId}`, {
     method: "PUT",
-    headers: isFormData ? { Authorization: authHeaders().Authorization } : authHeaders(),
+    headers: isFormData ? { Authorization: (authHeaders() as any).Authorization } : authHeaders(),
     body: isFormData ? payload : JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Error actualizando evento");

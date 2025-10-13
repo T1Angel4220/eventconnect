@@ -44,7 +44,7 @@ interface EventData {
     event_date: string;
     duration: number;
     location?: string;
-    event_type: 'academic' | 'cultural' | 'sports';
+    event_type: 'academico' | 'cultural' | 'deportivo';
     capacity: number;
     attendees?: number;
     event_image: string;
@@ -1326,7 +1326,7 @@ const EventsManagement: React.FC = () => {
             // status se calcula automáticamente
             location: event.location || '',
             capacity: String(event.capacity ?? ''),
-            category: mapEventTypeToUiCategory(event.event_type as 'academic' | 'cultural' | 'sports'),
+            category: mapEventTypeToUiCategory(event.event_type as 'academico' | 'cultural' | 'deportivo'),
             description: event.description || '',
             image: null // No podemos mostrar la imagen existente en el input file
         });
@@ -1482,7 +1482,7 @@ const EventsManagement: React.FC = () => {
                 attendees: e.registered_count ?? e.attendees ?? 0,
                 capacity: e.capacity,
                 status: statusText,
-                category: mapEventTypeToUiCategory(e.event_type as 'academic' | 'cultural' | 'sports'),
+                category: mapEventTypeToUiCategory(e.event_type as 'academico' | 'cultural' | 'deportivo'),
                 organizer: e.organizer_name || 'Organizador no disponible',
                 description: e.description || '',
                 event_image: e.event_image || '',
@@ -1523,26 +1523,26 @@ const EventsManagement: React.FC = () => {
         const colors: Record<string, string> = {
             'Académico': 'from-blue-500 to-cyan-500',
             'Cultural': 'from-green-500 to-emerald-500',
-            'Deportes': 'from-orange-500 to-red-500'
+            'Deportivo': 'from-orange-500 to-red-500'
         };
         return colors[category] || 'from-gray-500 to-gray-600';
     };
 
-    function mapEventTypeToUiCategory(type: 'academic' | 'cultural' | 'sports'): string {
+    function mapEventTypeToUiCategory(type: 'academico' | 'cultural' | 'deportivo'): string {
         switch (type) {
-            case 'academic': return 'Académico';
+            case 'academico': return 'Académico';
             case 'cultural': return 'Cultural';
-            case 'sports': return 'Deportes';
+            case 'deportivo': return 'Deportivo';
             default: return 'Académico';
         }
     }
 
-    function mapUiCategoryToEventType(category: string): 'academic' | 'cultural' | 'sports' {
+    function mapUiCategoryToEventType(category: string): 'academico' | 'cultural' | 'deportivo' {
         switch (category) {
-            case 'Académico': return 'academic';
+            case 'Académico': return 'academico';
             case 'Cultural': return 'cultural';
-            case 'Deportes': return 'sports';
-            default: return 'academic';
+            case 'Deportivo': return 'deportivo';
+            default: return 'academico';
         }
     }
 

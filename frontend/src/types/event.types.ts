@@ -4,7 +4,7 @@ export interface Event {
   description: string | null;
   event_date: string;
   location: string | null;
-  event_type: 'academic' | 'cultural' | 'sports';
+  event_type: 'academico' | 'cultural' | 'deportivo';
   capacity: number;
   organizer_id: number;
   created_at: string;
@@ -16,7 +16,7 @@ export interface EventData {
   description?: string;
   event_date: string;
   location?: string;
-  event_type: 'academic' | 'cultural' | 'sports';
+  event_type: 'academico' | 'cultural' | 'deportivo';
   capacity: number;
   organizer_id: number;
 }
@@ -29,14 +29,14 @@ export interface EventStats {
 }
 
 export interface EventType {
-  value: 'academic' | 'cultural' | 'sports';
+  value: 'academico' | 'cultural' | 'deportivo';
   label: string;
 }
 
 export const EVENT_TYPES: EventType[] = [
-  { value: 'academic', label: 'Académico' },
+  { value: 'academico', label: 'Académico' },
   { value: 'cultural', label: 'Cultural' },
-  { value: 'sports', label: 'Deportes' }
+  { value: 'deportivo', label: 'Deportivo' }
 ];
 
 export const getEventTypeLabel = (type: string): string => {

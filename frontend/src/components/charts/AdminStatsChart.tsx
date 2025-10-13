@@ -36,6 +36,7 @@ interface AdminStatsChartProps {
     total_events: number;
     events_by_type: Record<string, number>;
     total_registrations: number;
+    registrations_by_month?: Array<{ month: string; year: number; registrations: number }>;
   };
   loading?: boolean;
 }
@@ -77,9 +78,14 @@ const AdminStatsChart: React.FC<AdminStatsChartProps> = ({ data, loading = false
 
   // Gráfico de dona para eventos por tipo
   const eventsChartData = useMemo(() => ({
-    labels: Object.keys(data.events_by_type || {}).map(type => 
-      type.charAt(0).toUpperCase() + type.slice(1)
-    ),
+    labels: Object.keys(data.events_by_type || {}).map(type => {
+      switch (type) {
+        case 'academico': return 'Académico';
+        case 'cultural': return 'Cultural';
+        case 'deportivo': return 'Deportivo';
+        default: return type.charAt(0).toUpperCase() + type.slice(1);
+      }
+    }),
     datasets: [{
       data: Object.values(data.events_by_type || {}),
       backgroundColor: [
@@ -96,14 +102,33 @@ const AdminStatsChart: React.FC<AdminStatsChartProps> = ({ data, loading = false
 
   // Gráfico de líneas para inscripciones por mes
   const registrationsChartData = useMemo(() => {
-    // Por ahora mostrar datos vacíos hasta que tengamos datos reales de la BD
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+    // Generar los últimos 6 meses
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const currentDate = new Date();
+    const last6Months = [];
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      last6Months.push({
+        month: months[date.getMonth()],
+        year: date.getFullYear(),
+        registrations: 0
+      });
+    }
+
+    // Mapear datos reales si existen
+    const monthlyData = last6Months.map(monthData => {
+      const realData = data.registrations_by_month?.find(
+        item => item.month === monthData.month && item.year === monthData.year
+      );
+      return realData ? realData.registrations : 0;
+    });
     
     return {
-      labels: months,
+      labels: last6Months.map(item => `${item.month} ${item.year}`),
       datasets: [{
         label: 'Inscripciones',
-        data: [0, 0, 0, 0, 0, 0], // Datos reales vendrán del backend
+        data: monthlyData,
         borderColor: colors.purple,
         backgroundColor: colors.purple,
         fill: true,
@@ -114,7 +139,7 @@ const AdminStatsChart: React.FC<AdminStatsChartProps> = ({ data, loading = false
         pointRadius: 6,
       }],
     };
-  }, [colors, isDark]);
+  }, [colors, isDark, data.registrations_by_month]);
 
   // Gráfico de barras horizontales para comparación de usuarios vs eventos
   const comparisonChartData = useMemo(() => ({
@@ -272,7 +297,7 @@ const AdminStatsChart: React.FC<AdminStatsChartProps> = ({ data, loading = false
   // Verificar si hay datos válidos
   const hasUsersData = data.users_by_role && Object.keys(data.users_by_role).length > 0;
   const hasEventsData = data.events_by_type && Object.keys(data.events_by_type).length > 0;
-  const hasRegistrationsData = data.total_registrations && data.total_registrations > 0;
+  const hasMonthlyRegistrationsData = data.registrations_by_month && data.registrations_by_month.length > 0;
   const hasAnyData = data.total_users > 0 || data.total_events > 0 || data.total_registrations > 0;
 
   if (loading) {
@@ -344,7 +369,7 @@ const AdminStatsChart: React.FC<AdminStatsChartProps> = ({ data, loading = false
           📈 Inscripciones por Mes
         </h4>
         <div className="h-64">
-          {hasRegistrationsData ? (
+          {hasMonthlyRegistrationsData ? (
             <Line data={registrationsChartData} options={lineOptions} />
           ) : (
             <div className="h-full flex items-center justify-center">

@@ -26,6 +26,7 @@ import { useSessionExpired } from '../hooks/useSessionExpired';
 import SessionExpiredModal from '../components/modals/SessionExpiredModal';
 import { useNotifications } from '../hooks/useNotifications';
 import AdminStatsChart from '../components/charts/AdminStatsChart';
+import { getEventTypeLabel } from '../types/event.types';
 
 interface User {
   user_id: number;
@@ -57,6 +58,7 @@ interface SystemStats {
   total_registrations: number;
   users_by_role: Record<string, number>;
   events_by_type: Record<string, number>;
+  registrations_by_month?: Array<{ month: string; year: number; registrations: number }>;
 }
 
 const AdminPanel: React.FC = () => {
@@ -115,6 +117,7 @@ const AdminPanel: React.FC = () => {
             total_registrations: data.data.totalRegistrations,
             users_by_role: data.data.usersByRole,
             events_by_type: data.data.eventsByType,
+            registrations_by_month: data.data.registrationsByMonth,
           });
         }
       }
@@ -247,9 +250,9 @@ const AdminPanel: React.FC = () => {
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
-      case 'academic': return 'bg-blue-500 text-white';
+      case 'academico': return 'bg-blue-500 text-white';
       case 'cultural': return 'bg-purple-500 text-white';
-      case 'sports': return 'bg-orange-500 text-white';
+      case 'deportivo': return 'bg-orange-500 text-white';
       default: return 'bg-gray-500 text-white';
     }
   };
@@ -534,7 +537,7 @@ const AdminPanel: React.FC = () => {
                             </td>
                             <td className="py-3 px-4">
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getEventTypeColor(event.event_type)}`}>
-                                {event.event_type}
+                                {getEventTypeLabel(event.event_type)}
                               </span>
                             </td>
                             <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
