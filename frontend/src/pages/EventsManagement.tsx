@@ -149,8 +149,6 @@ const EventsManagement: React.FC = () => {
         console.log('🔄 selectedCategory cambió a:', selectedCategory);
     }, [selectedCategory]);
 
-
-
     // Función auxiliar para verificar si hay espacio suficiente para una fila de tabla
     const checkTableRowSpace = (doc: jsPDF, currentY: number, cellHeight: number = 12) => {
         const pageHeight = doc.internal.pageSize.height;
@@ -1427,7 +1425,17 @@ const EventsManagement: React.FC = () => {
             return [];
         }
         return events.map((e: EventData) => {
-            const dt = new Date(e.event_date);
+            // Corregir problema de zona horaria: tratar la fecha como fecha local
+            let dt: Date;
+            if (typeof e.event_date === 'string') {
+                // Si la fecha viene como string, crear Date sin conversión de zona horaria
+                const dateStr = e.event_date.replace('T', ' ').replace('Z', '');
+                dt = new Date(dateStr + ' UTC'); // Forzar interpretación como UTC
+                console.log(`🔧 Fecha corregida para ${e.title}: ${e.event_date} -> ${dt.toISOString().split('T')[0]}`);
+            } else {
+                dt = new Date(e.event_date);
+            }
+            
             // Calcular el estado automáticamente basado en fecha, hora y duración
             const calculatedStatus = calculateEventStatus(e.event_date, e.duration || 0);
             
@@ -1468,10 +1476,6 @@ const EventsManagement: React.FC = () => {
         
         return matchesSearch && matchesCategory;
     });
-
-    // Debug log para ver el estado del filtro (solo cuando sea necesario)
-    // Comentado para evitar logs repetitivos
-    // console.log('Estado del filtro:', selectedCategory, uiEvents.length, filteredEvents.length);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -1754,93 +1758,93 @@ const EventsManagement: React.FC = () => {
 
                         {/* Desktop Table View */}
                         <div className="hidden lg:block">
-                            {/* Table Header */}
-                            <div className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
-                                <div>Evento</div>
-                                <div>Fecha</div>
-                                <div>Hora</div>
-                                <div>Duración</div>
-                                <div>Ubicación</div>
-                                <div>Participantes</div>
-                                <div>Categoría</div>
-                                <div>Estado</div>
-                                <div>Acciones</div>
-                            </div>
+                        {/* Table Header */}
+                        <div className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
+                            <div>Evento</div>
+                            <div>Fecha</div>
+                            <div>Hora</div>
+                            <div>Duración</div>
+                            <div>Ubicación</div>
+                            <div>Participantes</div>
+                            <div>Categoría</div>
+                            <div>Estado</div>
+                            <div>Acciones</div>
+                        </div>
 
-                            <div className="space-y-3">
-                                {filteredEvents.map((event) => (
-                                    <div key={event.id} className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
-                                        <div className="flex items-center">
-                                            <div className="flex items-center space-x-3">
-                                                {/* Mini imagen del evento */}
-                                                {event.event_image && (
-                                                    <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-sm">
-                                                        <img
-                                                            src={getImageUrl(event.event_image)}
-                                                            alt={event.name}
-                                                            className="w-full h-full object-cover"
-                                                            onError={(e) => {
-                                                                const target = e.target as HTMLImageElement;
-                                                                target.style.display = 'none';
-                                                            }}
-                                                        />
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <h4 className="font-semibold text-black dark:text-white text-sm">{event.name}</h4>
-                                                    <p className="text-xs text-gray-600 dark:text-gray-400">{event.organizer}</p>
+                        <div className="space-y-3">
+                            {filteredEvents.map((event) => (
+                                <div key={event.id} className="grid grid-cols-9 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                    <div className="flex items-center">
+                                        <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                            {/* Imagen del evento - tamaño fijo para evitar que se achique */}
+                                            {event.event_image && (
+                                                <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
+                                                    <img
+                                                        src={getImageUrl(event.event_image)}
+                                                        alt={event.name}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            const target = e.target as HTMLImageElement;
+                                                            target.style.display = 'none';
+                                                        }}
+                                                    />
                                                 </div>
+                                            )}
+                                            <div className="min-w-0 flex-1">
+                                                <h4 className="font-semibold text-black dark:text-white text-sm leading-tight line-clamp-2">{event.name}</h4>
+                                                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{event.organizer}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                            {event.date}
-                                        </div>
-                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                            {event.time}
-                                        </div>
-                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                            <Clock className="w-3 h-3 mr-1" />
-                                            {event.duration} min
-                                        </div>
-                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                            <MapPin className="w-3 h-3 mr-1" />
-                                            {event.location}
-                                        </div>
-                                        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                                            {event.attendees}/{event.capacity}
-                                        </div>
-                                        <div className="flex items-center">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(event.category)} text-white`}>
-                                                {event.category}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status)}`}>
-                                                {event.status}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center space-x-3">
-                                            <button 
-                                                onClick={() => handleViewDetails(event)}
-                                                className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleEditEvent(event.raw)}
-                                                className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleDeleteEvent(event.raw)}
-                                                className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
                                     </div>
-                                ))}
+                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                        {event.date}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                        {event.time}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                        <Clock className="w-3 h-3 mr-1" />
+                                        {event.duration} min
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                        <MapPin className="w-3 h-3 mr-1" />
+                                        {event.location}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                        {event.attendees}/{event.capacity}
+                                    </div>
+                                    <div className="flex items-center">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(event.category)} text-white`}>
+                                            {event.category}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status)}`}>
+                                            {event.status}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center space-x-3">
+                                        <button 
+                                            onClick={() => handleViewDetails(event)}
+                                            className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleEditEvent(event.raw)}
+                                            className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeleteEvent(event.raw)}
+                                            className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                             </div>
                         </div>
 
@@ -1931,7 +1935,7 @@ const EventsManagement: React.FC = () => {
                                         {/* Header with image and basic info */}
                                         <div className="flex items-start space-x-3 mb-3">
                                             {event.event_image && (
-                                                <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
+                                                <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
                                                     <img
                                                         src={getImageUrl(event.event_image)}
                                                         alt={event.name}
@@ -1944,8 +1948,8 @@ const EventsManagement: React.FC = () => {
                                                 </div>
                                             )}
                                             <div className="flex-1 min-w-0">
-                                                <h4 className="font-semibold text-black dark:text-white text-base mb-1 line-clamp-2 break-words">{event.name}</h4>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-1 break-words">{event.organizer}</p>
+                                                <h4 className="font-semibold text-black dark:text-white text-base mb-1 leading-tight line-clamp-2">{event.name}</h4>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">{event.organizer}</p>
                                                 
                                                 {/* Date and time */}
                                                 <div className="flex items-center text-sm text-gray-700 dark:text-gray-300 mb-2">
@@ -2307,11 +2311,11 @@ const EventsManagement: React.FC = () => {
                                         {/* Preview de la imagen existente - Grande pero optimizada */}
                                         <div className="relative">
                                             <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Imagen actual:</div>
-                                            <div className="relative w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600">
+                                            <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600">
                                                 <img
                                                     src={getImageUrl(existingEventImage)}
                                                     alt="Imagen actual del evento"
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-contain"
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
                                                         target.style.display = 'none';
@@ -2343,11 +2347,11 @@ const EventsManagement: React.FC = () => {
                                         {/* Preview de la nueva imagen - Grande pero optimizada */}
                                         <div className="relative">
                                             <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Vista previa de la nueva imagen:</div>
-                                            <div className="relative w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600">
+                                            <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600">
                                                 <img
                                                     src={newImagePreview || '/uploads/events/default-event.jpg'}
                                                     alt="Preview del evento"
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-contain"
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                                                 <div className="absolute bottom-2 left-2 right-2">
@@ -2446,11 +2450,11 @@ const EventsManagement: React.FC = () => {
                                         <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-violet-500 rounded-full mr-2 animate-pulse"></div>
                                         Imagen del Evento
                                     </div>
-                                    <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-lg">
+                                    <div className="relative w-full h-64 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-lg">
                                         <img
                                             src={getImageUrl(selectedEvent.event_image)}
                                             alt={`Imagen de ${selectedEvent.name}`}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-contain"
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
                                                 target.src = getImageUrl('/uploads/events/default-event.jpg'); // Imagen de respaldo
