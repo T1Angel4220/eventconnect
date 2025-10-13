@@ -278,7 +278,7 @@ const EventsManagement: React.FC = () => {
             doc.setTextColor(30, 64, 175);
             doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
-            doc.text('RESUMEN ESTADISTICO', 35, yPosition + 12);
+            doc.text('RESUMEN ESTADÍSTICO', 35, yPosition + 12);
             
             // Estadísticas mejoradas
             const totalEvents = filteredEvents.length;
@@ -352,7 +352,7 @@ const EventsManagement: React.FC = () => {
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             
-            const headers = ['EVENTO', 'FECHA', 'HORA', 'DURACION', 'UBICACION', 'CATEGORIA', 'ESTADO', 'PARTICIPANTES'];
+            const headers = ['EVENTO', 'FECHA', 'HORA', 'DURACIÓN', 'UBICACIÓN', 'CATEGORÍA', 'ESTADO', 'PARTICIPANTES'];
             headers.forEach((header, index) => {
                 // Centrar texto en cada columna
                 const textWidth = doc.getTextWidth(header);
@@ -433,7 +433,7 @@ const EventsManagement: React.FC = () => {
             doc.setTextColor(30, 64, 175);
             doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
-            doc.text('ANALISIS ESTADISTICO DETALLADO', 35, yPosition);
+            doc.text('ANÁLISIS ESTADÍSTICO DETALLADO', 35, yPosition);
             
             yPosition += 30;
             
@@ -489,13 +489,13 @@ const EventsManagement: React.FC = () => {
                 doc.setTextColor(40, 40, 40);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
-                doc.text(category, barX + (barWidth - 10) / 2 - doc.getTextWidth(category) / 2, chartStartY + chartHeight + 10);
+                doc.text(category, barX + (barWidth - 10) / 2 - doc.getTextWidth(category) / 2, chartStartY + chartHeight + 5);
                 
                 // Valor numérico
                 doc.text(categoryValues[index].toString(), barX + (barWidth - 10) / 2 - doc.getTextWidth(categoryValues[index].toString()) / 2, barY - 5);
             });
             
-            yPosition += 120;
+            yPosition += 110;
             
             // Gráfico circular - Distribución por estado
             const statusStats = {
@@ -697,7 +697,7 @@ const EventsManagement: React.FC = () => {
             doc.setTextColor(30, 64, 175);
             doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
-            doc.text('ANALISIS AVANZADO PARA ORGANIZADORES', 35, yPosition);
+            doc.text('ANÁLISIS AVANZADO PARA ORGANIZADORES', 35, yPosition);
             
             yPosition += 30;
             
@@ -726,7 +726,7 @@ const EventsManagement: React.FC = () => {
             } else {
                 // Tabla de análisis de capacidad - Solo dibujar encabezados cuando hay datos
                 const analysisMargin = 35;
-                const analysisCellHeight = 15;
+                const analysisCellHeight = 12; // Reducido de 15 a 12 para más filas por página
                 const analysisTableWidth = doc.internal.pageSize.width - (analysisMargin * 2);
                 
                 const analysisHeaders = ['EVENTO', 'CAPACIDAD', 'ASISTENTES', 'UTILIZACIÓN'];
@@ -763,22 +763,22 @@ const EventsManagement: React.FC = () => {
                 // Datos de análisis - Verificar espacio antes de dibujar encabezados
                 doc.setTextColor(0, 0, 0);
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
+                doc.setFontSize(8); // Reducido de 9 a 8 para más compacto
                 
                 let headersDrawn = false;
                 
                 capacityAnalysis.forEach((analysis, index) => {
                     // Verificar espacio disponible en la página actual
                     const pageHeight = doc.internal.pageSize.height;
-                    const footerSpace = 60; // Espacio optimizado para el footer
+                    const footerSpace = 50; // Ajustado para evitar choque con el footer
                     const availableSpace = pageHeight - yPosition - footerSpace;
                     
                     // Calcular cuántas filas más pueden caber
                     const remainingRows = Math.floor(availableSpace / analysisCellHeight);
                     
-                    // Solo crear nueva página si quedan menos de 2 filas disponibles
-                    // Esto permite mostrar al menos 2-3 eventos por página
-                    if (remainingRows < 2) {
+                    // Solo crear nueva página si quedan menos de 1 fila disponible
+                    // Esto maximiza el uso del espacio disponible
+                    if (remainingRows < 1) {
                         doc.addPage('landscape');
                         yPosition = 20;
                         headersDrawn = false; // Resetear flag para nueva página
@@ -816,7 +816,7 @@ const EventsManagement: React.FC = () => {
                     const maxWidth = analysisColWidths[colIndex] - 8; // 8px de margen interno
                     
                     // Truncar texto si excede el ancho de columna
-                    const truncatedText = truncateText(doc, displayText, maxWidth, 9);
+                    const truncatedText = truncateText(doc, displayText, maxWidth, 8);
                     
                     doc.text(truncatedText, analysisColPositions[colIndex] + 4, yPosition + 8);
                 });
@@ -825,10 +825,19 @@ const EventsManagement: React.FC = () => {
                 });
             }
             
-            yPosition += 30;
+            yPosition += 20;
             
-            // Verificar espacio para insights
-            yPosition = ensureFooterSpace(doc, yPosition, 250);
+            // Verificar espacio para insights de manera más eficiente
+            const pageHeight = doc.internal.pageSize.height;
+            const footerSpace = 50;
+            const availableSpace = pageHeight - yPosition - footerSpace;
+            const insightsSpaceNeeded = 120; // Espacio necesario para insights (título + 6-7 líneas)
+            
+            // Solo crear nueva página si realmente no hay espacio suficiente
+            if (availableSpace < insightsSpaceNeeded) {
+                doc.addPage('landscape');
+                yPosition = 20;
+            }
             
             // Resumen de insights para el organizador
             doc.setTextColor(30, 64, 175);
@@ -836,7 +845,7 @@ const EventsManagement: React.FC = () => {
             doc.setFont('helvetica', 'bold');
             doc.text('INSIGHTS PARA EL ORGANIZADOR', 35, yPosition);
             
-            yPosition += 25;
+            yPosition += 20;
             
             // Asegurar que el texto sea visible
             doc.setTextColor(0, 0, 0);
@@ -866,13 +875,11 @@ const EventsManagement: React.FC = () => {
             
             insights.forEach((insight, index) => {
                 console.log(`Agregando insight ${index + 1}:`, insight);
-                // Verificar espacio antes de agregar cada insight
-                yPosition = ensureFooterSpace(doc, yPosition, 15);
                 doc.text(insight, 35, yPosition);
-                yPosition += 12;
+                yPosition += 10; // Reducido de 12 a 10 para más compacto
             });
             
-            yPosition += 80;
+            yPosition += 20;
             
             // Verificar espacio para recomendaciones
             yPosition = ensureFooterSpace(doc, yPosition, 200);
