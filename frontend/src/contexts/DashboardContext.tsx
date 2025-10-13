@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { dashboardService } from '../services/dashboardService';
-import { useAuth } from '../hooks/useAuth';
 import { DashboardContext } from './DashboardContextDefinition';
 import type { 
   DashboardStatsWithGrowth,
@@ -15,7 +14,6 @@ interface DashboardProviderProps {
 }
 
 const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
-  const { handleTokenExpired } = useAuth();
   const [stats, setStats] = useState<DashboardStatsWithGrowth | null>(null);
   const [recentEvents, setRecentEvents] = useState<EventWithOrganizer[]>([]);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
@@ -29,6 +27,18 @@ const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
   const hasLoadedRef = useRef(false);
 
   const fetchDashboardData = useCallback(async (forceRefresh = false) => {
+    // Verificar si es un logout manual antes de hacer llamadas a la API
+    const isManualLogout = localStorage.getItem('manual_logout');
+    if (isManualLogout === 'true') {
+      return; // No hacer llamadas a la API si es logout manual
+    }
+
+    // Verificar que el usuario esté autenticado
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return; // No hacer llamadas si no hay token
+    }
+
     // Si ya se cargaron los datos y no es un refresh forzado, no hacer nada
     if (hasLoadedRef.current && !forceRefresh) {
       return;
@@ -93,9 +103,16 @@ const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
     } catch (err) {
       console.error('Error fetching critical dashboard data:', err);
       
-      // Si es un error de token expirado, manejar la redirección
-      if (err instanceof Error && err.message.includes('Sesión expirada')) {
-        handleTokenExpired();
+      // Si es un error de token expirado, solo limpiar el estado
+      if (err instanceof Error && (err.message.includes('Sesión expirada') || err.message.includes('Token inválido'))) {
+        // Limpiar datos del dashboard
+        setStats(null);
+        setRecentEvents([]);
+        setTopUsers([]);
+        setEventCategories([]);
+        setParticipantsData([]);
+        setLastUpdated(null);
+        hasLoadedRef.current = false;
         return;
       }
       
@@ -104,7 +121,7 @@ const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, [handleTokenExpired]);
+  }, []);
 
   const refreshData = useCallback(async () => {
     await fetchDashboardData(true);
@@ -123,6 +140,12 @@ const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
 
   // Cargar datos al montar el provider (solo una vez)
   useEffect(() => {
+    // Verificar si es un logout manual antes de cargar datos
+    const isManualLogout = localStorage.getItem('manual_logout');
+    if (isManualLogout === 'true') {
+      return; // No cargar datos si es logout manual
+    }
+    
     fetchDashboardData();
   }, [fetchDashboardData]);
 

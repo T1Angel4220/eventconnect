@@ -27,6 +27,9 @@ export const useAuth = () => {
   }, [navigate]);
 
   const logout = () => {
+    // Marcar que es un logout manual para evitar que se dispare el modal de sesión expirada
+    localStorage.setItem('manual_logout', 'true');
+    
     // Preservar el tema antes de limpiar
     const theme = localStorage.getItem('theme');
     
@@ -42,6 +45,11 @@ export const useAuth = () => {
     
     setIsAuthenticated(false);
     navigate('/login');
+    
+    // Limpiar la marca después de un breve delay
+    setTimeout(() => {
+      localStorage.removeItem('manual_logout');
+    }, 1000);
   };
 
   const handleTokenExpired = () => {

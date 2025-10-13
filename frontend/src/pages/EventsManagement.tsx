@@ -1312,11 +1312,11 @@ const EventsManagement: React.FC = () => {
                 const updatedEvent = await apiUpdateEvent(editingEvent.event_id, updatePayload);
                 // Actualizar inmediatamente en el estado local
                 updateEventInLocalState(editingEvent.event_id, updatedEvent);
-            }
-            showSuccess(
-                'Evento actualizado',
-                `El evento "${newEvent.name}" ha sido actualizado exitosamente.`
-            );
+                }
+                showSuccess(
+                    'Evento actualizado',
+                    `El evento "${newEvent.name}" ha sido actualizado exitosamente.`
+                );
             } else {
                 // Para crear, usar FormData
                 await apiCreateEvent(formData);

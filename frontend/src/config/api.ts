@@ -15,46 +15,45 @@ export const getDefaultHeaders = () => {
 };
 
 // Función para manejar errores de API
-export const handleApiError = (error: any) => {
+export const handleApiError = (error: unknown) => {
   console.error('API Error:', error);
   
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  
+  // Verificar si es un logout manual
+  const isManualLogout = localStorage.getItem('manual_logout');
+  if (isManualLogout === 'true') {
+    return 'Sesión cerrada';
+  }
+
   // Verificar si es un error de token expirado específico
-  if (error.message?.includes('Token expired') || error.message?.includes('TOKEN_EXPIRED')) {
-    // Limpiar datos de sesión
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('firstName');
-    localStorage.removeItem('userId');
-    
-    // Mostrar mensaje y redirigir
-    alert('Tu sesión ha expirado. Serás redirigido al login.');
-    window.location.href = '/login';
-    return 'Sesión expirada. Redirigiendo al login...';
+  if (errorMessage.includes('Token expired') || errorMessage.includes('TOKEN_EXPIRED')) {
+    // Emitir evento personalizado para manejo centralizado
+    window.dispatchEvent(new CustomEvent('auth-error', { 
+      detail: { error: 'Sesión expirada' } 
+    }));
+    return 'Sesión expirada';
   }
   
-  if (error.message?.includes('401') || error.message?.includes('INVALID_TOKEN')) {
-    // Token inválido
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('firstName');
-    localStorage.removeItem('userId');
-    
-    alert('Token inválido. Serás redirigido al login.');
-    window.location.href = '/login';
-    return 'Token inválido. Redirigiendo al login...';
+  if (errorMessage.includes('401') || errorMessage.includes('INVALID_TOKEN')) {
+    // Emitir evento personalizado para manejo centralizado
+    window.dispatchEvent(new CustomEvent('auth-error', { 
+      detail: { error: 'Token inválido' } 
+    }));
+    return 'Token inválido';
   }
   
-  if (error.message?.includes('403')) {
+  if (errorMessage.includes('403')) {
     return 'No tienes permisos para realizar esta acción.';
   }
   
-  if (error.message?.includes('404')) {
+  if (errorMessage.includes('404')) {
     return 'Recurso no encontrado.';
   }
   
-  if (error.message?.includes('500')) {
+  if (errorMessage.includes('500')) {
     return 'Error interno del servidor. Inténtalo más tarde.';
   }
   
-  return error.message || 'Error desconocido';
+  return errorMessage || 'Error desconocido';
 };

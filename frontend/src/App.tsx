@@ -15,10 +15,18 @@ import AdminPanel from './pages/AdminPanel';
 import PrivateRoute from './components/login-Web/PrivateRoute';
 import PublicRoute from './components/login-Web/PublicRoute';
 import { DashboardProvider } from './contexts/DashboardContext';
+import SessionExpiredModal from './components/modals/SessionExpiredModal';
+import { useSessionExpired } from './hooks/useSessionExpired';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+    const { showSessionExpiredModal, goToLogin } = useSessionExpired();
+
     return (
-        <Router>
+        <>
+            <SessionExpiredModal 
+                isOpen={showSessionExpiredModal} 
+                onClose={goToLogin}
+            />
             <Routes>
                 <Route path="/" element={
                     <PublicRoute>
@@ -96,6 +104,14 @@ const App: React.FC = () => {
                  {/* Ruta catch-all */}
                  <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
+        </>
+    );
+};
+
+const App: React.FC = () => {
+    return (
+        <Router>
+            <AppContent />
         </Router>
     );
 };
