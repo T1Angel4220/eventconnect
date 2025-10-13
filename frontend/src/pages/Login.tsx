@@ -109,6 +109,7 @@ const Login: React.FC = () => {
       localStorage.setItem("token", data.token)
       localStorage.setItem("role", data.role)
       localStorage.setItem("firstName", data.firstName)
+      localStorage.setItem("userId", data.userId.toString())
       navigate("/dashboard")
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Error en el login"

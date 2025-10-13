@@ -27,6 +27,7 @@ export const register = async (req: Request, res: Response) => {
       token: token,
       role: user.role,
       firstName: user.first_name,
+      userId: user.user_id,
     });
   } catch (err) {
     console.error(err);

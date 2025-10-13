@@ -40,9 +40,23 @@ function authHeaders() {
   } as HeadersInit;
 }
 
+function authHeadersForFormData() {
+  const token = localStorage.getItem("token");
+  return {
+    Authorization: token ? `Bearer ${token}` : "",
+  };
+}
+
 export async function fetchEvents(): Promise<EventResponse[]> {
   const res = await fetch(`${API_URL}/events/with-organizer`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Error cargando eventos");
+  const response = await res.json();
+  return response.data; // El backend devuelve { success: true, data: events }
+}
+
+export async function fetchEventsByOrganizer(organizerId: number): Promise<EventResponse[]> {
+  const res = await fetch(`${API_URL}/events/organizer/${organizerId}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Error cargando eventos del organizador");
   const response = await res.json();
   return response.data; // El backend devuelve { success: true, data: events }
 }
@@ -52,7 +66,7 @@ export async function createEvent(payload: CreateEventPayload | FormData): Promi
   
   const res = await fetch(`${API_URL}/events`, {
     method: "POST",
-    headers: isFormData ? { Authorization: (authHeaders() as any).Authorization } : authHeaders(),
+    headers: isFormData ? authHeadersForFormData() : authHeaders(),
     body: isFormData ? payload : JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Error creando evento");
@@ -64,7 +78,7 @@ export async function updateEvent(eventId: number, payload: Partial<CreateEventP
   
   const res = await fetch(`${API_URL}/events/${eventId}`, {
     method: "PUT",
-    headers: isFormData ? { Authorization: (authHeaders() as any).Authorization } : authHeaders(),
+    headers: isFormData ? authHeadersForFormData() : authHeaders(),
     body: isFormData ? payload : JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Error actualizando evento");

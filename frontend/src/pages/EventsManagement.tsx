@@ -31,7 +31,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';
 import { useSessionExpired } from '../hooks/useSessionExpired';
 import SessionExpiredModal from '../components/modals/SessionExpiredModal';
-import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEvents as apiFetchEvents, updateEvent as apiUpdateEvent, updateEventStatuses as apiUpdateEventStatuses } from '../services/eventsService';
+import { createEvent as apiCreateEvent, deleteEvent as apiDeleteEvent, fetchEvents as apiFetchEvents, fetchEventsByOrganizer as apiFetchEventsByOrganizer, updateEvent as apiUpdateEvent, updateEventStatuses as apiUpdateEventStatuses } from '../services/eventsService';
 import Notification from '../components/ui/Notification';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import jsPDF from 'jspdf';
@@ -117,6 +117,7 @@ const EventsManagement: React.FC = () => {
     const role = localStorage.getItem('role');
     const firstName = localStorage.getItem('firstName');
     const profileImage = localStorage.getItem('profileImage');
+    const userId = localStorage.getItem('userId');
     const [events, setEvents] = useState<EventData[]>([]);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -1040,8 +1041,14 @@ const EventsManagement: React.FC = () => {
                 }
             }
             
-            // Cargar eventos actualizados
-            const response = await apiFetchEvents();
+            // Cargar eventos actualizados - solo del organizador actual
+            let response;
+            if (userId && role === 'organizer') {
+                response = await apiFetchEventsByOrganizer(parseInt(userId));
+            } else {
+                // Para admins, mostrar todos los eventos
+                response = await apiFetchEvents();
+            }
             
             // Extraer el array de datos del objeto de respuesta
             let eventsData: EventData[] = response as unknown as EventData[];
@@ -1081,7 +1088,7 @@ const EventsManagement: React.FC = () => {
                 errorMessage
             );
         }
-    }, [showError]);
+    }, [showError, role, userId]);
 
     React.useEffect(() => {
         loadEvents();

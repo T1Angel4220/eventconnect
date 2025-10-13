@@ -177,6 +177,19 @@ const RegistrationsManagement: React.FC = () => {
         }
     };
 
+    const getRoleLabel = (role: string): string => {
+        switch (role) {
+            case 'participant':
+                return 'Participante';
+            case 'organizer':
+                return 'Organizador';
+            case 'admin':
+                return 'Administrador';
+            default:
+                return role;
+        }
+    };
+
     // En eventos universitarios, los participantes se auto-inscriben
     // No hay necesidad de funciones de aprobar/rechazar
 
@@ -360,54 +373,57 @@ const RegistrationsManagement: React.FC = () => {
                 <main className="p-6">
                     {/* Quick Actions Toolbar */}
                     <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-4 shadow-lg mb-8">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-center space-x-2">
+                        <div className="flex flex-col space-y-4">
+                            <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-semibold text-black dark:text-white">Filtros y Acciones</h3>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-3">
                                 <button 
                                     onClick={() => setShowExportModal(true)}
                                     className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
                                 >
                                     <Download className="w-4 h-4 mr-2" />
-                                    <span className="font-medium">Exportar</span>
+                                    <span className="font-medium hidden sm:inline">Exportar</span>
                                 </button>
-                                
-                                <CustomDropdown
-                                    options={statusOptions}
+                            </div>
+                            
+                            {/* Filters Row */}
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="flex-1">
+                                    <CustomDropdown
+                                        options={statusOptions}
                                         value={selectedStatus}
-                                    onChange={setSelectedStatus}
-                                    icon={<Filter className="w-4 h-4" />}
-                                    className="min-w-[180px]"
-                                />
-                                
-                                <CustomDropdown
-                                    options={eventOptions}
+                                        onChange={setSelectedStatus}
+                                        icon={<Filter className="w-4 h-4" />}
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <CustomDropdown
+                                        options={eventOptions}
                                         value={selectedEvent}
-                                    onChange={setSelectedEvent}
-                                    icon={<CalendarIcon className="w-4 h-4" />}
-                                    className="min-w-[200px]"
-                                />
+                                        onChange={setSelectedEvent}
+                                        icon={<CalendarIcon className="w-4 h-4" />}
+                                        className="w-full"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Registrations Table */}
                     <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-2 sm:space-y-0">
                             <div>
                                 <h3 className="text-xl font-bold text-black dark:text-white">Inscripciones Confirmadas</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                    En eventos universitarios, los participantes se auto-inscriben directamente
                                 </p>
                             </div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg inline-block">
                                 {filteredRegistrations.length} de {registrations.length} inscripciones
                             </div>
                         </div>
 
-                        {/* Table Header */}
-                        <div className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
+                        {/* Table Header - Hidden on mobile */}
+                        <div className="hidden md:grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-300">
                             <div>Participante</div>
                             <div>Evento</div>
                             <div>Fecha de Inscripción</div>
@@ -425,54 +441,119 @@ const RegistrationsManagement: React.FC = () => {
                         ) : (
                         <div className="space-y-3">
                             {filteredRegistrations.map((registration) => (
-                                <div key={registration.registration_id} className="grid grid-cols-7 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
-                                    <div className="flex items-center">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mr-3 shadow-lg">
-                                            <User className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                                {registration.user_first_name} {registration.user_last_name}
-                                            </h4>
-                                            <p className="text-xs text-gray-600 dark:text-gray-300">{registration.user_email}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{registration.event_title}</p>
-                                            <p className="text-xs text-gray-600 dark:text-gray-300">{formatDate(registration.event_date)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
-                                        {formatDate(registration.registered_at)}
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(registration.status)}`}>
-                                            {getStatusIcon(registration.status)}
-                                            <span className="ml-1">{mapRegistrationStatusToSpanish(registration.status)}</span>
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
-                                        {registration.user_role}
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
-                                        <div className="text-center">
-                                            <div className="font-medium">{mapEventTypeToSpanish(registration.event_type)}</div>
-                                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                                                Capacidad: {registration.event_capacity}
+                                <div key={registration.registration_id} className="bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                    {/* Desktop View */}
+                                    <div className="hidden md:grid grid-cols-7 gap-4 p-4">
+                                        <div className="flex items-center">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mr-3 shadow-lg">
+                                                <User className="w-5 h-5 text-white" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                                    {registration.user_first_name} {registration.user_last_name}
+                                                </h4>
+                                                <p className="text-xs text-gray-600 dark:text-gray-300">{registration.user_email}</p>
                                             </div>
                                         </div>
+                                        <div className="flex items-center">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{registration.event_title}</p>
+                                                <p className="text-xs text-gray-600 dark:text-gray-300">{formatDate(registration.event_date)}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
+                                            {formatDate(registration.registered_at)}
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(registration.status)}`}>
+                                                {getStatusIcon(registration.status)}
+                                                <span className="ml-1">{mapRegistrationStatusToSpanish(registration.status)}</span>
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
+                                            {getRoleLabel(registration.user_role)}
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-800 dark:text-gray-200">
+                                            <div className="text-center">
+                                                <div className="font-medium">{mapEventTypeToSpanish(registration.event_type)}</div>
+                                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                    Capacidad: {registration.event_capacity}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <button 
+                                                onClick={() => handleViewDetails(registration)}
+                                                className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                                title="Ver detalles de la inscripción"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                        <button 
-                                            onClick={() => handleViewDetails(registration)}
-                                            className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                                            title="Ver detalles de la inscripción"
-                                        >
-                                            <Eye className="w-4 h-4" />
-                                        </button>
-                                        {/* En eventos universitarios, los participantes se auto-inscriben */}
-                                        {/* No hay necesidad de aprobar/rechazar inscripciones */}
+
+                                    {/* Mobile View */}
+                                    <div className="md:hidden p-4">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center flex-1">
+                                                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mr-3 shadow-lg">
+                                                    <User className="w-6 h-6 text-white" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
+                                                        {registration.user_first_name} {registration.user_last_name}
+                                                    </h4>
+                                                    <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{registration.user_email}</p>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleViewDetails(registration)}
+                                                className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                                title="Ver detalles"
+                                            >
+                                                <Eye className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">Evento:</span>
+                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 text-right flex-1 ml-2 truncate">
+                                                    {registration.event_title}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">Fecha:</span>
+                                                <span className="text-sm text-gray-800 dark:text-gray-200">
+                                                    {formatDate(registration.event_date)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">Estado:</span>
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(registration.status)}`}>
+                                                    {getStatusIcon(registration.status)}
+                                                    <span className="ml-1">{mapRegistrationStatusToSpanish(registration.status)}</span>
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">Tipo:</span>
+                                                <span className="text-sm text-gray-800 dark:text-gray-200">
+                                                    {mapEventTypeToSpanish(registration.event_type)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">Rol:</span>
+                                                <span className="text-sm text-gray-800 dark:text-gray-200">
+                                                    {getRoleLabel(registration.user_role)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">Capacidad:</span>
+                                                <span className="text-sm text-gray-800 dark:text-gray-200">
+                                                    {registration.event_capacity}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -493,7 +574,7 @@ const RegistrationsManagement: React.FC = () => {
             {/* Details Modal */}
             {showDetailsModal && selectedRegistration && (
                 <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-black rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-black rounded-2xl p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-bold text-black dark:text-white">Detalles de la Inscripción</h3>
                             <button
@@ -508,7 +589,7 @@ const RegistrationsManagement: React.FC = () => {
                             {/* Event Info */}
                             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                                 <h4 className="font-semibold text-black dark:text-white mb-3">Información del Evento</h4>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Evento:</p>
                                         <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.event_title}</p>
@@ -539,7 +620,7 @@ const RegistrationsManagement: React.FC = () => {
                             {/* Participant Info */}
                             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                                 <h4 className="font-semibold text-black dark:text-white mb-3">Información del Participante</h4>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Nombre:</p>
                                         <p className="font-medium text-gray-900 dark:text-gray-100">
@@ -552,7 +633,7 @@ const RegistrationsManagement: React.FC = () => {
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Rol:</p>
-                                        <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRegistration.user_role}</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{getRoleLabel(selectedRegistration.user_role)}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Estado:</p>
@@ -561,20 +642,6 @@ const RegistrationsManagement: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Información adicional para organizadores universitarios */}
-                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                                    📋 Información para Organizadores
-                                </h4>
-                                <p className="text-sm text-blue-800 dark:text-blue-200">
-                                    En eventos universitarios, los participantes se auto-inscriben directamente. 
-                                    Esta inscripción está confirmada automáticamente.
-                                </p>
-                                <div className="mt-3 flex items-center text-sm text-blue-700 dark:text-blue-300">
-                                        <CheckCircle className="w-4 h-4 mr-2" />
-                                    <span>Inscripción confirmada automáticamente</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>

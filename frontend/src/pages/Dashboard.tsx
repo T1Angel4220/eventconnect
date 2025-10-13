@@ -600,38 +600,36 @@ const Dashboard: React.FC = () => {
                 <main className="p-6">
                     {/* Quick Actions Toolbar */}
                     <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-4 shadow-lg mb-8">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-center space-x-2">
-                                <h3 className="text-lg font-semibold text-black dark:text-white">Acciones Rápidas</h3>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex flex-col space-y-4">
+                            <h3 className="text-lg font-semibold text-black dark:text-white">Acciones Rápidas</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                 <button 
                                     onClick={handleCreateEvent}
-                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
+                                    className="flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
                                 >
                                     <Calendar className="w-4 h-4 mr-2" />
-                                    <span className="font-medium">Crear Evento</span>
+                                    <span className="font-medium text-sm sm:text-base">Crear Evento</span>
                                 </button>
                                 <button 
                                     onClick={handleInviteUsers}
-                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg"
+                                    className="flex items-center justify-center px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg"
                                 >
                                     <Users className="w-4 h-4 mr-2" />
-                                    <span className="font-medium">Invitar Usuarios</span>
+                                    <span className="font-medium text-sm sm:text-base">Invitar Usuarios</span>
                                 </button>
                                 <button 
                                     onClick={handleViewReports}
-                                    className="flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
+                                    className="flex items-center justify-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
                                 >
                                     <BarChart3 className="w-4 h-4 mr-2" />
-                                    <span className="font-medium">Ver Reportes</span>
+                                    <span className="font-medium text-sm sm:text-base">Ver Reportes</span>
                                 </button>
                                 <button 
                                     onClick={handleNavigateToConfiguration}
-                                    className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+                                    className="flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
                                 >
                                     <Settings className="w-4 h-4 mr-2" />
-                                    <span className="font-medium">Configuración</span>
+                                    <span className="font-medium text-sm sm:text-base">Configuración</span>
                                 </button>
                             </div>
                         </div>
@@ -648,7 +646,7 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                         {statsCards.map((stat, index) => (
                             <div key={index} className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all duration-300">
                                 <div className="flex items-center justify-between">
@@ -674,23 +672,23 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     {/* Content Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
                         {/* Recent Events */}
-                        <div className="lg:col-span-3">
+                        <div className="xl:col-span-3">
                             <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
-                                <div className="flex items-center justify-between mb-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-3 sm:space-y-0">
                                     <h3 className="text-xl font-bold text-black dark:text-white">Gestión de Eventos</h3>
-                                    <div className="flex space-x-3">
+                                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                                         <button 
                                             onClick={handleNavigateToEvents}
-                                            className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
+                                            className="flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
                                         >
                                             <Plus className="w-4 h-4 mr-2" />
                                             Nuevo Evento
                                         </button>
                                         <button 
                                             onClick={exportEventsToPDF}
-                                            className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+                                            className="flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
                                         >
                                             <Download className="w-4 h-4 mr-2" />
                                             Exportar
@@ -698,8 +696,8 @@ const Dashboard: React.FC = () => {
                                     </div>
                                 </div>
                                 
-                                {/* Table Header */}
-                                <div className="grid grid-cols-8 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-200">
+                                {/* Table Header - Hidden on mobile */}
+                                <div className="hidden lg:grid grid-cols-8 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4 font-semibold text-sm text-gray-700 dark:text-gray-200">
                                     <div>Evento</div>
                                     <div>Fecha</div>
                                     <div>Participantes</div>
@@ -715,35 +713,78 @@ const Dashboard: React.FC = () => {
                                         const statusText = getEventStatusText(event.event_date, event.duration);
                                         const statusColor = getEventStatusColor(event.event_date, event.duration);
                                         return (
-                                            <div key={event.event_id} className="grid grid-cols-8 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
-                                                <div className="flex items-center">
-                                                    <div>
-                                                        <h4 className="font-semibold text-black dark:text-white text-sm">{event.title}</h4>
-                                                        <p className="text-xs text-gray-600 dark:text-gray-300">{getEventTypeLabel(event.event_type)}</p>
+                                            <div key={event.event_id} className="bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                                {/* Desktop View */}
+                                                <div className="hidden lg:grid grid-cols-8 gap-4 p-4">
+                                                    <div className="flex items-center">
+                                                        <div>
+                                                            <h4 className="font-semibold text-black dark:text-white text-sm">{event.title}</h4>
+                                                            <p className="text-xs text-gray-600 dark:text-gray-300">{getEventTypeLabel(event.event_type)}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
+                                                        {formatDate(event.event_date)}
+                                                    </div>
+                                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
+                                                        {event.registered_count}
+                                                    </div>
+                                                    <div className="flex items-center text-sm font-semibold text-purple-600 dark:text-purple-300">
+                                                        {event.capacity}
+                                                    </div>
+                                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
+                                                        {event.organizer_name}
+                                                    </div>
+                                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
+                                                        {formatTime(event.event_date)}
+                                                    </div>
+                                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
+                                                        {formatDuration(event.duration)}
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>
+                                                            {statusText}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
-                                                    {formatDate(event.event_date)}
-                                                </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
-                                                    {event.registered_count}
-                                                </div>
-                                                <div className="flex items-center text-sm font-semibold text-purple-600 dark:text-purple-300">
-                                                    {event.capacity}
-                                                </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
-                                                    {event.organizer_name}
-                                                </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
-                                                    {formatTime(event.event_date)}
-                                                </div>
-                                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-200">
-                                                    {formatDuration(event.duration)}
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>
-                                                        {statusText}
-                                                    </span>
+
+                                                {/* Mobile View */}
+                                                <div className="lg:hidden p-4">
+                                                    <div className="flex items-start justify-between mb-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="font-semibold text-black dark:text-white text-sm truncate">{event.title}</h4>
+                                                            <p className="text-xs text-gray-600 dark:text-gray-300">{getEventTypeLabel(event.event_type)}</p>
+                                                        </div>
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ml-2 ${statusColor}`}>
+                                                            {statusText}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-500 dark:text-gray-400">Fecha:</span>
+                                                            <span className="text-gray-700 dark:text-gray-200">{formatDate(event.event_date)}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-500 dark:text-gray-400">Hora:</span>
+                                                            <span className="text-gray-700 dark:text-gray-200">{formatTime(event.event_date)}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-500 dark:text-gray-400">Participantes:</span>
+                                                            <span className="text-gray-700 dark:text-gray-200">{event.registered_count}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-500 dark:text-gray-400">Capacidad:</span>
+                                                            <span className="font-semibold text-purple-600 dark:text-purple-300">{event.capacity}</span>
+                                                        </div>
+                                                        <div className="flex justify-between col-span-2">
+                                                            <span className="text-gray-500 dark:text-gray-400">Organizador:</span>
+                                                            <span className="text-gray-700 dark:text-gray-200 truncate">{event.organizer_name}</span>
+                                                        </div>
+                                                        <div className="flex justify-between col-span-2">
+                                                            <span className="text-gray-500 dark:text-gray-400">Duración:</span>
+                                                            <span className="text-gray-700 dark:text-gray-200">{formatDuration(event.duration)}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
@@ -792,13 +833,13 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     {/* Additional Management Sections */}
-                    <div id="stats-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div id="stats-section" className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
                         {/* Participants Chart */}
                         <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
-                            <div className="flex items-center justify-between mb-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-2 sm:space-y-0">
                                 <h3 className="text-xl font-bold text-black dark:text-white">Participantes por Mes</h3>
                                 <button 
-                                    className="flex items-center px-3 py-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
+                                    className="flex items-center justify-center px-3 py-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm hover:from-purple-600 hover:to-purple-700 transition-all duration-200"
                                     onClick={() => handleViewDetails('participants')}
                                 >
                                     <BarChart3 className="w-4 h-4 mr-2" />
@@ -815,22 +856,24 @@ const Dashboard: React.FC = () => {
 
                         {/* Event Categories */}
                         <div className="bg-white dark:bg-black border-2 border-gray-200 dark:border-white rounded-2xl p-6 shadow-lg">
-                            <div className="flex items-center justify-between mb-6">
+                            <div className="flex flex-col space-y-3 mb-6">
                                 <h3 className="text-xl font-bold text-black dark:text-white">Categorías de Eventos</h3>
-                                <button 
-                                    className="flex items-center px-3 py-1 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg text-sm hover:from-violet-600 hover:to-violet-700 transition-all duration-200"
-                                    onClick={() => handleViewDetails('categories')}
-                                >
-                                    <BarChart3 className="w-4 h-4 mr-2" />
-                                    Ver Detalles
-                                </button>
-                                <button 
-                                    className="flex items-center px-3 py-1 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg text-sm hover:from-violet-600 hover:to-violet-700 transition-all duration-200"
-                                    onClick={handleOpenFilter}
-                                >
-                                    <Filter className="w-4 h-4 mr-2" />
-                                    Filtrar
-                                </button>
+                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                                    <button 
+                                        className="flex items-center justify-center px-3 py-1 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg text-sm hover:from-violet-600 hover:to-violet-700 transition-all duration-200"
+                                        onClick={() => handleViewDetails('categories')}
+                                    >
+                                        <BarChart3 className="w-4 h-4 mr-2" />
+                                        Ver Detalles
+                                    </button>
+                                    <button 
+                                        className="flex items-center justify-center px-3 py-1 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg text-sm hover:from-violet-600 hover:to-violet-700 transition-all duration-200"
+                                        onClick={handleOpenFilter}
+                                    >
+                                        <Filter className="w-4 h-4 mr-2" />
+                                        Filtrar
+                                    </button>
+                                </div>
                             </div>
                             <div className="space-y-4">
                                 {eventCategories.length > 0 ? eventCategories.map((item, index) => {
@@ -908,7 +951,7 @@ const Dashboard: React.FC = () => {
                                         </div>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                                             <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Total Participantes</h5>
                                             <p className="text-2xl font-bold text-purple-600 dark:text-purple-300">
@@ -954,7 +997,7 @@ const Dashboard: React.FC = () => {
                                         </div>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                                             <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Total Eventos</h5>
                                             <p className="text-2xl font-bold text-green-600 dark:text-green-300">

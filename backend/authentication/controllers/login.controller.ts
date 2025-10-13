@@ -7,7 +7,7 @@ export const login = async (req: Request, res: Response) => {
 
     res
       .status(200)
-      .json({ token, role: user.role, firstName: user.first_name });
+      .json({ token, role: user.role, firstName: user.first_name, userId: user.user_id });
   } catch (err) {
     console.error(err);
     if (err instanceof Error) {

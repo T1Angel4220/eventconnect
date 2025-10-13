@@ -33,7 +33,7 @@ export class EventService {
     }
   }
 
-  async getEventsByOrganizer(organizerId: number): Promise<EventRow[]> {
+  async getEventsByOrganizer(organizerId: number): Promise<EventWithOrganizer[]> {
     try {
       return await eventRepository.findByOrganizer(organizerId);
     } catch (error) {

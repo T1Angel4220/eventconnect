@@ -5,7 +5,7 @@ export interface EventRepository {
   create(event: EventData): Promise<EventRow>;
   findById(eventId: number): Promise<EventRow | null>;
   findAll(): Promise<EventRow[]>;
-  findByOrganizer(organizerId: number): Promise<EventRow[]>;
+  findByOrganizer(organizerId: number): Promise<EventWithOrganizer[]>;
   update(eventId: number, event: Partial<EventData>): Promise<EventRow | null>;
   delete(eventId: number): Promise<boolean>;
   getStats(): Promise<EventStats>;
@@ -80,8 +80,25 @@ class EventRepositoryImpl implements EventRepository {
     return cleanedRows;
   }
 
-  async findByOrganizer(organizerId: number): Promise<EventRow[]> {
-    const query = 'SELECT * FROM events WHERE organizer_id = $1 ORDER BY created_at DESC';
+  async findByOrganizer(organizerId: number): Promise<EventWithOrganizer[]> {
+    const query = `
+      SELECT 
+        e.*,
+        CONCAT(u.first_name, ' ', u.last_name) as organizer_name,
+        u.email as organizer_email,
+        COALESCE(r.registered_count, 0) as registered_count
+      FROM events e
+      JOIN users u ON e.organizer_id = u.user_id
+      LEFT JOIN (
+        SELECT event_id, COUNT(*) as registered_count
+        FROM registrations 
+        WHERE status = 'registered'
+        GROUP BY event_id
+      ) r ON e.event_id = r.event_id
+      WHERE e.organizer_id = $1
+      ORDER BY e.created_at DESC
+    `;
+    
     const result = await pool.query(query, [organizerId]);
     
     // Limpiar URLs blob automáticamente

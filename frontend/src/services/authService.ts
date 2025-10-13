@@ -2,6 +2,7 @@ export interface LoginResponse {
     token: string;
     role: string;
     firstName: string;
+    userId: number;
 }
 
 export interface RegisterResponse {
@@ -9,6 +10,7 @@ export interface RegisterResponse {
     token: string;
     role: string;
     firstName: string;
+    userId: number;
 }
 
 export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
