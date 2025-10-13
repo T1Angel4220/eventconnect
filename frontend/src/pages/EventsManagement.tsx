@@ -217,6 +217,15 @@ const EventsManagement: React.FC = () => {
     // Función para exportar eventos a PDF
     const exportToPDF = () => {
         try {
+            // Definir filteredEvents dentro de la función para evitar errores de scope
+            const filteredEvents = uiEvents.filter(event => {
+                const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    event.organizer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    event.location.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
+                
+                return matchesSearch && matchesCategory;
+            });
             const doc = new jsPDF('landscape');
             
             // === ENCABEZADO PRINCIPAL MEJORADO ===
@@ -707,69 +716,79 @@ const EventsManagement: React.FC = () => {
             
             yPosition += 20;
             
-            // Tabla de análisis de capacidad
-            const analysisTableStartY = yPosition;
-            const analysisMargin = 35;
-            const analysisCellHeight = 15;
-            const analysisTableWidth = doc.internal.pageSize.width - (analysisMargin * 2);
-            
-            // Encabezados de análisis
-            doc.setFillColor(30, 64, 175);
-            doc.rect(analysisMargin, analysisTableStartY, analysisTableWidth, analysisCellHeight, 'F');
-            
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            
-            const analysisHeaders = ['EVENTO', 'CAPACIDAD', 'ASISTENTES', 'UTILIZACIÓN'];
-            const analysisColWidths = [
-                analysisTableWidth * 0.4, // Evento (40%)
-                analysisTableWidth * 0.2, // Capacidad (20%)
-                analysisTableWidth * 0.2, // Asistentes (20%)
-                analysisTableWidth * 0.2  // Utilización (20%)
-            ];
-            
-            const analysisColPositions = [analysisMargin];
-            for (let i = 1; i < analysisColWidths.length; i++) {
-                analysisColPositions.push(analysisColPositions[i-1] + analysisColWidths[i-1]);
-            }
-            
-            analysisHeaders.forEach((header, index) => {
-                const textWidth = doc.getTextWidth(header);
-                const centerX = analysisColPositions[index] + (analysisColWidths[index] / 2) - (textWidth / 2);
-                doc.text(header, centerX, analysisTableStartY + 8);
-            });
-            
-            yPosition = analysisTableStartY + analysisCellHeight;
-            
-            // Datos de análisis
-            doc.setTextColor(0, 0, 0);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            
-            capacityAnalysis.forEach((analysis, index) => {
-                // Verificar espacio para la fila actual
-                yPosition = checkTableRowSpace(doc, yPosition, analysisCellHeight);
+            // Verificar si hay datos para mostrar
+            if (capacityAnalysis.length === 0) {
+                doc.setTextColor(100, 100, 100);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text('No hay datos de capacidad disponibles para mostrar.', 35, yPosition + 10);
+                yPosition += 30;
+            } else {
+                // Tabla de análisis de capacidad - Solo dibujar encabezados cuando hay datos
+                const analysisMargin = 35;
+                const analysisCellHeight = 15;
+                const analysisTableWidth = doc.internal.pageSize.width - (analysisMargin * 2);
                 
-                // Si se creó una nueva página, redibujar encabezados de análisis
-                if (yPosition === 20) {
-                    console.log('Redibujando encabezados de análisis en nueva página...');
-                    // Redibujar encabezados de análisis
+                const analysisHeaders = ['EVENTO', 'CAPACIDAD', 'ASISTENTES', 'UTILIZACIÓN'];
+                const analysisColWidths = [
+                    analysisTableWidth * 0.4, // Evento (40%)
+                    analysisTableWidth * 0.2, // Capacidad (20%)
+                    analysisTableWidth * 0.2, // Asistentes (20%)
+                    analysisTableWidth * 0.2  // Utilización (20%)
+                ];
+                
+                const analysisColPositions = [analysisMargin];
+                for (let i = 1; i < analysisColWidths.length; i++) {
+                    analysisColPositions.push(analysisColPositions[i-1] + analysisColWidths[i-1]);
+                }
+                
+                // Función para dibujar encabezados
+                const drawAnalysisHeaders = (currentY: number) => {
                     doc.setFillColor(30, 64, 175);
-                    doc.rect(analysisMargin, yPosition, analysisTableWidth, analysisCellHeight, 'F');
+                    doc.rect(analysisMargin, currentY, analysisTableWidth, analysisCellHeight, 'F');
                     
                     doc.setTextColor(255, 255, 255);
                     doc.setFontSize(10);
                     doc.setFont('helvetica', 'bold');
                     
-                    analysisHeaders.forEach((header, colIndex) => {
+                    analysisHeaders.forEach((header, index) => {
                         const textWidth = doc.getTextWidth(header);
-                        const centerX = analysisColPositions[colIndex] + (analysisColWidths[colIndex] / 2) - (textWidth / 2);
-                        doc.text(header, centerX, yPosition + 8);
+                        const centerX = analysisColPositions[index] + (analysisColWidths[index] / 2) - (textWidth / 2);
+                        doc.text(header, centerX, currentY + 8);
                     });
                     
-                    yPosition += analysisCellHeight;
-                }
+                    return currentY + analysisCellHeight;
+                };
+                
+                // Datos de análisis - Verificar espacio antes de dibujar encabezados
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                
+                let headersDrawn = false;
+                
+                capacityAnalysis.forEach((analysis, index) => {
+                    // Verificar espacio disponible en la página actual
+                    const pageHeight = doc.internal.pageSize.height;
+                    const footerSpace = 60; // Espacio optimizado para el footer
+                    const availableSpace = pageHeight - yPosition - footerSpace;
+                    
+                    // Calcular cuántas filas más pueden caber
+                    const remainingRows = Math.floor(availableSpace / analysisCellHeight);
+                    
+                    // Solo crear nueva página si quedan menos de 2 filas disponibles
+                    // Esto permite mostrar al menos 2-3 eventos por página
+                    if (remainingRows < 2) {
+                        doc.addPage('landscape');
+                        yPosition = 20;
+                        headersDrawn = false; // Resetear flag para nueva página
+                    }
+                    
+                    // Dibujar encabezados solo si no se han dibujado en esta página
+                    if (!headersDrawn) {
+                        yPosition = drawAnalysisHeaders(yPosition);
+                        headersDrawn = true;
+                    }
                 
                 // Alternar colores de fila
                 if (index % 2 === 0) {
@@ -802,8 +821,9 @@ const EventsManagement: React.FC = () => {
                     doc.text(truncatedText, analysisColPositions[colIndex] + 4, yPosition + 8);
                 });
                 
-                yPosition += analysisCellHeight;
-            });
+                    yPosition += analysisCellHeight;
+                });
+            }
             
             yPosition += 30;
             
@@ -872,7 +892,6 @@ const EventsManagement: React.FC = () => {
             const recommendations = [
                 `• Si la utilización promedio es menor al 50%, considera reducir la capacidad de futuros eventos`,
                 `• Enfócate en la categoría "${mostPopularCategory}" que es la más exitosa`,
-                `• Planifica ${upcomingEventsCount} eventos próximos con anticipación`,
                 `• Considera estrategias de marketing para aumentar la asistencia`,
                 `• Revisa eventos con baja utilización para identificar problemas`
             ];
