@@ -30,6 +30,10 @@ class UserService {
   async updateUserProfile(userId: number, profileData: { first_name: string; last_name: string; email: string; profile_image?: string }) {
     return this.userModel.updateProfile(userId, profileData);
   }
+
+  async deleteUser(userId: number) {
+    return this.userModel.delete(userId);
+  }
 }
 
 export const userService = new UserService(userRepository);

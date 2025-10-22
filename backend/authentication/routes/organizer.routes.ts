@@ -21,4 +21,7 @@ router.put("/event-preferences", organizerController.updateEventPreferences.bind
 router.post("/profile-image", profileUpload.single('profileImage'), organizerController.updateProfileImage.bind(organizerController));
 router.delete("/profile-image", organizerController.deleteProfileImage.bind(organizerController));
 
+// Ruta para eliminar cuenta propia
+router.delete("/account", organizerController.deleteMyAccount.bind(organizerController));
+
 export default router;
