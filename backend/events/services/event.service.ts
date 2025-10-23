@@ -1,5 +1,5 @@
 import { CreateEventDto, EventEntity, UpdateEventDto } from "events/models/event.interface";
-import { EventRepository, eventRepository } from "events/repositories/event.repository";
+import { EventRepository, EventFilters, eventRepository } from "events/repositories/event.repository";
 
 export class EventService {
   constructor(private repo: EventRepository) {}
@@ -10,6 +10,13 @@ export class EventService {
       events.map(async (e) => ({ ...e, attendees: await this.repo.countRegistrations(e.event_id) }))
     );
     return withCounts;
+  }
+
+  /**
+   * Listar eventos con filtros avanzados
+   */
+  async listWithFilters(filters: EventFilters): Promise<any[]> {
+    return await this.repo.findAllWithFilters(filters);
   }
 
   async getById(eventId: number): Promise<(EventEntity & { attendees: number }) | null> {
