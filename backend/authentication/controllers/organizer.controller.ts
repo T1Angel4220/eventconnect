@@ -63,9 +63,12 @@ export class OrganizerController {
         });
       }
 
+      // Normalizar email a minúsculas
+      const normalizedEmail = email.trim().toLowerCase();
+
       // Validar formato de email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      if (!emailRegex.test(normalizedEmail)) {
         return res.status(400).json({
           success: false,
           message: 'Formato de email inválido'
@@ -73,7 +76,7 @@ export class OrganizerController {
       }
 
       // Verificar si el email ya existe en otro usuario
-      const existingUser = await userService.getUserByEmail(email);
+      const existingUser = await userService.getUserByEmail(normalizedEmail);
       if (existingUser && existingUser.user_id !== userId) {
         return res.status(400).json({
           success: false,
@@ -85,7 +88,7 @@ export class OrganizerController {
       const updatedUser = await userService.updateUserProfile(userId, {
         first_name,
         last_name,
-        email
+        email: normalizedEmail
       });
 
       if (!updatedUser) {

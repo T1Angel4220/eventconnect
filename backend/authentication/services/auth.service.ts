@@ -16,7 +16,10 @@ class AuthService {
       throw new Error("Todos los campos son requeridos");
     }
 
-    if (!validateEmail(email)) {
+    // Normalizar email a minúsculas
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!validateEmail(normalizedEmail)) {
       throw new Error("El formato del correo es incorrecto");
     }
 
@@ -24,7 +27,7 @@ class AuthService {
       throw new Error("La contraseña debe tener al menos 6 caracteres.");
     }
 
-    const existingUser = await this.userService.getUserByEmail(email);
+    const existingUser = await this.userService.getUserByEmail(normalizedEmail);
 
     if (existingUser) {
       throw new Error("El correo ya esta en uso");
@@ -35,9 +38,9 @@ class AuthService {
     const userDataToCreate: UserData = {
       firstName,
       lastName,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
-      role: role || "organizer", // Por defecto es organizer
+      role: role || "organizer", // Por defecto es organizer si no se especifica
     };
 
     const newUser = await this.userService.createUser(userDataToCreate);
@@ -60,7 +63,10 @@ class AuthService {
       throw new Error("Correo y contraseña requerido");
     }
 
-    const user = await this.userService.getUserByEmail(email);
+    // Normalizar email a minúsculas
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await this.userService.getUserByEmail(normalizedEmail);
 
     if (!user) {
       throw new Error("El correo no existe");

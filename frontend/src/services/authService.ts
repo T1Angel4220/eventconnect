@@ -22,10 +22,18 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || 'Error en el login');
+        throw new Error(error.message || error.error || 'Error en el login');
     }
 
-    return res.json();
+    const data = await res.json();
+    
+    // Transformar la respuesta del backend al formato esperado por el frontend
+    return {
+        token: data.token,
+        role: data.user.role,
+        firstName: data.user.first_name,
+        userId: data.user.user_id
+    };
 };
 
 export const registerUser = async (firstName: string, lastName: string, email: string, password: string): Promise<RegisterResponse> => {
@@ -37,10 +45,19 @@ export const registerUser = async (firstName: string, lastName: string, email: s
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || error.message || 'Error en el registro');
+        throw new Error(error.message || error.error || 'Error en el registro');
     }
 
-    return res.json();
+    const data = await res.json();
+    
+    // Transformar la respuesta del backend al formato esperado por el frontend
+    return {
+        message: data.message,
+        token: data.token,
+        role: data.user.role,
+        firstName: data.user.first_name,
+        userId: data.user.user_id
+    };
 };
 
 export interface ForgotPasswordResponse {
@@ -66,7 +83,7 @@ export const forgotPassword = async (email: string): Promise<ForgotPasswordRespo
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || error.message || 'Error solicitando recuperación');
+        throw new Error(error.message || error.error || 'Error solicitando recuperación');
     }
 
     return res.json();
@@ -81,7 +98,7 @@ export const verifyResetCode = async (userId: number, code: string): Promise<Ver
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || error.message || 'Error verificando código');
+        throw new Error(error.message || error.error || 'Error verificando código');
     }
 
     return res.json();
@@ -96,7 +113,7 @@ export const resetPassword = async (resetId: number, newPassword: string): Promi
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || error.message || 'Error actualizando contraseña');
+        throw new Error(error.message || error.error || 'Error actualizando contraseña');
     }
 
     return res.json();

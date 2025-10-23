@@ -30,11 +30,14 @@ class PasswordService {
       throw new Error("El correo es requerido");
     }
 
-    if (!validateEmail(email)) {
+    // Normalizar email a minúsculas
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!validateEmail(normalizedEmail)) {
       throw new Error("Formato de correo invalido");
     }
 
-    const user = await this.userService.getUserByEmail(email);
+    const user = await this.userService.getUserByEmail(normalizedEmail);
 
     if (!user) {
       throw new Error("El usuario con ese correo no existe");
