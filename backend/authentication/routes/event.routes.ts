@@ -2,6 +2,7 @@ import { Router } from "express";
 import { eventController } from "authentication/controllers/event.controller";
 import authMiddleware from "authentication/middlewares/auth.middleware";
 import upload from "../../middleware/upload";
+import { listEvents } from "events/controllers/event.controller";
 
 const router = Router();
 
@@ -10,7 +11,8 @@ router.use(authMiddleware);
 
 // Rutas de eventos
 router.post('/', upload.single('event_image'), eventController.createEvent.bind(eventController));
-router.get('/', eventController.getAllEvents.bind(eventController));
+// RUTA PRINCIPAL CON FILTROS AVANZADOS
+router.get('/', listEvents);
 router.get('/with-organizer', eventController.getEventsWithOrganizer.bind(eventController));
 router.get('/upcoming', eventController.getUpcomingEvents.bind(eventController));
 router.get('/active', eventController.getActiveEvents.bind(eventController));

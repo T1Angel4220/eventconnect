@@ -56,10 +56,31 @@ class UserRepository {
 
   async updateProfile(userId: number, profileData: { first_name: string; last_name: string; email: string; profile_image?: string }): Promise<UserRow | undefined> {
     try {
-      const res = await pool.query(
-        "UPDATE users SET first_name = $1, last_name = $2, email = $3, profile_image = $4 WHERE user_id = $5 RETURNING user_id, first_name, last_name, email, role, profile_image, created_at",
-        [profileData.first_name, profileData.last_name, profileData.email, profileData.profile_image || null, userId]
-      );
+      // Construir query dinámicamente para actualizar solo los campos proporcionados
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramIndex = 1;
+
+      updates.push(`first_name = $${paramIndex++}`);
+      values.push(profileData.first_name);
+
+      updates.push(`last_name = $${paramIndex++}`);
+      values.push(profileData.last_name);
+
+      updates.push(`email = $${paramIndex++}`);
+      values.push(profileData.email);
+
+      // Solo actualizar profile_image si se proporciona explícitamente
+      if (profileData.profile_image !== undefined) {
+        updates.push(`profile_image = $${paramIndex++}`);
+        values.push(profileData.profile_image || null);
+      }
+
+      values.push(userId);
+
+      const query = `UPDATE users SET ${updates.join(', ')} WHERE user_id = $${paramIndex} RETURNING user_id, first_name, last_name, email, role, profile_image, created_at`;
+      
+      const res = await pool.query(query, values);
       return res.rows[0] as UserRow;
     } catch (error) {
       console.error("Error updating user profile:", error);

@@ -1,9 +1,65 @@
 import { Request, Response } from "express";
 import { eventService } from "events/services/event.service";
+import { EventFilters } from "events/repositories/event.repository";
 
-export const listEvents = async (_req: Request, res: Response) => {
-  const events = await eventService.list();
-  res.json(events);
+export const listEvents = async (req: Request, res: Response) => {
+  try {
+    console.log('📥 Query params recibidos:', req.query);
+    
+    // Construir filtros desde query params
+    const filters: EventFilters = {};
+
+    // Filtros de fecha
+    if (req.query.dateRange) {
+      filters.dateRange = req.query.dateRange as any;
+      console.log('📅 dateRange recibido:', req.query.dateRange);
+    }
+    if (req.query.startDate) {
+      filters.startDate = req.query.startDate as string;
+    }
+    if (req.query.endDate) {
+      filters.endDate = req.query.endDate as string;
+    }
+
+    // Filtros básicos
+    if (req.query.location) {
+      filters.location = req.query.location as string;
+    }
+    if (req.query.eventType) {
+      filters.eventType = req.query.eventType as any;
+    }
+    if (req.query.status) {
+      filters.status = req.query.status as any;
+    }
+
+    // Ordenamiento
+    if (req.query.sortBy) {
+      filters.sortBy = req.query.sortBy as any;
+    }
+    if (req.query.sortOrder) {
+      filters.sortOrder = req.query.sortOrder as any;
+    }
+
+    console.log('🔍 Filtros procesados:', JSON.stringify(filters, null, 2));
+
+    const events = await eventService.listWithFilters(filters);
+    
+    console.log(`✅ Retornando ${events.length} eventos`);
+    
+    res.json({
+      success: true,
+      data: events,
+      filters: filters,
+      count: events.length
+    });
+  } catch (error) {
+    console.error('❌ Error al listar eventos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener eventos',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 };
 
 export const getEvent = async (req: Request, res: Response) => {

@@ -423,6 +423,81 @@ export class OrganizerController {
       });
     }
   }
+
+  // Eliminar cuenta propia
+  async deleteMyAccount(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+      }
+
+      const { password } = req.body;
+
+      // Validar que se proporcione la contraseña
+      if (!password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Debes proporcionar tu contraseña para confirmar la eliminación'
+        });
+      }
+
+      // Obtener información del usuario actual
+      const user = await userService.getUserById(userId);
+      if (!user || !user.password) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado'
+        });
+      }
+
+      // Verificar contraseña
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({
+          success: false,
+          message: 'Contraseña incorrecta'
+        });
+      }
+
+      // Eliminar imagen de perfil del servidor si existe
+      if (user.profile_image) {
+        const imagePath = path.join(__dirname, '../../uploads/profiles', path.basename(user.profile_image));
+        if (fs.existsSync(imagePath)) {
+          try {
+            fs.unlinkSync(imagePath);
+          } catch (error) {
+            console.error('Error deleting profile image file:', error);
+          }
+        }
+      }
+
+      // Eliminar cuenta (esto también eliminará eventos e inscripciones por CASCADE)
+      const deleted = await userService.deleteUser(userId);
+      
+      if (deleted) {
+        return res.status(200).json({
+          success: true,
+          message: 'Tu cuenta ha sido eliminada exitosamente'
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Error al eliminar la cuenta'
+        });
+      }
+
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+      });
+    }
+  }
 }
 
 export const organizerController = new OrganizerController();
