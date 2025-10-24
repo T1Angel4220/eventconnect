@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { registrationController } from "authentication/controllers/registration.controller";
-import authMiddleware from "authentication/middlewares/auth.middleware";
+import { registrationController } from "../controllers/registration.controller";
+import authMiddleware from "../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -32,8 +32,14 @@ router.get('/event/:eventId', registrationController.getEventRegistrations.bind(
 // GET /api/registrations/event/:eventId/capacity - Obtener información de capacidad de un evento
 router.get('/event/:eventId/capacity', registrationController.getEventCapacity.bind(registrationController));
 
+// GET /api/registrations/check/:eventId - Verificar si el usuario está inscrito en un evento
+router.get('/check/:eventId', registrationController.checkUserRegistration.bind(registrationController));
+
 // GET /api/registrations/:id - Obtener inscripción por ID
 router.get('/:id', registrationController.getRegistrationById.bind(registrationController));
+
+// PUT /api/registrations/:id/cancel - Cancelar inscripción (usuario puede cancelar su propia inscripción)
+router.put('/:id/cancel', registrationController.cancelRegistration.bind(registrationController));
 
 // DELETE /api/registrations/:id - Eliminar inscripción completamente (solo admin)
 // Solo para casos excepcionales (duplicados, errores técnicos)

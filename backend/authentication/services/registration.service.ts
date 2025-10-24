@@ -15,8 +15,22 @@ export class RegistrationService {
     try {
       // Verificar si el usuario ya está inscrito en el evento
       const existingRegistration = await registrationRepository.findByUserAndEvent(userId, registrationData.event_id);
-      if (existingRegistration) {
+      
+      // Si ya existe una inscripción ACTIVA, no permitir duplicados
+      if (existingRegistration && existingRegistration.status === 'registered') {
         throw new Error('El usuario ya está inscrito en este evento');
+      }
+
+      // Si existe una inscripción CANCELADA, reactivarla en lugar de crear una nueva
+      if (existingRegistration && existingRegistration.status === 'canceled') {
+        const statusPayload: UpdateRegistrationStatusPayload = {
+          status: 'registered'
+        };
+        const reactivated = await registrationRepository.updateStatus(existingRegistration.registration_id, statusPayload);
+        if (!reactivated) {
+          throw new Error('No se pudo reactivar la inscripción');
+        }
+        return reactivated;
       }
 
       // Verificar capacidad del evento
@@ -46,6 +60,19 @@ export class RegistrationService {
     } catch (error) {
       console.error('Error getting registration by ID:', error);
       throw new Error('Failed to get registration');
+    }
+  }
+
+  // Cancelar una inscripción (cambiar status a 'canceled')
+  async cancelRegistration(registrationId: number): Promise<RegistrationRow | null> {
+    try {
+      const statusPayload: UpdateRegistrationStatusPayload = {
+        status: 'canceled'
+      };
+      return await registrationRepository.updateStatus(registrationId, statusPayload);
+    } catch (error) {
+      console.error('Error canceling registration:', error);
+      throw new Error('Failed to cancel registration');
     }
   }
 
@@ -117,7 +144,10 @@ export class RegistrationService {
     try {
       // Verificar si ya está inscrito
       const existingRegistration = await registrationRepository.findByUserAndEvent(userId, eventId);
-      if (existingRegistration) {
+      
+      // Solo bloquear si la inscripción está ACTIVA (registered)
+      // Si está CANCELADA, permitir re-inscripción
+      if (existingRegistration && existingRegistration.status === 'registered') {
         return { 
           canRegister: false, 
           reason: 'El usuario ya está inscrito en este evento' 
@@ -152,6 +182,34 @@ export class RegistrationService {
     } catch (error) {
       console.error('Error getting event capacity info:', error);
       throw new Error('Failed to get event capacity information');
+    }
+  }
+
+  // Verificar si el usuario está inscrito en un evento específico
+  async checkUserRegistration(userId: number, eventId: number): Promise<{
+    isRegistered: boolean;
+    status?: 'registered' | 'canceled';
+    registrationId?: number;
+    registeredAt?: Date;
+  }> {
+    try {
+      const registration = await registrationRepository.findByUserAndEvent(userId, eventId);
+      
+      if (!registration) {
+        return { isRegistered: false };
+      }
+
+      // Solo considerar como "inscrito" si el status es 'registered'
+      // Si está 'canceled', considerarlo como no inscrito
+      return {
+        isRegistered: registration.status === 'registered',
+        status: registration.status,
+        registrationId: registration.registration_id,
+        registeredAt: new Date(registration.registered_at)
+      };
+    } catch (error) {
+      console.error('Error checking user registration:', error);
+      throw new Error('Failed to check user registration status');
     }
   }
 

@@ -211,6 +211,7 @@ class EventRepositoryImpl implements EventRepository {
         WHERE status = 'registered'
         GROUP BY event_id
       ) r ON e.event_id = r.event_id
+      WHERE e.status != 'completed'
       ORDER BY e.created_at DESC
     `;
     

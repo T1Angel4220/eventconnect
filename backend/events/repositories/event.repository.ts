@@ -53,6 +53,13 @@ export class EventRepository {
       const values: any[] = [];
       let paramIndex = 1;
 
+      // FILTRO PREDETERMINADO: Excluir eventos completados SIEMPRE (a menos que se solicite explícitamente)
+      // Esto asegura que el dashboard NUNCA muestre eventos finalizados para inscribirse
+      if (!filters.status || filters.status !== 'completed') {
+        query += ` AND e.status != 'completed'`;
+        console.log('🚫 Excluyendo eventos completados del dashboard');
+      }
+
       // Filtro de rango de fechas
       if (filters.dateRange) {
         const now = new Date();

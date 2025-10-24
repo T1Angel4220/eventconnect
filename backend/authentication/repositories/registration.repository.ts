@@ -1,11 +1,11 @@
-import pool from "config/db";
+import pool from "../../config/db";
 import { 
   RegistrationData, 
   RegistrationRow, 
   RegistrationWithDetails, 
   RegistrationStats,
   UpdateRegistrationStatusPayload 
-} from "authentication/models/registration.interface";
+} from "../models/registration.interface";
 
 export interface RegistrationRepository {
   create(registration: RegistrationData): Promise<RegistrationRow>;
@@ -22,7 +22,7 @@ export interface RegistrationRepository {
   getRegistrationsByUser(userId: number): Promise<RegistrationWithDetails[]>;
   getRegistrationsByOrganizer(organizerId: number): Promise<RegistrationWithDetails[]>;
   checkEventCapacity(eventId: number): Promise<{ current: number; capacity: number }>;
-  getTopUsers(limit: number): Promise<Array<{ user_id: number; user_name: string; events_attended: number; favorite_category: string; join_date: string }>>;
+  getTopUsers(limit: number): Promise<{ user_id: number; user_name: string; events_attended: number; favorite_category: string; join_date: string }[]>;
   getRecentRegistrations(limit: number): Promise<RegistrationWithDetails[]>;
 }
 
@@ -73,13 +73,15 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
         e.location as event_location,
         e.event_type,
         e.capacity as event_capacity,
+        e.event_image,
+        e.duration,
         e.organizer_id,
         CONCAT(org.first_name, ' ', org.last_name) as organizer_name
       FROM registrations r
       JOIN users u ON r.user_id = u.user_id
       JOIN events e ON r.event_id = e.event_id
       JOIN users org ON e.organizer_id = org.user_id
-      WHERE r.user_id = $1
+      WHERE r.user_id = $1 AND r.status = 'registered'
       ORDER BY r.registered_at DESC
     `;
     
@@ -101,6 +103,8 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
         e.location as event_location,
         e.event_type,
         e.capacity as event_capacity,
+        e.event_image,
+        e.duration,
         e.organizer_id,
         CONCAT(org.first_name, ' ', org.last_name) as organizer_name
       FROM registrations r
@@ -256,6 +260,8 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
         e.location as event_location,
         e.event_type,
         e.capacity as event_capacity,
+        e.event_image,
+        e.duration,
         e.organizer_id,
         CONCAT(org.first_name, ' ', org.last_name) as organizer_name
       FROM registrations r
@@ -288,6 +294,8 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
         e.location as event_location,
         e.event_type,
         e.capacity as event_capacity,
+        e.event_image,
+        e.duration,
         e.organizer_id,
         CONCAT(org.first_name, ' ', org.last_name) as organizer_name
       FROM registrations r
@@ -329,7 +337,7 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
   }
 
   // Obtener usuarios más activos (con más inscripciones)
-  async getTopUsers(limit: number = 10): Promise<Array<{ user_id: number; user_name: string; events_attended: number; favorite_category: string; join_date: string }>> {
+  async getTopUsers(limit: number = 10): Promise<{ user_id: number; user_name: string; events_attended: number; favorite_category: string; join_date: string }[]> {
     const query = `
       SELECT 
         u.user_id,
@@ -382,6 +390,8 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
         e.location as event_location,
         e.event_type,
         e.capacity as event_capacity,
+        e.event_image,
+        e.duration,
         o.first_name || ' ' || o.last_name as organizer_name,
         o.user_id as organizer_id
       FROM registrations r
@@ -408,6 +418,8 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
       event_location: row.event_location,
       event_type: row.event_type,
       event_capacity: row.event_capacity,
+      event_image: row.event_image,
+      duration: row.duration,
       organizer_name: row.organizer_name,
       organizer_id: row.organizer_id
     }));
@@ -425,7 +437,7 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
     }
   }
 
-  async getRegistrationsByMonth(months: number = 6): Promise<Array<{ month: string; year: number; registrations: number }>> {
+  async getRegistrationsByMonth(months: number = 6): Promise<{ month: string; year: number; registrations: number }[]> {
     try {
       const query = `
         SELECT 

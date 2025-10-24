@@ -6,7 +6,7 @@ export interface EventData {
   duration: number; // Duration in minutes
   status?: 'upcoming' | 'in_progress' | 'completed';
   location?: string;
-  event_type: 'academic' | 'cultural' | 'sports';
+  event_type: 'academico' | 'cultural' | 'deportivo';
   capacity: number;
   organizer_id: number;
   event_image: string; // URL o path de la imagen del evento (OBLIGATORIA)
@@ -22,7 +22,7 @@ export interface EventRow {
   duration: number; // Duration in minutes
   status: 'upcoming' | 'in_progress' | 'completed';
   location: string | null;
-  event_type: 'academic' | 'cultural' | 'sports';
+  event_type: 'academico' | 'cultural' | 'deportivo';
   capacity: number;
   organizer_id: number;
   event_image: string; // URL o path de la imagen del evento

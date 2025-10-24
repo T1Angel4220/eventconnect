@@ -23,7 +23,7 @@ event_date TIMESTAMP NOT NULL,
 duration INT CHECK (duration > 0) NOT NULL, -- Duration in minutes
 status VARCHAR(50) CHECK (status IN ('upcoming', 'in_progress', 'completed')) DEFAULT 'upcoming',
 location VARCHAR(200),
-event_type VARCHAR(50) CHECK (event_type IN ('academic', 'cultural', 'sports')) NOT NULL,
+event_type VARCHAR(50) CHECK (event_type IN ('academico', 'cultural', 'deportivo')) NOT NULL,
 capacity INT CHECK (capacity > 0),
 organizer_id INT NOT NULL,
 event_image TEXT NOT NULL, -- URL o path de la imagen del evento (OBLIGATORIA) - TEXT para soportar base64
