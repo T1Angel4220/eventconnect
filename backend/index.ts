@@ -1,15 +1,19 @@
 import cors from "cors";
 import express, { Application } from "express";
 import path from "path";
-import env from "./config/env";
 import pool from "./config/db";
-import authRouter from "authentication/routes/auth.routes";
-import passwordRouter from "authentication/routes/password.routes";
-import dashboardRouter from "authentication/routes/dashboard.routes";
-import eventRouter from "authentication/routes/event.routes";
-import registrationRouter from "authentication/routes/registration.routes";
-import organizerRouter from "authentication/routes/organizer.routes";
+import env from "./config/env";
+
+// Routes
+
 import adminRouter from "authentication/routes/admin.routes";
+import authRouter from "authentication/routes/auth.routes";
+import dashboardRouter from "authentication/routes/dashboard.routes";
+// import eventRouter from "authentication/routes/event.routes";
+import eventRouter from "events/routes/event.routes";
+import organizerRouter from "authentication/routes/organizer.routes";
+import passwordRouter from "authentication/routes/password.routes";
+import registrationRouter from "authentication/routes/registration.routes";
 import tokenRouter from "tokens/routes/token.routes";
 
 const app: Application = express();

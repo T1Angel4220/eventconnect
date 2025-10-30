@@ -1,112 +1,129 @@
-import { CreateEventDto, EventEntity, UpdateEventDto } from "events/models/event.interface";
-import { EventRepository, EventFilters, eventRepository } from "events/repositories/event.repository";
+import {
+  EventData,
+  EventRow,
+  EventWithOrganizer,
+} from "events/models/event.interface";
+import { EventFilters } from "events/models/filters.interface";
+import { eventRepository } from "events/repositories/event.repository";
 
 export class EventService {
-  constructor(private repo: EventRepository) {}
+  listWithFilters = async (filters: EventFilters): Promise<any[]> => {
+    return await eventRepository.findAllWithFilters(filters);
+  };
 
-  async list(): Promise<(EventEntity & { attendees: number })[]> {
-    const events = await this.repo.findAll();
-    const withCounts = await Promise.all(
-      events.map(async (e) => ({ ...e, attendees: await this.repo.countRegistrations(e.event_id) }))
-    );
-    return withCounts;
+  createEvent = async (eventData: EventData): Promise<EventRow> => {
+    try {
+      console.log(
+        "📝 Servicio: Creando evento con datos:",
+        JSON.stringify(eventData, null, 2),
+      );
+      const result = await eventRepository.create(eventData);
+      console.log("✅ Servicio: Evento creado exitosamente:", result.event_id);
+      return result;
+    } catch (error) {
+      console.error("❌ Servicio: Error creating event:", error);
+      console.error(
+        "📊 Stack trace:",
+        error instanceof Error ? error.stack : "No stack trace",
+      );
+      throw new Error("Failed to create event");
+    }
+  };
+
+  async getEventById(eventId: number): Promise<EventRow | null> {
+    try {
+      return await eventRepository.findById(eventId);
+    } catch (error) {
+      console.error("Error getting event by ID:", error);
+      throw new Error("Failed to get event");
+    }
   }
 
-  /**
-   * Listar eventos con filtros avanzados
-   */
-  async listWithFilters(filters: EventFilters): Promise<any[]> {
-    return await this.repo.findAllWithFilters(filters);
+  async getAllEvents(): Promise<EventRow[]> {
+    try {
+      return await eventRepository.findAll();
+    } catch (error) {
+      console.error("Error getting all events:", error);
+      throw new Error("Failed to get events");
+    }
   }
 
-  async getById(eventId: number): Promise<(EventEntity & { attendees: number }) | null> {
-    const event = await this.repo.findById(eventId);
-    if (!event) return null;
-    const attendees = await this.repo.countRegistrations(eventId);
-    return { ...event, attendees };
+  async getEventsByOrganizer(
+    organizerId: number,
+  ): Promise<EventWithOrganizer[]> {
+    try {
+      return await eventRepository.findByOrganizer(organizerId);
+    } catch (error) {
+      console.error("Error getting events by organizer:", error);
+      throw new Error("Failed to get organizer events");
+    }
   }
 
-  async create(dto: CreateEventDto, organizerId: number): Promise<EventEntity> {
-    console.log("🔍 Validando datos del evento:", dto);
-    
-    // Validar campos requeridos
-    if (!dto.title) {
-      throw new Error("El título es requerido");
+  async updateEvent(
+    eventId: number,
+    eventData: Partial<EventData>,
+  ): Promise<EventRow | null> {
+    try {
+      return await eventRepository.update(eventId, eventData);
+    } catch (error) {
+      console.error("Error updating event:", error);
+      throw new Error("Failed to update event");
     }
-    if (!dto.event_date) {
-      throw new Error("La fecha del evento es requerida");
-    }
-    if (!dto.duration || dto.duration <= 0) {
-      throw new Error("La duración debe ser mayor a 0");
-    }
-    if (!dto.event_type) {
-      throw new Error("El tipo de evento es requerido");
-    }
-    if (!dto.capacity || dto.capacity <= 0) {
-      throw new Error("La capacidad debe ser mayor a 0");
-    }
-    
-    // Calcular el estado automáticamente basado en la fecha actual
-    const now = new Date();
-    const eventDateTime = new Date(dto.event_date);
-    const endDateTime = new Date(eventDateTime.getTime() + dto.duration * 60000);
-    
-    let calculatedStatus = 'upcoming';
-    if (now >= eventDateTime && now <= endDateTime) {
-      calculatedStatus = 'in_progress';
-    } else if (now > endDateTime) {
-      calculatedStatus = 'completed';
-    }
-    
-    // Agregar el estado calculado al DTO
-    const dtoWithStatus = { ...dto, status: calculatedStatus };
-    
-    console.log("✅ Validación exitosa, creando evento...");
-    return this.repo.create(dtoWithStatus, organizerId);
   }
 
-  async update(eventId: number, dto: UpdateEventDto): Promise<EventEntity | null> {
-    return this.repo.update(eventId, dto);
+  async deleteEvent(eventId: number): Promise<boolean> {
+    try {
+      return await eventRepository.delete(eventId);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      throw new Error("Failed to delete event");
+    }
   }
 
-  async remove(eventId: number): Promise<void> {
-    await this.repo.delete(eventId);
+  async getUpcomingEvents(limit: number = 10): Promise<EventWithOrganizer[]> {
+    try {
+      return await eventRepository.getUpcomingEvents(limit);
+    } catch (error) {
+      console.error("Error getting upcoming events:", error);
+      throw new Error("Failed to get upcoming events");
+    }
+  }
+
+  async getActiveEvents(): Promise<EventWithOrganizer[]> {
+    try {
+      return await eventRepository.getActiveEvents();
+    } catch (error) {
+      console.error("Error getting active events:", error);
+      throw new Error("Failed to get active events");
+    }
+  }
+
+  async getEventStats() {
+    try {
+      return await eventRepository.getStats();
+    } catch (error) {
+      console.error("Error getting event stats:", error);
+      throw new Error("Failed to get event statistics");
+    }
+  }
+
+  async getEventsWithOrganizer(): Promise<EventWithOrganizer[]> {
+    try {
+      return await eventRepository.getEventsWithOrganizer();
+    } catch (error) {
+      console.error("Error getting events with organizer:", error);
+      throw new Error("Failed to get events with organizer details");
+    }
   }
 
   async updateAllEventStatuses(): Promise<number> {
-    console.log("🔄 Iniciando actualización de estados de eventos...");
-    
-    // Obtener todos los eventos
-    const events = await this.repo.findAll();
-    console.log(`📊 Total de eventos encontrados: ${events.length}`);
-    
-    const now = new Date();
-    let updatedCount = 0;
-    
-    for (const event of events) {
-      const eventDateTime = new Date(event.event_date);
-      const endDateTime = new Date(eventDateTime.getTime() + event.duration * 60000);
-      
-      let newStatus = 'upcoming';
-      if (now >= eventDateTime && now <= endDateTime) {
-        newStatus = 'in_progress';
-      } else if (now > endDateTime) {
-        newStatus = 'completed';
-      }
-      
-      // Solo actualizar si el estado ha cambiado
-      if (event.status !== newStatus) {
-        console.log(`🔄 Actualizando evento ${event.event_id}: ${event.status} -> ${newStatus}`);
-        await this.repo.updateStatus(event.event_id, newStatus);
-        updatedCount++;
-      }
+    try {
+      return await eventRepository.updateAllEventStatuses();
+    } catch (error) {
+      console.error("Error updating event statuses:", error);
+      throw new Error("Failed to update event statuses");
     }
-    
-    console.log(`✅ Actualización completada. ${updatedCount} eventos actualizados.`);
-    return updatedCount;
   }
 }
 
-export const eventService = new EventService(eventRepository);
-
-
+export const eventService = new EventService();
