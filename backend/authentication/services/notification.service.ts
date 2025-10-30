@@ -1,5 +1,4 @@
-import Expo from "expo-server-sdk";
-import { ExpoPushMessage } from "expo-server-sdk";
+import Expo, { ExpoPushMessage } from "expo-server-sdk";
 import { tokenService } from "tokens/services/token.service";
 
 export class NotificationService {
@@ -88,7 +87,7 @@ export class NotificationService {
         messages.push({
           to: pushToken.token,
           sound: "default",
-          title: "🎉 Nuevo Evento Disponible",
+          title: "Nuevo Evento Disponible",
           body: `${organizerName} ha creado el evento "${eventTitle}". ¡No te lo pierdas!`,
           data: {
             type: "event_created",
@@ -126,7 +125,7 @@ export class NotificationService {
         messages.push({
           to: pushToken.token,
           sound: "default",
-          title: "📅 Evento Cancelado",
+          title: "Evento Cancelado",
           body: `El evento "${eventTitle}" de ${organizerName} ha sido cancelado.`,
           data: {
             type: "event_deleted",
@@ -170,7 +169,7 @@ export class NotificationService {
         messages.push({
           to: pushToken.token,
           sound: "default",
-          title: "📝 Evento Actualizado",
+          title: "Evento Actualizado",
           body: `El evento "${eventTitle}" de ${organizerName} ha sido actualizado.`,
           data: {
             type: "event_updated",
@@ -250,4 +249,3 @@ export class NotificationService {
 }
 
 export const notificationService = new NotificationService();
-

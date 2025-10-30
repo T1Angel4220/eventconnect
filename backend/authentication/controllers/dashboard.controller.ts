@@ -7,14 +7,14 @@ export class DashboardController {
       const stats = await dashboardService.getDashboardStats();
       res.json({
         success: true,
-        data: stats
+        data: stats,
       });
     } catch (error) {
-      console.error('Error in getDashboardStats:', error);
+      console.error("Error in getDashboardStats:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting dashboard statistics',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting dashboard statistics",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -23,21 +23,23 @@ export class DashboardController {
     try {
       const userId = req.user?.userId;
       const userRole = req.user?.role;
-      
+
       // Para organizadores, filtrar estadísticas por organizador
-      const organizerId = userRole === 'organizer' && userId ? userId : undefined;
-      const stats = await dashboardService.getDashboardStatsWithGrowth(organizerId);
-      
+      const organizerId =
+        userRole === "organizer" && userId ? userId : undefined;
+      const stats =
+        await dashboardService.getDashboardStatsWithGrowth(organizerId);
+
       res.json({
         success: true,
-        data: stats
+        data: stats,
       });
     } catch (error) {
-      console.error('Error in getDashboardStatsWithGrowth:', error);
+      console.error("Error in getDashboardStatsWithGrowth:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting dashboard statistics with growth',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting dashboard statistics with growth",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -47,22 +49,23 @@ export class DashboardController {
       const limit = parseInt(req.query.limit as string) || 10;
       const userId = req.user?.userId;
       const userRole = req.user?.role;
-      
+
       // Para organizadores, filtrar solo sus eventos
-      const events = userRole === 'organizer' && userId
-        ? await dashboardService.getRecentEventsByOrganizer(userId, limit)
-        : await dashboardService.getRecentEvents(limit);
-        
+      const events =
+        userRole === "organizer" && userId
+          ? await dashboardService.getRecentEventsByOrganizer(userId, limit)
+          : await dashboardService.getRecentEvents(limit);
+
       res.json({
         success: true,
-        data: events
+        data: events,
       });
     } catch (error) {
-      console.error('Error in getRecentEvents:', error);
+      console.error("Error in getRecentEvents:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting recent events',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting recent events",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -73,14 +76,14 @@ export class DashboardController {
       const events = await dashboardService.getUpcomingEvents(limit);
       res.json({
         success: true,
-        data: events
+        data: events,
       });
     } catch (error) {
-      console.error('Error in getUpcomingEvents:', error);
+      console.error("Error in getUpcomingEvents:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting upcoming events',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting upcoming events",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -90,14 +93,14 @@ export class DashboardController {
       const events = await dashboardService.getActiveEvents();
       res.json({
         success: true,
-        data: events
+        data: events,
       });
     } catch (error) {
-      console.error('Error in getActiveEvents:', error);
+      console.error("Error in getActiveEvents:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting active events',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting active events",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -108,14 +111,14 @@ export class DashboardController {
       const users = await dashboardService.getTopUsers(limit);
       res.json({
         success: true,
-        data: users
+        data: users,
       });
     } catch (error) {
-      console.error('Error in getTopUsers:', error);
+      console.error("Error in getTopUsers:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting top users',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting top users",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -123,17 +126,18 @@ export class DashboardController {
   async getRecentRegistrations(req: Request, res: Response) {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
-      const registrations = await dashboardService.getRecentRegistrations(limit);
+      const registrations =
+        await dashboardService.getRecentRegistrations(limit);
       res.json({
         success: true,
-        data: registrations
+        data: registrations,
       });
     } catch (error) {
-      console.error('Error in getRecentRegistrations:', error);
+      console.error("Error in getRecentRegistrations:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting recent registrations',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting recent registrations",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -143,14 +147,14 @@ export class DashboardController {
       const categories = await dashboardService.getEventCategories();
       res.json({
         success: true,
-        data: categories
+        data: categories,
       });
     } catch (error) {
-      console.error('Error in getEventCategories:', error);
+      console.error("Error in getEventCategories:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting event categories',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting event categories",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -161,14 +165,14 @@ export class DashboardController {
       const data = await dashboardService.getParticipantsByMonth(months);
       res.json({
         success: true,
-        data: data
+        data: data,
       });
     } catch (error) {
-      console.error('Error in getParticipantsByMonth:', error);
+      console.error("Error in getParticipantsByMonth:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting participants by month data',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting participants by month data",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -179,21 +183,21 @@ export class DashboardController {
       if (isNaN(userId)) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid user ID'
+          message: "Invalid user ID",
         });
       }
 
       const notifications = await dashboardService.getUserNotifications(userId);
       res.json({
         success: true,
-        data: notifications
+        data: notifications,
       });
     } catch (error) {
-      console.error('Error in getUserNotifications:', error);
+      console.error("Error in getUserNotifications:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting user notifications',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting user notifications",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -204,21 +208,21 @@ export class DashboardController {
       if (isNaN(userId)) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid user ID'
+          message: "Invalid user ID",
         });
       }
 
       const count = await dashboardService.getUnreadNotificationCount(userId);
       res.json({
         success: true,
-        data: { unread_count: count }
+        data: { unread_count: count },
       });
     } catch (error) {
-      console.error('Error in getUnreadNotificationCount:', error);
+      console.error("Error in getUnreadNotificationCount:", error);
       res.status(500).json({
         success: false,
-        message: 'Error getting unread notification count',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error getting unread notification count",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }

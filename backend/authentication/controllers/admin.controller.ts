@@ -1,42 +1,41 @@
-import { Request, Response } from "express";
-import { userRepository } from "authentication/repositories/user.repository";
-import { eventRepository } from "authentication/repositories/event.repository";
-import { registrationRepository } from "authentication/repositories/registration.repository";
 import { notificationRepository } from "authentication/repositories/notification.repository";
+import { registrationRepository } from "authentication/repositories/registration.repository";
+import { userRepository } from "authentication/repositories/user.repository";
+import { eventRepository } from "events/repositories/event.repository";
+import { Request, Response } from "express";
 
 export class AdminController {
-  
   // === GESTIÓN DE USUARIOS ===
-  
+
   /**
    * Obtener todos los usuarios del sistema (solo admin)
    */
   async getAllUsers(req: Request, res: Response) {
     try {
       const users = await userRepository.findAll();
-      
+
       // Remover información sensible
-      const safeUsers = users.map(user => ({
+      const safeUsers = users.map((user) => ({
         user_id: user.user_id,
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
         role: user.role,
         profile_image: user.profile_image,
-        created_at: user.created_at
+        created_at: user.created_at,
       }));
 
       res.json({
         success: true,
         data: safeUsers,
-        message: 'Usuarios obtenidos exitosamente'
+        message: "Usuarios obtenidos exitosamente",
       });
     } catch (error) {
-      console.error('Error getting all users:', error);
+      console.error("Error getting all users:", error);
       res.status(500).json({
         success: false,
-        message: 'Error obteniendo usuarios',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error obteniendo usuarios",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -53,7 +52,7 @@ export class AdminController {
       if (parseInt(userId) === currentAdminId) {
         return res.status(400).json({
           success: false,
-          message: 'No puedes eliminarte a ti mismo'
+          message: "No puedes eliminarte a ti mismo",
         });
       }
 
@@ -61,30 +60,30 @@ export class AdminController {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'Usuario no encontrado'
+          message: "Usuario no encontrado",
         });
       }
 
       // Eliminar usuario (esto también eliminará sus eventos e inscripciones por CASCADE)
       const deleted = await userRepository.delete(parseInt(userId));
-      
+
       if (deleted) {
         res.json({
           success: true,
-          message: `Usuario ${user.first_name} ${user.last_name} eliminado exitosamente`
+          message: `Usuario ${user.first_name} ${user.last_name} eliminado exitosamente`,
         });
       } else {
         res.status(500).json({
           success: false,
-          message: 'Error eliminando usuario'
+          message: "Error eliminando usuario",
         });
       }
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error("Error deleting user:", error);
       res.status(500).json({
         success: false,
-        message: 'Error eliminando usuario',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error eliminando usuario",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -102,16 +101,16 @@ export class AdminController {
       if (parseInt(userId) === currentAdminId) {
         return res.status(400).json({
           success: false,
-          message: 'No puedes cambiar tu propio rol'
+          message: "No puedes cambiar tu propio rol",
         });
       }
 
       // Validar rol
-      const validRoles = ['participant', 'organizer', 'admin'];
+      const validRoles = ["participant", "organizer", "admin"];
       if (!validRoles.includes(newRole)) {
         return res.status(400).json({
           success: false,
-          message: 'Rol inválido. Roles válidos: participant, organizer, admin'
+          message: "Rol inválido. Roles válidos: participant, organizer, admin",
         });
       }
 
@@ -119,30 +118,33 @@ export class AdminController {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'Usuario no encontrado'
+          message: "Usuario no encontrado",
         });
       }
 
       // Actualizar rol
-      const updated = await userRepository.updateRole(parseInt(userId), newRole);
-      
+      const updated = await userRepository.updateRole(
+        parseInt(userId),
+        newRole,
+      );
+
       if (updated) {
         res.json({
           success: true,
-          message: `Rol de ${user.first_name} ${user.last_name} cambiado a ${newRole} exitosamente`
+          message: `Rol de ${user.first_name} ${user.last_name} cambiado a ${newRole} exitosamente`,
         });
       } else {
         res.status(500).json({
           success: false,
-          message: 'Error actualizando rol'
+          message: "Error actualizando rol",
         });
       }
     } catch (error) {
-      console.error('Error changing user role:', error);
+      console.error("Error changing user role:", error);
       res.status(500).json({
         success: false,
-        message: 'Error cambiando rol de usuario',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error cambiando rol de usuario",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -155,18 +157,18 @@ export class AdminController {
   async getAllEvents(req: Request, res: Response) {
     try {
       const events = await eventRepository.findAllWithOrganizer();
-      
+
       res.json({
         success: true,
         data: events,
-        message: 'Eventos obtenidos exitosamente'
+        message: "Eventos obtenidos exitosamente",
       });
     } catch (error) {
-      console.error('Error getting all events:', error);
+      console.error("Error getting all events:", error);
       res.status(500).json({
         success: false,
-        message: 'Error obteniendo eventos',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error obteniendo eventos",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -182,30 +184,30 @@ export class AdminController {
       if (!event) {
         return res.status(404).json({
           success: false,
-          message: 'Evento no encontrado'
+          message: "Evento no encontrado",
         });
       }
 
       // Eliminar evento (esto también eliminará las inscripciones por CASCADE)
       const deleted = await eventRepository.delete(parseInt(eventId));
-      
+
       if (deleted) {
         res.json({
           success: true,
-          message: `Evento "${event.title}" eliminado exitosamente`
+          message: `Evento "${event.title}" eliminado exitosamente`,
         });
       } else {
         res.status(500).json({
           success: false,
-          message: 'Error eliminando evento'
+          message: "Error eliminando evento",
         });
       }
     } catch (error) {
-      console.error('Error deleting event:', error);
+      console.error("Error deleting event:", error);
       res.status(500).json({
         success: false,
-        message: 'Error eliminando evento',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error eliminando evento",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -223,14 +225,14 @@ export class AdminController {
         totalRegistrations,
         usersByRole,
         eventsByType,
-        registrationsByMonth
+        registrationsByMonth,
       ] = await Promise.all([
         userRepository.countAll(),
         eventRepository.countAll(),
         registrationRepository.countAll(),
         userRepository.countByRole(),
         eventRepository.countByType(),
-        registrationRepository.getRegistrationsByMonth(6)
+        registrationRepository.getRegistrationsByMonth(6),
       ]);
 
       res.json({
@@ -241,16 +243,16 @@ export class AdminController {
           totalRegistrations,
           usersByRole,
           eventsByType,
-          registrationsByMonth
+          registrationsByMonth,
         },
-        message: 'Estadísticas del sistema obtenidas exitosamente'
+        message: "Estadísticas del sistema obtenidas exitosamente",
       });
     } catch (error) {
-      console.error('Error getting system stats:', error);
+      console.error("Error getting system stats:", error);
       res.status(500).json({
         success: false,
-        message: 'Error obteniendo estadísticas del sistema',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error obteniendo estadísticas del sistema",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -267,18 +269,18 @@ export class AdminController {
       if (!message || message.trim().length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'El mensaje es requerido'
+          message: "El mensaje es requerido",
         });
       }
 
       // Obtener todos los usuarios
       const users = await userRepository.findAll();
-      
+
       // Crear notificaciones para todos los usuarios
-      const notifications = users.map(user => ({
+      const notifications = users.map((user) => ({
         user_id: user.user_id,
         message: message.trim(),
-        status: 'pending' as const
+        status: "pending" as const,
       }));
 
       // Insertar todas las notificaciones
@@ -288,14 +290,14 @@ export class AdminController {
 
       res.json({
         success: true,
-        message: `Notificación enviada a ${users.length} usuarios exitosamente`
+        message: `Notificación enviada a ${users.length} usuarios exitosamente`,
       });
     } catch (error) {
-      console.error('Error sending global notification:', error);
+      console.error("Error sending global notification:", error);
       res.status(500).json({
         success: false,
-        message: 'Error enviando notificación global',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error enviando notificación global",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }

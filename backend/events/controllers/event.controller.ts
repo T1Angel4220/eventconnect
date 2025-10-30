@@ -1,6 +1,8 @@
 import { eventService } from "events/services/event.service";
 import { EventFilters } from "events/models/filters.interface";
 import { Request, Response } from "express";
+import { notificationService } from "authentication/services/notification.service";
+import { userRepository } from "authentication/repositories/user.repository";
 
 export class EventController {
   listEvents = async (req: Request, res: Response) => {
@@ -141,6 +143,22 @@ export class EventController {
 
       const event = await eventService.createEvent(eventDataWithOrganizer);
       console.log("✅ Evento creado exitosamente:", event.event_id);
+
+      // Send notification about the new event
+      try {
+        const organizer = await userRepository.findById(organizerId);
+        if (organizer) {
+          await notificationService.sendEventCreatedNotification(
+            event.title,
+            `${organizer.first_name} ${organizer.last_name}`
+          );
+          console.log("📱 Notificación de evento creado enviada");
+        }
+      } catch (notificationError) {
+        console.error("❌ Error enviando notificación de evento creado:", notificationError);
+        // Don't fail the event creation if notification fails
+      }
+
       res.status(201).json({
         success: true,
         data: event,
@@ -247,6 +265,21 @@ export class EventController {
         });
       }
 
+      // Send notification about the event update
+      try {
+        const organizer = await userRepository.findById(event.organizer_id);
+        if (organizer) {
+          await notificationService.sendEventUpdatedNotification(
+            event.title,
+            `${organizer.first_name} ${organizer.last_name}`
+          );
+          console.log("📱 Notificación de evento actualizado enviada");
+        }
+      } catch (notificationError) {
+        console.error("❌ Error enviando notificación de evento actualizado:", notificationError);
+        // Don't fail the update if notification fails
+      }
+
       res.json({
         success: true,
         data: event,
@@ -272,12 +305,36 @@ export class EventController {
         });
       }
 
+      // Get event details before deletion for notification
+      const eventToDelete = await eventService.getEventById(eventId);
+      if (!eventToDelete) {
+        return res.status(404).json({
+          success: false,
+          message: "Event not found",
+        });
+      }
+
       const deleted = await eventService.deleteEvent(eventId);
       if (!deleted) {
         return res.status(404).json({
           success: false,
           message: "Event not found",
         });
+      }
+
+      // Send notification about the event deletion
+      try {
+        const organizer = await userRepository.findById(eventToDelete.organizer_id);
+        if (organizer) {
+          await notificationService.sendEventDeletedNotification(
+            eventToDelete.title,
+            `${organizer.first_name} ${organizer.last_name}`
+          );
+          console.log("📱 Notificación de evento eliminado enviada");
+        }
+      } catch (notificationError) {
+        console.error("❌ Error enviando notificación de evento eliminado:", notificationError);
+        // Don't fail the deletion if notification fails
       }
 
       res.json({

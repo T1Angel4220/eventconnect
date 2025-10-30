@@ -9,7 +9,6 @@ import env from "./config/env";
 import adminRouter from "authentication/routes/admin.routes";
 import authRouter from "authentication/routes/auth.routes";
 import dashboardRouter from "authentication/routes/dashboard.routes";
-// import eventRouter from "authentication/routes/event.routes";
 import eventRouter from "events/routes/event.routes";
 import organizerRouter from "authentication/routes/organizer.routes";
 import passwordRouter from "authentication/routes/password.routes";
