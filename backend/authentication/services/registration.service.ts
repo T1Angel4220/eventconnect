@@ -7,6 +7,9 @@ import {
   CreateRegistrationPayload,
   UpdateRegistrationStatusPayload 
 } from "authentication/models/registration.interface";
+import { notificationService } from "../../notifications/services/notification.service";
+import { eventService } from "../../events/services/event.service";
+import { userService } from "./user.service";
 
 export class RegistrationService {
   
@@ -30,6 +33,26 @@ export class RegistrationService {
         if (!reactivated) {
           throw new Error('No se pudo reactivar la inscripción');
         }
+
+        // Crear notificación para el organizador sobre la reactivación
+        try {
+          const event = await eventService.getEventById(registrationData.event_id);
+          const user = await userService.getUserById(userId);
+          
+          if (event && user) {
+            const userName = `${user.first_name} ${user.last_name}`;
+            await notificationService.createRegistrationNotificationForOrganizer(
+              event.organizer_id,
+              event.title,
+              userName
+            );
+            console.log(`✅ Notificación enviada al organizador ${event.organizer_id} sobre reactivación de inscripción`);
+          }
+        } catch (notificationError) {
+          console.error('❌ Error enviando notificación al organizador:', notificationError);
+          // No fallar la reactivación si hay error en la notificación
+        }
+
         return reactivated;
       }
 
@@ -46,7 +69,28 @@ export class RegistrationService {
         status: 'registered'
       };
 
-      return await registrationRepository.create(registration);
+      const newRegistration = await registrationRepository.create(registration);
+
+      // Crear notificación para el organizador
+      try {
+        const event = await eventService.getEventById(registrationData.event_id);
+        const user = await userService.getUserById(userId);
+        
+        if (event && user) {
+          const userName = `${user.first_name} ${user.last_name}`;
+          await notificationService.createRegistrationNotificationForOrganizer(
+            event.organizer_id,
+            event.title,
+            userName
+          );
+          console.log(`✅ Notificación enviada al organizador ${event.organizer_id} sobre nueva inscripción`);
+        }
+      } catch (notificationError) {
+        console.error('❌ Error enviando notificación al organizador:', notificationError);
+        // No fallar la inscripción si hay error en la notificación
+      }
+
+      return newRegistration;
     } catch (error) {
       console.error('Error creating registration:', error);
       throw new Error('Failed to create registration');
@@ -66,10 +110,36 @@ export class RegistrationService {
   // Cancelar una inscripción (cambiar status a 'canceled')
   async cancelRegistration(registrationId: number): Promise<RegistrationRow | null> {
     try {
+      // Obtener datos de la inscripción antes de cancelarla
+      const existingRegistration = await registrationRepository.findById(registrationId);
+      
       const statusPayload: UpdateRegistrationStatusPayload = {
         status: 'canceled'
       };
-      return await registrationRepository.updateStatus(registrationId, statusPayload);
+      const canceledRegistration = await registrationRepository.updateStatus(registrationId, statusPayload);
+
+      // Crear notificación para el organizador
+      if (canceledRegistration && existingRegistration) {
+        try {
+          const event = await eventService.getEventById(existingRegistration.event_id);
+          const user = await userService.getUserById(existingRegistration.user_id);
+          
+          if (event && user) {
+            const userName = `${user.first_name} ${user.last_name}`;
+            await notificationService.createCancellationNotificationForOrganizer(
+              event.organizer_id,
+              event.title,
+              userName
+            );
+            console.log(`✅ Notificación enviada al organizador ${event.organizer_id} sobre cancelación de inscripción`);
+          }
+        } catch (notificationError) {
+          console.error('❌ Error enviando notificación al organizador:', notificationError);
+          // No fallar la cancelación si hay error en la notificación
+        }
+      }
+
+      return canceledRegistration;
     } catch (error) {
       console.error('Error canceling registration:', error);
       throw new Error('Failed to cancel registration');

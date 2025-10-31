@@ -14,6 +14,7 @@ import organizerRouter from "authentication/routes/organizer.routes";
 import passwordRouter from "authentication/routes/password.routes";
 import registrationRouter from "authentication/routes/registration.routes";
 import tokenRouter from "tokens/routes/token.routes";
+import notificationRouter from "notifications/routes/notification.routes";
 
 const app: Application = express();
 app.use(cors());
@@ -40,6 +41,9 @@ app.use("/api/organizer", organizerRouter);
 
 // Rutas de administrador
 app.use("/api/admin", adminRouter);
+
+// Rutas de notificaciones
+app.use("/api/notifications", notificationRouter);
 
 app.use("/api/token", tokenRouter);
 

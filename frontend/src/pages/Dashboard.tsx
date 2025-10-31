@@ -36,6 +36,8 @@ import ParticipantsChart from '../components/charts/ParticipantsChart';
 import { formatDate, formatTime, formatDuration, getEventStatusText, getEventStatusColor } from '../utils/dateUtils';
 import jsPDF from 'jspdf';
 import { useNotifications } from '../hooks/useNotifications';
+import { NotificationsPanel } from '../components/ui/NotificationsPanel';
+import { notificationService } from '../services/notificationService';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -45,6 +47,8 @@ const Dashboard: React.FC = () => {
     const { showSessionExpiredModal, goToLogin } = useSessionExpired();
     const { showSuccess, showError } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
+    const userId = parseInt(localStorage.getItem('userId') || '0', 10);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showFilterModal, setShowFilterModal] = useState(false);
     const [selectedChart, setSelectedChart] = useState<'participants' | 'categories' | null>(null);
@@ -54,6 +58,7 @@ const Dashboard: React.FC = () => {
         status: 'all'
     });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
     const firstName = localStorage.getItem('firstName');
     const profileImage = localStorage.getItem('profileImage');
     
@@ -84,6 +89,25 @@ const Dashboard: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Solo ejecutar una vez al montar
 
+    // Cargar contador de notificaciones no leídas
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            if (userId > 0) {
+                try {
+                    const count = await notificationService.getUnreadNotificationCount(userId);
+                    setUnreadNotificationCount(count);
+                } catch (error) {
+                    console.error('Error fetching unread notification count:', error);
+                }
+            }
+        };
+
+        fetchUnreadCount();
+        // Actualizar cada 30 segundos
+        const interval = setInterval(fetchUnreadCount, 30000);
+        return () => clearInterval(interval);
+    }, [userId]);
+
     const handleLogout = () => {
         setShowLogoutModal(true);
     };
@@ -92,6 +116,18 @@ const Dashboard: React.FC = () => {
         logout();
         setShowLogoutModal(false);
     };
+
+    // Función para actualizar el contador de notificaciones no leídas
+    const refreshUnreadCount = useCallback(async () => {
+        if (userId > 0) {
+            try {
+                const count = await notificationService.getUnreadNotificationCount(userId);
+                setUnreadNotificationCount(count);
+            } catch (error) {
+                console.error('Error refreshing unread notification count:', error);
+            }
+        }
+    }, [userId]);
 
 
     // Funciones para acciones rápidas
@@ -579,9 +615,16 @@ const Dashboard: React.FC = () => {
                             </button>
 
                             {/* Notifications */}
-                            <button className="p-2 text-gray-400 hover:text-black dark:hover:text-white relative">
+                            <button 
+                                onClick={() => setNotificationsPanelOpen(true)}
+                                className="p-2 text-gray-400 hover:text-black dark:hover:text-white relative"
+                            >
                                 <Bell className="w-5 h-5" />
-                                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                                {unreadNotificationCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center leading-none">
+                                        {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                                    </span>
+                                )}
                             </button>
 
                             {/* Theme Toggle */}
@@ -1160,6 +1203,39 @@ const Dashboard: React.FC = () => {
                                     Sí, Cerrar Sesión
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Notifications Drawer */}
+            {notificationsPanelOpen && (
+                <div className="fixed inset-0 z-50 overflow-hidden">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-black bg-opacity-50" 
+                        onClick={() => setNotificationsPanelOpen(false)}
+                    ></div>
+                    
+                    {/* Drawer */}
+                    <div className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-black border-l border-gray-200 dark:border-white shadow-xl transform transition-transform duration-300 ease-in-out">
+                        {/* Header */}
+                        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-white">
+                            <h2 className="text-xl font-bold text-black dark:text-white">Notificaciones</h2>
+                            <button
+                                onClick={() => setNotificationsPanelOpen(false)}
+                                className="p-2 rounded-md text-gray-400 hover:text-black dark:hover:text-white"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="h-full overflow-hidden">
+                            <NotificationsPanel 
+                                userId={userId} 
+                                onUnreadCountChange={setUnreadNotificationCount}
+                            />
                         </div>
                     </div>
                 </div>
