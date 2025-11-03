@@ -1596,7 +1596,7 @@ const EventsManagement: React.FC = () => {
         });
     }, [events]);
 
-    const categories = ['Académico', 'Cultural', 'Deportes'];
+    const categories = ['Académico', 'Cultural', 'Deportivo'];
 
     const filteredEvents = uiEvents.filter(event => {
         const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
