@@ -32,10 +32,6 @@ export class TokenService {
       throw new Error("El token es requerido");
     }
 
-    if (!dto.device_id) {
-      throw new Error("El ID del dispositivo es requerido");
-    }
-
     console.log("🔍 Validación de datos completada:", dto);
     return this.repo.create(dto);
   };

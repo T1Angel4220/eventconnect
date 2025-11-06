@@ -31,10 +31,10 @@ export class TokenRepository {
 
   create = async (dto: CreateTokenDto): Promise<TokenEntity> => {
     const result = await pool.query(
-      `INSERT INTO user_push_tokens (user_id, expo_push_token, device_id)
-       VALUES ($1, $2, $3)
+      `INSERT INTO user_push_tokens (user_id, token)
+       VALUES ($1, $2)
        RETURNING *`,
-      [dto.user_id, dto.token, dto.device_id],
+      [dto.user_id, dto.token],
     );
     return result.rows[0] as TokenEntity;
   };
@@ -53,21 +53,16 @@ export class TokenRepository {
 
     const result = await pool.query(
       `UPDATE user_push_tokens
-       SET user_id = $1, expo_push_token = $2, device_id = $3, updated_at = NOW()
-       WHERE token_id = $4
+       SET user_id = $1, token = $2, updated_at = NOW()
+       WHERE token_id = $3
        RETURNING *`,
-      [
-        updatedToken.user_id,
-        updatedToken.token,
-        updatedToken.device_id,
-        tokenID,
-      ],
+      [updatedToken.user_id, updatedToken.token, tokenID],
     );
     return result.rows[0] as TokenEntity;
   };
 
   delete = async (tokenID: number): Promise<void> => {
-    await pool.query("DELETE FROM user_push_tokens WHERE token_id = $1", [
+    await pool.query("DELETE FROM user_push_tokens WHERE user_id = $1", [
       tokenID,
     ]);
   };
