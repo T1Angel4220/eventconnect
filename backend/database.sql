@@ -67,19 +67,15 @@ FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 
 -- User push tokens table for Expo notifications
 CREATE TABLE user_push_tokens (
-token_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 user_id INT NOT NULL,
-expo_push_token VARCHAR(200) NOT NULL,
-device_id VARCHAR(100), -- Identificador único del dispositivo
+token VARCHAR(200) NOT NULL,
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- Índices para optimizar consultas de tokens push
 CREATE INDEX idx_user_push_tokens_user ON user_push_tokens(user_id);
-CREATE UNIQUE INDEX idx_user_push_tokens_user_device ON user_push_tokens(user_id, device_id) WHERE device_id IS NOT NULL;
-
-
 
 -- ==============================
 -- MIGRACIÓN SEGURA PARA USUARIOS EXISTENTES
