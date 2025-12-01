@@ -23,6 +23,7 @@ router.delete('/events/:eventId', adminMiddleware, adminController.deleteEvent);
 router.get('/stats/system', adminMiddleware, adminController.getSystemStats);
 
 // Notificaciones globales (solo admin)
+router.get('/notifications', adminMiddleware, adminController.getAllNotifications);
 router.post('/notifications/global', adminMiddleware, adminController.sendGlobalNotification);
 
 // === RUTAS PARA ADMIN U ORGANIZADOR ===

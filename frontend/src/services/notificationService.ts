@@ -67,6 +67,11 @@ class NotificationService {
     });
     return response.data;
   }
+
+  async getAllNotifications(): Promise<(Notification & { first_name: string; last_name: string; email: string })[]> {
+    const response = await this.request<{ success: boolean; data: (Notification & { first_name: string; last_name: string; email: string })[] }>(`/admin/notifications`);
+    return response.data;
+  }
 }
 
 export const notificationService = new NotificationService();

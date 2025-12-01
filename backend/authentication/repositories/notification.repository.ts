@@ -5,6 +5,7 @@ export interface NotificationRepository {
   create(notification: NotificationData): Promise<NotificationRow>;
   findById(notificationId: number): Promise<NotificationRow | null>;
   findByUser(userId: number): Promise<NotificationRow[]>;
+  findAll(): Promise<(NotificationRow & { first_name: string; last_name: string; email: string })[]>;
   update(notificationId: number, notification: Partial<NotificationData>): Promise<NotificationRow | null>;
   delete(notificationId: number): Promise<boolean>;
   markAsRead(notificationId: number): Promise<boolean>;
@@ -94,6 +95,18 @@ class NotificationRepositoryImpl implements NotificationRepository {
     const query = 'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND status != $2';
     const result = await pool.query(query, [userId, 'read']);
     return parseInt(result.rows[0].count);
+  }
+
+  async findAll(): Promise<(NotificationRow & { first_name: string; last_name: string; email: string })[]> {
+    const query = `
+      SELECT n.*, u.first_name, u.last_name, u.email
+      FROM notifications n
+      JOIN users u ON n.user_id = u.user_id
+      ORDER BY n.sent_at DESC
+    `;
+    
+    const result = await pool.query(query);
+    return result.rows;
   }
 }
 

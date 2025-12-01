@@ -260,6 +260,28 @@ export class AdminController {
   // === GESTIÓN DE NOTIFICACIONES GLOBALES ===
 
   /**
+   * Obtener todas las notificaciones del sistema (solo admin)
+   */
+  async getAllNotifications(req: Request, res: Response) {
+    try {
+      const notifications = await notificationRepository.findAll();
+
+      res.json({
+        success: true,
+        data: notifications,
+        message: "Notificaciones obtenidas exitosamente",
+      });
+    } catch (error) {
+      console.error("Error getting all notifications:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error obteniendo notificaciones",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  /**
    * Enviar notificación global a todos los usuarios (solo admin)
    */
   async sendGlobalNotification(req: Request, res: Response) {
