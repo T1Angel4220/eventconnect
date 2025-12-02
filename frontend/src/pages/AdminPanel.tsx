@@ -25,7 +25,6 @@ import SessionExpiredModal from "../components/modals/SessionExpiredModal";
 import { useNotifications } from "../hooks/useNotifications";
 import AdminStatsChart from "../components/charts/AdminStatsChart";
 import { getEventTypeLabel } from "../types/event.types";
-import notificationService from "../services/notificationService";
 
 interface User {
   user_id: number;
@@ -92,6 +91,11 @@ const AdminPanel: React.FC = () => {
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  // Estados para filtros de eventos
+  const [eventSearchTerm, setEventSearchTerm] = useState("");
+  const [eventDateFrom, setEventDateFrom] = useState("");
+  const [eventDateTo, setEventDateTo] = useState("");
+  const [eventTypeFilter, setEventTypeFilter] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{
     type: "user" | "event";
@@ -324,6 +328,13 @@ const AdminPanel: React.FC = () => {
     loadData(false);
   };
 
+  const clearEventFilters = () => {
+    setEventSearchTerm("");
+    setEventDateFrom("");
+    setEventDateTo("");
+    setEventTypeFilter("");
+  };
+
   const sendGlobalNotification = async () => {
     if (!globalNotification.trim()) {
       showError("Error", "El mensaje no puede estar vacío");
@@ -380,16 +391,26 @@ const AdminPanel: React.FC = () => {
       user.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const filteredEvents = events.filter(
-    (event) =>
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.organizer_first_name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      event.organizer_last_name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()),
-  );
+  const filteredEvents = events.filter((event) => {
+    // Filtro por nombre del evento
+    const matchesEventName =
+      eventSearchTerm === "" ||
+      event.title.toLowerCase().includes(eventSearchTerm.toLowerCase());
+
+    // Filtro por tipo de evento
+    const matchesEventType =
+      eventTypeFilter === "" || event.event_type === eventTypeFilter;
+
+    // Filtro por fecha
+    const eventDate = new Date(event.event_date);
+    const fromDate = eventDateFrom ? new Date(eventDateFrom) : null;
+    const toDate = eventDateTo ? new Date(eventDateTo) : null;
+
+    const matchesDateRange =
+      (!fromDate || eventDate >= fromDate) && (!toDate || eventDate <= toDate);
+
+    return matchesEventName && matchesEventType && matchesDateRange;
+  });
 
   const menuItems = [
     {
@@ -739,6 +760,77 @@ const AdminPanel: React.FC = () => {
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Actualizar
                     </button>
+                  </div>
+
+                  {/* Filtros para eventos */}
+                  <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+                    <div className="flex flex-wrap gap-4 items-end">
+                      {/* Filtro por nombre */}
+                      <div className="flex-1 min-w-[200px]">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Buscar por nombre
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Nombre del evento..."
+                          value={eventSearchTerm}
+                          onChange={(e) => setEventSearchTerm(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
+
+                      {/* Filtro por tipo */}
+                      <div className="min-w-[150px]">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Tipo
+                        </label>
+                        <select
+                          value={eventTypeFilter}
+                          onChange={(e) => setEventTypeFilter(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          <option value="">Todos los tipos</option>
+                          <option value="academico">Académico</option>
+                          <option value="cultural">Cultural</option>
+                          <option value="deportivo">Deportivo</option>
+                        </select>
+                      </div>
+
+                      {/* Filtro por fecha desde */}
+                      <div className="min-w-[140px]">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Fecha desde
+                        </label>
+                        <input
+                          type="date"
+                          value={eventDateFrom}
+                          onChange={(e) => setEventDateFrom(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
+
+                      {/* Filtro por fecha hasta */}
+                      <div className="min-w-[140px]">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Fecha hasta
+                        </label>
+                        <input
+                          type="date"
+                          value={eventDateTo}
+                          onChange={(e) => setEventDateTo(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
+
+                      {/* Botón limpiar filtros */}
+                      <button
+                        onClick={clearEventFilters}
+                        className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 border border-gray-300 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-600 rounded-lg transition-colors"
+                        title="Limpiar todos los filtros"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto">
