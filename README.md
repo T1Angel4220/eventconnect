@@ -290,17 +290,3 @@ Para probar inmediatamente todos los roles en la plataforma sin necesidad de reg
 > - [API de Inscripciones](backend/REGISTRATIONS_API_DOCUMENTATION.md)
 
 ---
-
-## 🔒 Seguridad y Buenas Prácticas
-
-- **Exclusión de Secretos**: Los archivos `.env` reales, contraseñas de aplicación y credenciales de base de datos están estrictamente excluidos de Git mediante `.gitignore`.
-- **Plantillas Seguras**: Se proporcionan `.env.example` tanto para el backend como para el frontend con valores ficticios e instrucciones claras.
-- **Prevención de Inyecciones SQL**: Todas las consultas a PostgreSQL utilizan sentencias parametrizadas (`$1, $2, ...`) a través de la librería `pg`.
-- **Validación de Archivos**: La subida de imágenes verifica tipos MIME permitidos y restringe el tamaño a un máximo de 5 MB.
-- **Limpieza de Artefactos**: Repositorio optimizado, libre de archivos `.zip`, volcados de depuración o logs innecesarios.
-
----
-
-## 📄 Licencia
-
-Este proyecto está distribuido bajo la licencia **ISC**. Consulta los archivos de paquete para más detalles.

@@ -288,3 +288,4 @@ Este proyecto evidencia sólidas competencias en desarrollo de software moderno:
 - **Seguridad en la Práctica**: Manejo adecuado de variables de entorno, protección de secretos, prevención de inyecciones SQL con consultas parametrizadas, encriptación bcrypt y roles RBAC.
 - **UX/UI Profesional**: Modo oscuro nativo, validación reactiva de formularios, estados de carga y errores manejados con elegancia, además de visualizaciones analíticas con Chart.js.
 - **Multiplataforma**: Arquitectura preparada para clientes móviles mediante tokens de Expo Push Notifications.
+
