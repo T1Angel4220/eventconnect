@@ -102,10 +102,12 @@ POST /api/events
   "title": "Conferencia de Tecnología",
   "description": "Conferencia sobre las últimas tendencias tecnológicas",
   "event_date": "2025-01-15T10:00:00Z",
+  "duration": 120,
   "location": "Auditorio Principal",
-  "event_type": "academic",
+  "event_type": "academico",
   "capacity": 200,
-  "organizer_id": 1
+  "organizer_id": 1,
+  "event_image": "/uploads/events/default-event.jpg"
 }
 ```
 
@@ -194,10 +196,10 @@ GET /api/events/stats
 }
 ```
 
-## Tipos de Eventos
-- `academic` - Académico
+## Tipos de Eventos (Categorías)
+- `academico` - Académico
 - `cultural` - Cultural
-- `sports` - Deportes
+- `deportivo` - Deportivo
 
 ## Estados de Registro
 - `registered` - Registrado

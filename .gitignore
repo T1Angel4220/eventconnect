@@ -1,5 +1,93 @@
-**/node_modules
+# =============================================================================
+# EventConnect - Git Ignore Configuration
+# =============================================================================
+
+# --- Environment Variables & Secrets ---
+.env
+.env.*
+*.env
+backend/.env
+frontend/.env
+*.pem
+*.key
+*.cert
+*.crt
+id_rsa*
+*.p12
+
+# Explicitly allow example env files
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# --- Dependencies ---
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 pnpm-lock.yaml
 */pnpm-lock.yaml
-**/dist
-backend/.env
+
+# --- Build Outputs & Caches ---
+dist/
+dist-ssr/
+build/
+**/dist/
+**/build/
+.next/
+out/
+*.tsbuildinfo
+.eslintcache
+
+# --- Archives, Zips & Compressed Files ---
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.gz
+*.bz2
+
+# --- Logs & Temp Files ---
+logs/
+*.log
+temp/
+tmp/
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# --- Uploads / Runtime Dynamic Media ---
+backend/uploads/events/*
+!backend/uploads/events/default-event.jpg
+!backend/uploads/events/.gitkeep
+backend/uploads/profiles/*
+!backend/uploads/profiles/.gitkeep
+
+# --- OS Specific Files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# --- IDEs & Editors ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

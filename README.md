@@ -1,258 +1,306 @@
-# EventConnect
+# 🌐 EventConnect
 
-Una aplicación web de gestión de eventos con sistema de autenticación completo que incluye registro, login, recuperación de contraseña y dashboard.
+<div align="center">
 
-## 🚀 Funcionalidades
+![EventConnect Banner](https://img.shields.io/badge/EventConnect-Platform-6366f1?style=for-the-badge&logo=compass&logoColor=white)
 
-### Autenticación y Gestión de Usuarios
-- **Registro de usuarios** con validación de datos
-- **Login con JWT** para sesiones seguras
-- **Recuperación de contraseña** con códigos de verificación por email
-- **Protección de rutas** según roles de usuario
-- **Validación de formularios** en tiempo real
-- **Gestión de sesiones** con localStorage
+**Plataforma Integral de Gestión de Eventos, Control de Asistencia y Analítica Multicanal**
 
-### Roles y Permisos
-- **Organizadores**: Usuarios que pueden gestionar eventos
-- **Administradores**: Control total de la plataforma
-- **Rutas protegidas** según rol del usuario
+[![React](https://img.shields.io/badge/React-19.1-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7.1-646cff?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-5.1-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169e1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg?style=flat-square)](https://opensource.org/licenses/ISC)
 
-### Interfaz de Usuario
-- **Diseño responsivo** con Tailwind CSS
-- **Componentes reutilizables** con Radix UI
-- **Tema oscuro/claro** configurable
-- **Validaciones visuales** con indicadores de estado
-- **Componentes de formulario** especializados
+[📖 Especificación Completa del Proyecto](PROJECT_OVERVIEW.md) • [📡 Documentación API Backend](backend/API_DOCUMENTATION.md) • [💻 Frontend Docs](frontend/README.md)
 
-## 🛠️ Tecnologías Principales
+</div>
+
+---
+
+## 📌 Descripción General
+
+**EventConnect** es una solución Full-Stack diseñada para centralizar y optimizar el ciclo de vida de eventos académicos, culturales y deportivos. Permite a instituciones, colectivos y organizadores publicar eventos con banners personalizados, regular aforos en tiempo real, auditar inscripciones, generar reportes formales en PDF y notificar a los participantes tanto en la web como en aplicaciones móviles vía notificaciones Push.
+
+> 💡 **Para conocer a fondo el problema de negocio, diagramas de secuencia y justificación técnica, consulta [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md).**
+
+---
+
+## 🚀 Funcionalidades Principales
+
+### 🎪 Gestión de Eventos & Aforos
+- **Ciclo de vida completo**: Creación, edición, filtrado y eliminación de eventos.
+- **Categorización estandarizada**: Eventos clasificados en `académico`, `cultural` y `deportivo`.
+- **Control dinámico de capacidad**: Validación en tiempo real del límite de cupos disponibles por evento.
+- **Subida de posters/banners**: Carga optimizada de imágenes mediante Multer con previsualización en vivo.
+- **Estados automáticos**: Cálculo y visualización de estados (`upcoming`, `in_progress`, `completed`).
+
+### 📊 Dashboard Analítico & Reportes
+- **Métricas operativas**: Visualización instantánea de eventos activos, asistentes totales y registros mensuales.
+- **Gráficos interactivos**: Integración de Chart.js para análisis de distribución por categorías y series temporales.
+- **Exportación a PDF**: Generación en el cliente de reportes profesionales de participantes con membrete y tablas estructuradas (`jsPDF` + `autotable`).
+
+### 🛡️ Panel de Administración (Super Admin)
+- **Moderación centralizada**: Control y auditoría de eventos publicados por cualquier organizador.
+- **Gestión de usuarios**: Visualización de usuarios, modificación de roles (`participant`, `organizer`, `admin`) y eliminación de cuentas.
+- **Mensajería global (Broadcast)**: Envío de anuncios y comunicados del sistema a todos los usuarios.
+
+### 🔔 Notificaciones Multicanal
+- **Centro de notificaciones web**: Panel desplegable con contador de no leídas y actualización de estados (`pending`, `sent`, `read`).
+- **Soporte Móvil Push (Expo)**: Almacenamiento de tokens push por dispositivo y despacho mediante `expo-server-sdk`.
+
+### 🔐 Seguridad y Autenticación
+- **Sesiones con JWT**: Tokens de acceso con verificación de roles mediante middlewares dedicados.
+- **Detección de sesión expirada**: Interceptor reactivo que abre un modal de advertencia y redirige al login sin pérdida abrupta de estado.
+- **Encriptación unidireccional**: Contraseñas protegidas mediante `bcryptjs` con 10 rondas de salt.
+- **Recuperación de contraseña por email**: Flujo de validación con código de seguridad temporal de 6 dígitos enviado por Nodemailer.
+
+### 🎨 Experiencia de Usuario (UI/UX)
+- **Tema Claro / Oscuro**: Conmutador fluido con persistencia en `localStorage`.
+- **Formularios inteligentes**: Validación reactiva con indicador visual de fortaleza de contraseñas.
+- **Diseño responsivo**: Adaptado para resoluciones móviles, tablets y monitores de escritorio.
+
+---
+
+## 🏗️ Arquitectura del Sistema
+
+```mermaid
+graph TD
+    User([👤 Usuario / Navegador]) -->|HTTPS / SPA| Client[Frontend: React 19 + Vite + Tailwind]
+    
+    subgraph Frontend Architecture
+        Client --> Hooks[Custom Hooks: useAuth, useDashboard, useTheme]
+        Client --> Charts[Visualización: Chart.js & react-chartjs-2]
+        Client --> PDF[Reportes: jsPDF + autotable]
+    end
+
+    Client -->|REST API Requests + Bearer JWT| Server[Backend: Node.js + Express + TypeScript]
+
+    subgraph Backend Architecture
+        Server --> Middlewares[Middlewares: JWT Auth, Admin Guard, Multer Upload]
+        Middlewares --> Controllers[Controllers & Services: Repository Pattern]
+        Controllers --> DB[(PostgreSQL Database)]
+        Controllers --> Disk[(Almacenamiento Local de Banners)]
+        Controllers --> Mailer[Servicio SMTP: Nodemailer]
+        Controllers --> PushAPI[Push Gateway: Expo Server SDK]
+    end
+```
+
+---
+
+## 🛠️ Tecnologías Empleadas
 
 ### Backend
-- **Node.js** - Runtime de JavaScript
-- **Express.js** - Framework web minimalista
-- **TypeScript** - Tipado estático para JavaScript
-- **PostgreSQL** - Base de datos relacional
-- **JWT** - Autenticación con tokens
-- **bcryptjs** - Encriptación de contraseñas
-- **Nodemailer** - Envío de emails
-- **CORS** - Configuración de políticas de acceso
+| Tecnología | Versión | Rol en el Proyecto |
+| :--- | :---: | :--- |
+| **Node.js** | 18+ | Entorno de ejecución en servidor |
+| **Express.js** | ^5.1.0 | Framework web REST y enrutamiento |
+| **TypeScript** | ^5.9.2 | Tipado estático y robustez del código |
+| **PostgreSQL** | 14+ | Base de datos relacional y transaccional |
+| **pg (node-postgres)** | ^8.16.3 | Driver cliente para conexión a PostgreSQL |
+| **jsonwebtoken** | ^9.0.2 | Generación y validación de tokens de sesión |
+| **bcryptjs** | ^3.0.2 | Hashing criptográfico de contraseñas |
+| **Multer** | ^2.0.2 | Manejo de subida de archivos multipart |
+| **Nodemailer** | ^6.10.1 | Envío de códigos de verificación por SMTP |
+| **expo-server-sdk**| ^4.0.0 | Despacho de notificaciones push a clientes Expo |
 
 ### Frontend
-- **React 19** - Biblioteca de interfaz de usuario
-- **TypeScript** - Tipado estático
-- **Vite** - Herramienta de construcción y desarrollo
-- **React Router DOM** - Enrutamiento
-- **Tailwind CSS** - Framework de estilos utilitarios
-- **Radix UI** - Componentes accesibles sin estilos
-- **Lucide React** - Iconos
-- **Class Variance Authority** - Gestión de variantes de clases
+| Tecnología | Versión | Rol en el Proyecto |
+| :--- | :---: | :--- |
+| **React** | ^19.1.1 | Biblioteca reactiva para la interfaz de usuario |
+| **TypeScript** | ^5.8.3 | Tipado integral de componentes y servicios |
+| **Vite** | ^7.1.2 | Bundler y servidor de desarrollo ultrarrápido |
+| **Tailwind CSS** | ^4.1.12 | Sistema de estilos utilitarios modernos |
+| **React Router** | ^7.8.2 | Enrutador para navegación y protección de rutas |
+| **Chart.js** | ^4.5.0 | Motor de renderizado de gráficos estadísticos |
+| **jsPDF** | ^3.0.3 | Generación de reportes tabulares en PDF |
+| **Lucide React** | ^0.542.0 | Iconografía limpia y accesible |
+| **Radix UI** | ^1.2.3 | Primitivas de interfaz sin estilos y accesibles |
 
-## 📁 Estructura del Proyecto
+---
+
+## 📁 Estructura del Repositorio
 
 ```
 eventconnect/
-├── backend/                    # Servidor Node.js + Express
-│   ├── config/
-│   │   └── env.ts             # Configuración de variables de entorno
-│   ├── controllers/
-│   │   └── authController.ts  # Lógica de autenticación
-│   ├── middleware/
-│   │   └── authMiddleware.ts  # Middleware de autorización
-│   ├── models/
-│   │   ├── db.ts             # Conexión a PostgreSQL
-│   │   ├── user.ts           # Modelo de usuario
-│   │   └── passwordReset.ts  # Modelo de recuperación de contraseña
-│   ├── routes/
-│   │   └── auth.ts           # Rutas de autenticación
-│   ├── services/
-│   │   └── emailService.ts   # Servicio de envío de emails
-│   ├── tests/
-│   │   ├── testDb.ts         # Pruebas de base de datos
-│   │   └── testMail.ts       # Pruebas de email
-│   ├── utils/
-│   │   └── hashPassword.js   # Utilidades de encriptación
-│   ├── .env                  # Variables de entorno
-│   ├── index.ts              # Punto de entrada del servidor
-│   └── package.json          # Dependencias del backend
+├── backend/                             # Servidor API REST (Express + TypeScript)
+│   ├── authentication/                  # Módulo de Auth (login, registro, perfiles, passwords)
+│   │   ├── controllers/
+│   │   ├── middlewares/
+│   │   ├── models/
+│   │   ├── repositories/
+│   │   ├── routes/
+│   │   └── services/
+│   ├── config/                          # Conexión DB, variables de entorno y JWT
+│   ├── events/                          # Módulo de gestión y filtros de eventos
+│   ├── notifications/                   # Módulo de notificaciones web y push
+│   ├── tokens/                          # Módulo de almacenamiento de tokens push Expo
+│   ├── middleware/                      # Subida de imágenes con Multer
+│   ├── migrations/                      # Scripts SQL de migraciones controladas
+│   ├── tests/                           # Pruebas de conectividad y servicios
+│   ├── uploads/                         # Directorio de banners y avatares
+│   ├── database.sql                     # Script DDL/DML completo de PostgreSQL
+│   ├── .env.example                     # Plantilla de variables de entorno (segura)
+│   └── package.json
 │
-├── frontend/                  # Aplicación React
-│   ├── public/               # Archivos estáticos
+├── frontend/                            # Aplicación Cliente (React 19 + Vite + Tailwind)
+│   ├── public/                          # Recursos estáticos servidos directamente
 │   ├── src/
-│   │   ├── assets/           # Recursos estáticos
-│   │   ├── components/       # Componentes reutilizables
-│   │   │   ├── forms/        # Componentes de formulario
-│   │   │   ├── login-Web/    # Componentes de autenticación
-│   │   │   └── ui/           # Componentes base de UI
-│   │   ├── hooks/
-│   │   │   └── useTheme.ts   # Hook para manejo de temas
-│   │   ├── lib/
-│   │   │   └── utils.ts      # Utilidades generales
-│   │   ├── pages/            # Páginas de la aplicación
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── Login.tsx
-│   │   │   ├── Register.tsx
-│   │   │   ├── ForgotPassword.tsx
-│   │   │   ├── VerifyCode.tsx
-│   │   │   └── ResetPassword.tsx
-│   │   ├── services/
-│   │   │   └── authService.ts # Servicios de API
-│   │   ├── utils/
-│   │   │   └── validations.ts # Validaciones del frontend
-│   │   ├── App.tsx           # Componente principal
-│   │   └── main.tsx          # Punto de entrada
-│   ├── components.json       # Configuración de shadcn/ui
-│   ├── vite.config.ts        # Configuración de Vite
-│   └── package.json          # Dependencias del frontend
+│   │   ├── components/                  # Componentes reutilizables (forms, charts, modals, ui)
+│   │   ├── config/                      # Configuración de Axios/Fetch y API URL
+│   │   ├── contexts/                    # Contextos globales de React (Dashboard, etc.)
+│   │   ├── hooks/                       # Hooks personalizados (useAuth, useTheme, etc.)
+│   │   ├── pages/                       # Vistas (Dashboard, Events, Admin, Registrations...)
+│   │   ├── services/                    # Clientes de consumo HTTP hacia la API
+│   │   ├── types/                       # Interfaces y contratos de datos TypeScript
+│   │   └── utils/                       # Generador de PDF, dateUtils y validaciones
+│   ├── .env.example                     # Plantilla de variables del frontend
+│   └── package.json
 │
-└── README.md                 # Documentación del proyecto
+├── .gitignore                           # Exclusión de secrets, zips, logs y temporales
+├── PROJECT_OVERVIEW.md                  # Especificación profunda, arquitectura y diagramas
+└── README.md                            # Documentación principal del proyecto
 ```
 
-## ⚙️ Instalación y Configuración
+---
+
+## ⚙️ Guía de Instalación y Puesta en Marcha
 
 ### Prerrequisitos
-- Node.js 18+
-- PostgreSQL 12+
-- npm o yarn
+- **Node.js** (v18.0 o superior)
+- **PostgreSQL** (v14.0 o superior)
+- **npm** o gestor de paquetes equivalente
 
-### 1. Clonar el repositorio
+---
+
+### 1. Clonar el Repositorio
 ```bash
-git clone <repository-url>
+git clone https://github.com/<tu-usuario>/eventconnect.git
 cd eventconnect
 ```
 
-### 2. Configurar el Backend
+---
 
+### 2. Configurar la Base de Datos PostgreSQL
+1. Abre tu cliente de PostgreSQL (pgAdmin, DBeaver o `psql`).
+2. Ejecuta el archivo de inicialización [database.sql](file:///c:/Proyectos-HojaDeVida/eventconnect/backend/database.sql):
+```bash
+psql -U postgres -f backend/database.sql
+```
+> Esto creará la base de datos `eventconnect`, las tablas, índices, restricciones y usuarios iniciales de prueba.
+
+---
+
+### 3. Configurar el Backend
 ```bash
 cd backend
 npm install
 ```
 
-#### Configurar variables de entorno
-Crear archivo `.env` en la carpeta `backend/`:
+Copia la plantilla de variables de entorno y ajusta tus credenciales locales:
+```bash
+cp .env.example .env
+```
 
+Edita `.env` con tus credenciales:
 ```env
-# Puerto del servidor
 PORT=3001
-
-# Base de datos PostgreSQL
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=your_password
+DB_PASSWORD=tu_password
 DB_NAME=eventconnect
-
-# JWT
-JWT_SECRET=your_super_secret_jwt_key
+JWT_SECRET=tu_clave_secreta_jwt_muy_segura
 JWT_EXPIRES_IN=24h
-
-# Email (para recuperación de contraseña)
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
+EMAIL_USER=tu_correo@gmail.com
+EMAIL_PASS=tu_app_password_de_gmail
 ```
 
-#### Configurar base de datos
-```sql
--- Crear base de datos
-CREATE DATABASE eventconnect;
-
--- Crear tabla de usuarios
-CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'organizer',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Crear tabla de códigos de recuperación
-CREATE TABLE password_reset_codes (
-    reset_id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(user_id),
-    code VARCHAR(6) NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    used BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+Inicia el servidor backend:
+```bash
+npm start
 ```
+El servidor arrancará en `http://localhost:3001`.
 
-### 3. Configurar el Frontend
+---
 
+### 4. Configurar el Frontend
+En una nueva terminal:
 ```bash
 cd frontend
 npm install
 ```
 
-## 🚀 Proceso para Levantar la Aplicación
-
-### Levantar el Backend
-
+Copia la plantilla de variables de entorno:
 ```bash
-cd backend
-
-# Ejecutar tests (opcional)
-npm test
-
-# Iniciar servidor en modo desarrollo
-npm start
+cp .env.example .env
 ```
 
-El servidor se ejecutará en `http://localhost:3001`
+Contenido de `.env`:
+```env
+VITE_API_URL=http://localhost:3001/api
+```
 
-### Levantar el Frontend
-
+Inicia el servidor de desarrollo:
 ```bash
-cd frontend
-
-# Iniciar en modo desarrollo
 npm run dev
-
-# Para producción
-npm run build
-npm run preview
 ```
+La aplicación web estará disponible en `http://localhost:5173`.
 
-La aplicación se ejecutará en `http://localhost:5173`
+---
 
-### Scripts Disponibles
+## 🔑 Credenciales de Demostración
 
-#### Backend
-- `npm start` - Inicia el servidor
-- `npm test` - Ejecuta pruebas de base de datos y email
+Para probar inmediatamente todos los roles en la plataforma sin necesidad de registrar nuevos datos, puedes utilizar las cuentas sembradas en `database.sql`:
 
-#### Frontend
-- `npm run dev` - Servidor de desarrollo con hot reload
-- `npm run build` - Construye la aplicación para producción
-- `npm run preview` - Previsualiza la build de producción
-- `npm run lint` - Ejecuta el linter
+| Rol | Correo Electrónico | Contraseña | Capacidades |
+| :--- | :--- | :--- | :--- |
+| **Administrador** | `admin@eventconnect.com` | `Admin123` | Control total, usuarios, moderación global y métricas del sistema |
+| **Organizador** | `organizer@eventconnect.com` | `organizer123` | Creación/edición de eventos, control de asistentes y exportación PDF |
 
-## 🔧 Configuración Adicional
+---
 
-### Base de Datos
-Asegúrate de tener PostgreSQL corriendo y ejecutar las migraciones de la base de datos antes de iniciar el backend.
+## 📡 Resumen de Endpoints de la API
 
-### Email
-Para la funcionalidad de recuperación de contraseña, configura un servicio de email (Gmail recomendado) con una contraseña de aplicación.
+| Módulo | Método | Endpoint | Acceso | Descripción |
+| :--- | :---: | :--- | :---: | :--- |
+| **Auth** | `POST` | `/api/auth/register` | Público | Registro de usuarios |
+| **Auth** | `POST` | `/api/auth/login` | Público | Autenticación y expedición de JWT |
+| **Password** | `POST` | `/api/password/forgot-password` | Público | Envío de código de recuperación al email |
+| **Password** | `POST` | `/api/password/verify-code` | Público | Validación del código de 6 dígitos |
+| **Password** | `POST` | `/api/password/reset-password` | Público | Establecimiento de nueva contraseña |
+| **Events** | `GET` | `/api/events` | Público | Listar eventos con filtros (categoría, fecha) |
+| **Events** | `POST` | `/api/events` | `organizer`, `admin` | Crear evento con póster (Multipart) |
+| **Events** | `PUT` | `/api/events/:id` | `organizer`, `admin` | Actualizar evento existente |
+| **Events** | `DELETE` | `/api/events/:id` | `organizer`, `admin` | Eliminar evento |
+| **Registrations** | `POST` | `/api/registrations` | Autenticado | Inscribirse a un evento (con control de aforo) |
+| **Registrations** | `GET` | `/api/registrations/event/:id` | `organizer`, `admin` | Obtener participantes inscritos |
+| **Dashboard** | `GET` | `/api/dashboard/stats` | `organizer`, `admin` | Obtener estadísticas resumidas |
+| **Dashboard** | `GET` | `/api/dashboard/events/upcoming` | `organizer`, `admin` | Eventos más próximos |
+| **Admin** | `GET` | `/api/admin/users` | `admin` | Listado maestro de usuarios |
+| **Admin** | `PATCH` | `/api/admin/users/:id/role` | `admin` | Cambiar rol a un usuario |
+| **Admin** | `POST` | `/api/admin/notifications/broadcast` | `admin` | Difusión global de notificaciones |
 
-### CORS
-El backend está configurado para aceptar peticiones desde cualquier origen en desarrollo. Para producción, configura los orígenes permitidos.
+> Para especificaciones detalladas de payloads y respuestas JSON, consulta:
+> - [API General](backend/API_DOCUMENTATION.md)
+> - [API de Administración](backend/ADMIN_API_DOCUMENTATION.md)
+> - [API de Inscripciones](backend/REGISTRATIONS_API_DOCUMENTATION.md)
 
-## 📝 Uso
+---
 
-1. **Registro**: Los usuarios pueden registrarse como organizadores
-2. **Login**: Autenticación con email y contraseña
-3. **Recuperar contraseña**: Sistema de códigos de verificación por email
-4. **Dashboard**: Área protegida para usuarios autenticados
-5. **Rutas protegidas**: Acceso basado en roles de usuario
+## 🔒 Seguridad y Buenas Prácticas
 
-## 🤝 Contribuir
+- **Exclusión de Secretos**: Los archivos `.env` reales, contraseñas de aplicación y credenciales de base de datos están estrictamente excluidos de Git mediante `.gitignore`.
+- **Plantillas Seguras**: Se proporcionan `.env.example` tanto para el backend como para el frontend con valores ficticios e instrucciones claras.
+- **Prevención de Inyecciones SQL**: Todas las consultas a PostgreSQL utilizan sentencias parametrizadas (`$1, $2, ...`) a través de la librería `pg`.
+- **Validación de Archivos**: La subida de imágenes verifica tipos MIME permitidos y restringe el tamaño a un máximo de 5 MB.
+- **Limpieza de Artefactos**: Repositorio optimizado, libre de archivos `.zip`, volcados de depuración o logs innecesarios.
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+---
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia ISC.
+Este proyecto está distribuido bajo la licencia **ISC**. Consulta los archivos de paquete para más detalles.
